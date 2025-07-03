@@ -26,12 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('admin_user');
+    const storedUser = localStorage.getItem('baddelha_user');
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (e) {
-        localStorage.removeItem('admin_user');
+        localStorage.removeItem('baddelha_user');
       }
     }
     setLoading(false);
@@ -46,20 +46,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock validation (in real app, this would be a server-side check)
+      // Mock validation for both admin and inspector
+      let userData: AuthUser | null = null;
+      
       if (email === 'admin@baddelha.com' && password === 'admin123') {
-        const userData: AuthUser = {
+        userData = {
           id: '1',
           name: 'Admin User',
           email: 'admin@baddelha.com',
           role: 'admin'
         };
-        
-        localStorage.setItem('admin_user', JSON.stringify(userData));
-        setUser(userData);
+      } else if (email === 'inspector@baddelha.com' && password === 'inspector123') {
+        userData = {
+          id: '2',
+          name: 'Inspector User',
+          email: 'inspector@baddelha.com',
+          role: 'inspector'
+        };
       } else {
         throw new Error('Invalid email or password');
       }
+      
+      localStorage.setItem('baddelha_user', JSON.stringify(userData));
+      setUser(userData);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -68,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('admin_user');
+    localStorage.removeItem('baddelha_user');
     setUser(null);
   };
 

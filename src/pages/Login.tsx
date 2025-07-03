@@ -13,7 +13,11 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      if (user.role === 'inspector') {
+        navigate('/inspections');
+      } else {
+        navigate('/');
+      }
     }
   }, [user, navigate]);
 
@@ -29,9 +33,9 @@ const Login = () => {
           <div className="flex justify-center">
             <Car className="h-12 w-12 text-blue-800" />
           </div>
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">Baddelha Admin</h2>
+          <h2 className="mt-4 text-3xl font-bold text-gray-900">Baddelha Portal</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to access the admin dashboard
+            Sign in to access your dashboard
           </p>
         </div>
         
@@ -50,7 +54,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="form-input"
-                placeholder="admin@baddelha.com"
+                placeholder="Enter your email"
               />
             </div>
             <div>
@@ -109,8 +113,9 @@ const Login = () => {
             </button>
           </div>
           
-          <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Demo credentials: admin@baddelha.com / admin123</p>
+          <div className="mt-4 text-center text-sm text-gray-600 space-y-1">
+            <p><strong>Admin:</strong> admin@baddelha.com / admin123</p>
+            <p><strong>Inspector:</strong> inspector@baddelha.com / inspector123</p>
           </div>
         </form>
       </div>

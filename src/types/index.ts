@@ -46,9 +46,40 @@ export interface ValuationRequest {
   notes?: string;
 }
 
+export interface InspectionRequest {
+  id: string;
+  userId: string;
+  carId: string;
+  requestDate: string;
+  inspectionDate?: string;
+  location: string;
+  status: 'pending' | 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high';
+  inspectorId?: string;
+  notes?: string;
+}
+
+export interface InspectionReport {
+  id: string;
+  inspectionId: string;
+  inspectorId: string;
+  completedDate: string;
+  overallCondition: 'excellent' | 'good' | 'fair' | 'poor';
+  exteriorCondition: 'excellent' | 'good' | 'fair' | 'poor';
+  interiorCondition: 'excellent' | 'good' | 'fair' | 'poor';
+  engineCondition: 'excellent' | 'good' | 'fair' | 'poor';
+  mileageVerified: boolean;
+  actualMileage?: number;
+  defects: string[];
+  recommendations: string;
+  estimatedValue: number;
+  images: string[];
+  signature?: string;
+}
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin';
+  role: 'admin' | 'inspector';
 }

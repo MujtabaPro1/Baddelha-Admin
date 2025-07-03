@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, Car, Calendar, BadgeDollarSign, 
-  LogOut, Menu, X, Bell, ChevronDown 
+  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck
 } from 'lucide-react';
 
 const Layout = () => {
@@ -13,17 +13,35 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Users', href: '/users', icon: Users },
-    { name: 'Cars', href: '/cars', icon: Car },
-    { name: 'Appointments', href: '/appointments', icon: Calendar },
-    { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
-  ];
+  // Different navigation based on user role
+  const getNavigation = () => {
+    if (user?.role === 'inspector') {
+      return [
+        { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+      ];
+    }
+    
+    // Admin navigation
+    return [
+      { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { name: 'Users', href: '/users', icon: Users },
+      { name: 'Cars', href: '/cars', icon: Car },
+      { name: 'Appointments', href: '/appointments', icon: Calendar },
+      { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
+      { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+    ];
+  };
+
+  const navigation = getNavigation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const getPageTitle = () => {
+    const currentNav = navigation.find(item => item.href === location.pathname);
+    return currentNav?.name || 'Dashboard';
   };
 
   return (
@@ -56,7 +74,9 @@ const Layout = () => {
           
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div className="flex-shrink-0 flex items-center px-4">
-              <h1 className="text-2xl font-bold text-white">Baddelha Admin</h1>
+              <h1 className="text-2xl font-bold text-white">
+                Baddelha {user?.role === 'inspector' ? 'Inspector' : 'Admin'}
+              </h1>
             </div>
             <nav className="mt-5 px-2 space-y-1">
               {navigation.map((item) => {
@@ -101,7 +121,9 @@ const Layout = () => {
           <div className="flex flex-col h-0 flex-1 bg-blue-900">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-2xl font-bold text-white">Baddelha Admin</h1>
+                <h1 className="text-2xl font-bold text-white">
+                  Baddelha {user?.role === 'inspector' ? 'Inspector' : 'Admin'}
+                </h1>
               </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
                 {navigation.map((item) => {
@@ -155,7 +177,7 @@ const Layout = () => {
           <div className="flex-1 px-4 flex justify-between">
             <div className="flex-1 flex items-center">
               <h2 className="text-xl font-semibold text-gray-800">
-                {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
+                {getPageTitle()}
               </h2>
             </div>
             <div className="ml-4 flex items-center md:ml-6">

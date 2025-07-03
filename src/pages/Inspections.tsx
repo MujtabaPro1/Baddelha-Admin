@@ -3,21 +3,26 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Calendar, Filter, Plus, MapPin, ChevronRight } from 'lucide-react';
-import { Appointment, User, Car } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  Search, Filter, Plus, RefreshCw, Calendar, MapPin, 
+  ChevronRight, AlertTriangle, Clock, User
+} from 'lucide-react';
+import { InspectionRequest, User as UserInterface, Car } from '../types';
 
-// Mock data for appointments
-const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[] = [
+// Mock data for inspection requests
+const mockInspections: (InspectionRequest & { userDetails: UserInterface, carDetails: Car })[] = [
   {
     id: '1',
     userId: '1',
     carId: '3',
-    date: '2025-04-28',
-    time: '10:00',
+    requestDate: '2025-04-25',
+    inspectionDate: '2025-04-28',
     location: 'Baddelha Riyadh Branch',
-    purpose: 'buy',
     status: 'scheduled',
-    notes: 'Customer interested in test drive',
+    priority: 'high',
+    inspectorId: '2',
+    notes: 'Customer wants comprehensive inspection before purchase',
     userDetails: {
       id: '1',
       name: 'Ahmed Mohammed',
@@ -46,11 +51,11 @@ const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[]
     id: '2',
     userId: '2',
     carId: '5',
-    date: '2025-04-28',
-    time: '14:30',
-    location: 'Baddelha Jeddah Branch',
-    purpose: 'sell',
-    status: 'scheduled',
+    requestDate: '2025-04-24',
+    location: 'Customer Location - Jeddah',
+    status: 'pending',
+    priority: 'medium',
+    notes: 'Pre-sale inspection required for trade-in evaluation',
     userDetails: {
       id: '2',
       name: 'Fatima Al-Saud',
@@ -79,11 +84,13 @@ const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[]
     id: '3',
     userId: '4',
     carId: '2',
-    date: '2025-04-29',
-    time: '11:15',
+    requestDate: '2025-04-23',
+    inspectionDate: '2025-04-26',
     location: 'Baddelha Dammam Branch',
-    purpose: 'tradeIn',
-    status: 'scheduled',
+    status: 'in-progress',
+    priority: 'high',
+    inspectorId: '2',
+    notes: 'Insurance claim inspection - check for accident damage',
     userDetails: {
       id: '4',
       name: 'Nora Al-Qahtani',
@@ -112,11 +119,13 @@ const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[]
     id: '4',
     userId: '5',
     carId: '1',
-    date: '2025-04-27',
-    time: '15:00',
+    requestDate: '2025-04-22',
+    inspectionDate: '2025-04-25',
     location: 'Baddelha Riyadh Branch',
-    purpose: 'buy',
     status: 'completed',
+    priority: 'low',
+    inspectorId: '2',
+    notes: 'Routine inspection completed successfully',
     userDetails: {
       id: '5',
       name: 'Khalid Al-Harbi',
@@ -145,11 +154,11 @@ const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[]
     id: '5',
     userId: '3',
     carId: '4',
-    date: '2025-04-26',
-    time: '09:30',
-    location: 'Baddelha Jeddah Branch',
-    purpose: 'tradeIn',
+    requestDate: '2025-04-21',
+    location: 'Customer Location - Riyadh',
     status: 'cancelled',
+    priority: 'low',
+    notes: 'Customer cancelled inspection request',
     userDetails: {
       id: '3',
       name: 'Mohammed Abdullah',
@@ -176,38 +185,75 @@ const mockAppointments: (Appointment & { userDetails: User, carDetails: Car })[]
   },
 ];
 
-const Appointments = () => {
-  const [appointments] = useState(mockAppointments);
+const Inspections = () => {
+  const { user } = useAuth();
+  const [inspections] = useState(mockInspections);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [selectedPurpose, setSelectedPurpose] = useState<string>('');
+  const [selectedPriority, setSelectedPriority] = useState<string>('');
 
-  const filteredAppointments = appointments.filter((appointment) => {
-    const searchStr = `${appointment.userDetails.name} ${appointment.carDetails.make} ${appointment.carDetails.model}`.toLowerCase();
-    const matchesSearch = searchStr.includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === '' || appointment.status === selectedStatus;
-    const matchesPurpose = selectedPurpose === '' || appointment.purpose === selectedPurpose;
+  // Filter inspections based on user role
+  const getFilteredInspections = () => {
+    let filtered = inspections;
     
-    return matchesSearch && matchesStatus && matchesPurpose;
-  });
+    // If inspector, only show their assigned inspections or unassigned ones
+    if (user?.role === 'inspector') {
+      filtered = inspections.filter(inspection => 
+        !inspection.inspectorId || inspection.inspectorId === user.id
+      );
+    }
+    
+    // Apply search and status filters
+    return filtered.filter((inspection) => {
+      const searchStr = `${inspection.userDetails.name} ${inspection.carDetails.make} ${inspection.carDetails.model}`.toLowerCase();
+      const matchesSearch = searchStr.includes(searchQuery.toLowerCase());
+      const matchesStatus = selectedStatus === '' || inspection.status === selectedStatus;
+      const matchesPriority = selectedPriority === '' || inspection.priority === selectedPriority;
+      
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  };
+
+  const filteredInspections = getFilteredInspections();
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  const formatAppointmentTime = (date: string, time: string) => {
-    return `${formatDate(date)} at ${time}`;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    if (priority === 'high') {
+      return <AlertTriangle className="h-4 w-4 mr-1" />;
+    }
+    return null;
   };
 
   return (
     <div>
       <PageHeader 
-        title="Appointments" 
-        description="Manage all appointments on the Baddelha platform"
+        title="Inspection Requests" 
+        description={user?.role === 'inspector' ? 
+          "Manage your assigned inspection requests" : 
+          "Manage all inspection requests on the platform"
+        }
         actions={
-          <button className="btn btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-1" /> Add Appointment
-          </button>
+          user?.role === 'admin' && (
+            <button className="btn btn-primary flex items-center">
+              <Plus className="h-4 w-4 mr-1" /> New Inspection
+            </button>
+          )
         }
       />
       
@@ -219,7 +265,7 @@ const Appointments = () => {
           </div>
           <input
             type="text"
-            placeholder="Search appointments..."
+            placeholder="Search inspections..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input pl-10"
@@ -236,7 +282,9 @@ const Appointments = () => {
               className="form-input pl-10 appearance-none"
             >
               <option value="">All statuses</option>
+              <option value="pending">Pending</option>
               <option value="scheduled">Scheduled</option>
+              <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -248,14 +296,14 @@ const Appointments = () => {
               <Filter className="h-5 w-5 text-gray-400" />
             </div>
             <select
-              value={selectedPurpose}
-              onChange={(e) => setSelectedPurpose(e.target.value)}
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
               className="form-input pl-10 appearance-none"
             >
-              <option value="">All purposes</option>
-              <option value="buy">Buy</option>
-              <option value="sell">Sell</option>
-              <option value="tradeIn">Trade-In</option>
+              <option value="">All priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
             </select>
           </div>
           <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
@@ -264,66 +312,75 @@ const Appointments = () => {
         </div>
       </div>
       
-      {/* Appointments list */}
+      {/* Inspections list */}
       <div className="space-y-4">
-        {filteredAppointments.map((appointment) => (
+        {filteredInspections.map((inspection) => (
           <Link 
-            to={`/appointments/${appointment.id}`}
-            key={appointment.id} 
+            to={`/inspections/${inspection.id}`}
+            key={inspection.id} 
             className="card p-6 block hover:shadow-md animated-transition"
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mb-4 md:mb-0">
+                <div className="mb-4 md:mb-0 md:mr-4">
+                  <img
+                    src={inspection.carDetails.thumbnailUrl}
+                    alt={`${inspection.carDetails.year} ${inspection.carDetails.make} ${inspection.carDetails.model}`}
+                    className="h-16 w-24 object-cover rounded-md"
+                  />
+                </div>
                 <div>
-                  <div className="flex items-center">
+                  <div className="flex items-center flex-wrap gap-2">
                     <h3 className="text-lg font-medium text-gray-900">
-                      {appointment.userDetails.name}
+                      {inspection.carDetails.year} {inspection.carDetails.make} {inspection.carDetails.model}
                     </h3>
-                    <span className="ml-3">
-                      <StatusBadge status={appointment.status} />
+                    <StatusBadge status={inspection.status} />
+                    <span className={`badge ${getPriorityColor(inspection.priority)} flex items-center`}>
+                      {getPriorityIcon(inspection.priority)}
+                      {inspection.priority}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {appointment.userDetails.phone} • {appointment.userDetails.email}
-                  </p>
+                  <div className="mt-1 flex items-center text-sm text-gray-600">
+                    <User className="h-4 w-4 mr-1" />
+                    <span>{inspection.userDetails.name}</span>
+                    <span className="mx-2">•</span>
+                    <span>{inspection.userDetails.phone}</span>
+                  </div>
                 </div>
               </div>
               
               <div className="flex flex-col items-start md:items-end">
-                <div className="flex items-center">
+                <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
-                  <span className="text-sm text-gray-700">
-                    {formatAppointmentTime(appointment.date, appointment.time)}
+                  <span>
+                    {inspection.inspectionDate ? 
+                      `Scheduled: ${formatDate(inspection.inspectionDate)}` :
+                      `Requested: ${formatDate(inspection.requestDate)}`
+                    }
                   </span>
                 </div>
-                <div className="flex items-center mt-1">
+                <div className="flex items-center text-sm text-gray-700">
                   <MapPin className="h-4 w-4 text-gray-500 mr-1" />
-                  <span className="text-sm text-gray-700">
-                    {appointment.location}
-                  </span>
+                  <span className="truncate max-w-48">{inspection.location}</span>
                 </div>
               </div>
             </div>
             
-            <div className="mt-4 p-3 bg-gray-50 rounded-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    {appointment.carDetails.year} {appointment.carDetails.make} {appointment.carDetails.model}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Purpose: <span className="capitalize">{appointment.purpose}</span>
-                  </p>
+            {inspection.notes && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-700">{inspection.notes}</p>
+                  <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>
-            </div>
+            )}
           </Link>
         ))}
 
-        {filteredAppointments.length === 0 && (
+        {filteredInspections.length === 0 && (
           <div className="py-12 text-center bg-white rounded-lg shadow-sm">
-            <p className="text-gray-500">No appointments found matching your criteria.</p>
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No inspection requests found matching your criteria.</p>
           </div>
         )}
       </div>
@@ -331,4 +388,4 @@ const Appointments = () => {
   );
 };
 
-export default Appointments;
+export default Inspections;
