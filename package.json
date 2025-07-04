@@ -10,13 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.18",
+    "axios": "^1.10.0",
+    "date-fns": "^3.3.1",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3",
-    "recharts": "^2.11.0",
-    "date-fns": "^3.3.1",
-    "@headlessui/react": "^1.7.18"
+    "recharts": "^2.11.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
