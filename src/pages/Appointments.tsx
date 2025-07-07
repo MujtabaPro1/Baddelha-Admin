@@ -161,7 +161,7 @@ const Appointments = () => {
             {appointments?.map((appointment: any) => (
               <Link 
                 to={`/appointments/${appointment.id}`}
-                key={appointment.id} 
+                key={appointment.uid} 
                 className="card p-6 block hover:shadow-md animated-transition"
               >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -191,7 +191,7 @@ const Appointments = () => {
                     <div className="flex items-center mt-1">
                       <MapPin className="h-4 w-4 text-gray-500 mr-1" />
                       <span className="text-sm text-gray-700">
-                        Riyadh Branch
+                        {appointment?.Branch?.enName}
                       </span>
                     </div>
                   </div>

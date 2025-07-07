@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { 
   Phone, PhoneCall, Calendar, Clock, MapPin, User, Mail, 
@@ -6,180 +6,9 @@ import {
   XCircle, AlertCircle, MessageSquare, History, Star
 } from 'lucide-react';
 import { Appointment, User as UserInterface, Car } from '../types';
-
+import axios from 'axios';
 // Mock data for appointments (same structure as before)
-const mockAppointments: (Appointment & { userDetails: UserInterface, carDetails: Car })[] = [
-  {
-    id: '1',
-    userId: '1',
-    carId: '3',
-    date: '2025-04-28',
-    time: '10:00',
-    location: 'Baddelha Riyadh Branch',
-    purpose: 'buy',
-    status: 'scheduled',
-    notes: 'Customer interested in test drive and discussing financing options.',
-    userDetails: {
-      id: '1',
-      name: 'Ahmed Mohammed',
-      email: 'ahmed@example.com',
-      phone: '+966 50 123 4567',
-      role: 'customer',
-      status: 'active',
-      createdAt: '2023-05-15T08:30:00Z'
-    },
-    carDetails: {
-      id: '3',
-      make: 'Nissan',
-      model: 'Patrol',
-      year: 2023,
-      price: 235000,
-      condition: 'new',
-      mileage: 0,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Silver',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '2',
-    userId: '2',
-    carId: '5',
-    date: '2025-04-28',
-    time: '14:30',
-    location: 'Baddelha Jeddah Branch',
-    purpose: 'sell',
-    status: 'scheduled',
-    notes: 'Customer wants to sell their car. Vehicle inspection required.',
-    userDetails: {
-      id: '2',
-      name: 'Fatima Al-Saud',
-      email: 'fatima@example.com',
-      phone: '+966 55 987 6543',
-      role: 'customer',
-      status: 'active',
-      createdAt: '2023-07-22T14:45:00Z'
-    },
-    carDetails: {
-      id: '5',
-      make: 'Hyundai',
-      model: 'Sonata',
-      year: 2021,
-      price: 85000,
-      condition: 'used',
-      mileage: 30000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Red',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/112460/pexels-photo-112460.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '3',
-    userId: '4',
-    carId: '2',
-    date: '2025-04-29',
-    time: '11:15',
-    location: 'Baddelha Dammam Branch',
-    purpose: 'tradeIn',
-    status: 'scheduled',
-    notes: 'Customer interested in trading their current vehicle for a newer model.',
-    userDetails: {
-      id: '4',
-      name: 'Nora Al-Qahtani',
-      email: 'nora@example.com',
-      phone: '+966 56 234 5678',
-      role: 'customer',
-      status: 'inactive',
-      createdAt: '2023-08-05T09:15:00Z'
-    },
-    carDetails: {
-      id: '2',
-      make: 'Honda',
-      model: 'Accord',
-      year: 2021,
-      price: 95000,
-      condition: 'used',
-      mileage: 25000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Black',
-      status: 'sold',
-      thumbnailUrl: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '4',
-    userId: '5',
-    carId: '1',
-    date: '2025-04-27',
-    time: '15:00',
-    location: 'Baddelha Riyadh Branch',
-    purpose: 'buy',
-    status: 'completed',
-    notes: 'Customer purchased the vehicle. All paperwork completed.',
-    userDetails: {
-      id: '5',
-      name: 'Khalid Al-Harbi',
-      email: 'khalid@example.com',
-      phone: '+966 53 876 5432',
-      role: 'dealer',
-      status: 'active',
-      createdAt: '2023-04-30T16:40:00Z'
-    },
-    carDetails: {
-      id: '1',
-      make: 'Toyota',
-      model: 'Camry',
-      year: 2022,
-      price: 110000,
-      condition: 'new',
-      mileage: 0,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'White',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '5',
-    userId: '3',
-    carId: '4',
-    date: '2025-04-26',
-    time: '09:30',
-    location: 'Baddelha Jeddah Branch',
-    purpose: 'tradeIn',
-    status: 'cancelled',
-    notes: 'Appointment cancelled by customer. Follow up required.',
-    userDetails: {
-      id: '3',
-      name: 'Mohammed Abdullah',
-      email: 'mohammed@example.com',
-      phone: '+966 54 456 7890',
-      role: 'dealer',
-      status: 'active',
-      createdAt: '2023-06-10T11:20:00Z'
-    },
-    carDetails: {
-      id: '4',
-      make: 'Mercedes-Benz',
-      model: 'C-Class',
-      year: 2020,
-      price: 180000,
-      condition: 'used',
-      mileage: 45000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Blue',
-      status: 'pending',
-      thumbnailUrl: 'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-];
+
 
 // Mock call history
 const mockCallHistory = [
@@ -189,7 +18,9 @@ const mockCallHistory = [
 ];
 
 const CallCenter = () => {
-  const [appointments] = useState(mockAppointments);
+  const [appointments,setAppointments]: any = useState([]);
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState<string | null>(null);
   const [callHistory] = useState(mockCallHistory);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -207,12 +38,66 @@ const CallCenter = () => {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
+
+  useEffect(()=>{
+    fetchAppointments();
+  },[])
+
+  const fetchAppointments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Make the actual API call
+      try {
+        const response = await axios.get('https://stg-service.bddelha.com/api/1.0/book-appointment');
+        const data = response.data.map((a: any) => {
+          return {
+            ...a,
+            car: JSON.parse(a.carDetail),
+            // Map to expected structure for the call center
+            id: a.uid,
+            date: a.appointmentDate,
+            time: a.appointmentTime,
+            location: a.branch?.enName, // Default location if not provided
+            purpose: a?.type?.[0]?.toString().toUpperCase() + a?.type?.slice(1)?.toString(),  // Default purpose if not provided
+            status: a?.status, // Default status if not provided
+            branch: a?.Branch?.enName,
+            userDetails: {
+              id: a.uid,
+              name: a.firstName + ' ' + a.lastName,
+              email: a.email,
+              phone: '+966 ' + a.phone,
+              role: 'customer',
+              status: 'active',
+              createdAt: new Date().toISOString()
+            },
+            carDetails: {
+              ...a.car,
+              price: a.car?.carPrice || 0
+            }
+          };
+        });
+
+        setAppointments(data);
+      } catch (apiError) {
+        console.error('API call failed:', apiError);
+        throw apiError; // Re-throw to be caught by the outer try/catch
+      }
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
+      setError('Failed to load appointments. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
   const formatTime = (timeString: string) => {
-    return timeString;
+    return format(new Date(timeString), 'h:mm a');
   };
 
   const handleCall = (appointmentId: string, phone: string) => {
@@ -316,7 +201,7 @@ const CallCenter = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Today's Appointments</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {appointments.filter(a => a.date === '2025-04-28').length}
+                  {appointments.filter((a: any) => a.appointmentDate === '2025-04-28').length}
                 </p>
               </div>
             </div>
@@ -341,7 +226,7 @@ const CallCenter = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Confirmed</p>
-                <p className="text-2xl font-bold text-gray-900">8</p>
+                <p className="text-2xl font-bold text-gray-900">{appointments.filter((a: any) => a.status === 'Confirmed').length}</p>
               </div>
             </div>
           </div>
@@ -353,7 +238,7 @@ const CallCenter = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Pending Follow-up</p>
-                <p className="text-2xl font-bold text-gray-900">4</p>
+                <p className="text-2xl font-bold text-gray-900">{appointments.filter((a: any) => a.status == 'Scheduled').length}</p>
               </div>
             </div>
           </div>
@@ -418,7 +303,7 @@ const CallCenter = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 mr-3">
-                          {appointment.userDetails.name}
+                          {appointment.firstName + ' ' + appointment.lastName}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                           {getStatusIcon(appointment.status)}
@@ -435,19 +320,19 @@ const CallCenter = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
                         <div className="flex items-center">
                           <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium">{appointment.userDetails.phone}</span>
+                          <span className="font-medium">{appointment.phone}</span>
                         </div>
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{formatDate(appointment.date)} at {formatTime(appointment.time)}</span>
+                          <span>{formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}</span>
                         </div>
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="truncate">{appointment.location}</span>
+                          <span className="truncate">{appointment.branch}</span>
                         </div>
                         <div className="flex items-center">
                           <CarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{appointment.carDetails.year} {appointment.carDetails.make} {appointment.carDetails.model}</span>
+                          <span>{appointment.car.year} {appointment.car.make} {appointment.car.model}</span>
                         </div>
                       </div>
                       
