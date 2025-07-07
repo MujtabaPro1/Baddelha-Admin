@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, Car, Calendar, BadgeDollarSign, 
-  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck
+  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon
 } from 'lucide-react';
 
 const Layout = () => {
@@ -29,6 +29,7 @@ const Layout = () => {
       { name: 'Appointments', href: '/appointments', icon: Calendar },
       { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+      { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
     ];
   };
 

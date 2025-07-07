@@ -16,6 +16,7 @@ import InspectionReport from './pages/InspectionReport';
 import Layout from './components/Layout';
 import CallCenterLogin from './pages/CallCenterLogin';
 import CallCenter from './pages/CallCenter';
+import MakeModel from './pages/MakeModel';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -113,6 +114,11 @@ function App() {
             <Route path="valuations" element={
               <AdminRoute>
                 <ValuationRequests />
+              </AdminRoute>
+            } />
+            <Route path="make-and-model" element={
+              <AdminRoute>
+                <MakeModel />
               </AdminRoute>
             } />
             <Route path="inspections" element={<Inspections />} />
