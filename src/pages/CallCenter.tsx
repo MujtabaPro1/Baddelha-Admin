@@ -6,11 +6,10 @@ import {
   XCircle, AlertCircle, MessageSquare, History, Star,
   LogOut
 } from 'lucide-react';
-import { Appointment, User as UserInterface, Car } from '../types';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-// Mock data for appointments (same structure as before)
+import axiosInstance from '../service/api';
 
 
 // Mock call history
@@ -54,7 +53,7 @@ const CallCenter = () => {
     try {
       // Make the actual API call
       try {
-        const response = await axios.get('https://stg-service.bddelha.com/api/1.0/book-appointment');
+        const response = await axiosInstance.get('/1.0/book-appointment');
         const data = response.data.map((a: any) => {
           return {
             ...a,

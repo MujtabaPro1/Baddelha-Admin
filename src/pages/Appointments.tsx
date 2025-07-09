@@ -7,6 +7,7 @@ import { Search, Calendar, Filter, Plus, MapPin, ChevronRight, RefreshCw } from 
 // axios is imported but currently unused as API calls are commented out for demonstration
 // @ts-ignore
 import axios from 'axios';
+import axiosInstance from '../service/api';
 
 
 const numberWithComma = (num: number) => {
@@ -31,7 +32,7 @@ const Appointments = () => {
         // In a real scenario, we would make an actual API call like this:
         try {
 
-          const response = await axios.get('https://stg-service.bddelha.com/api/1.0/book-appointment');
+          const response = await axiosInstance.get('/1.0/book-appointment');
           const data = response.data.map((a: any)=>{
             return {
               ...a,

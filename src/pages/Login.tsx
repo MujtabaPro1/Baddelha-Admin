@@ -29,8 +29,7 @@ const Login = () => {
     e.preventDefault();
     const role = await login(email, password);
 
-    console.log(role);
-  
+    
     if (role) {
       // Navigate based on user role
       if (role == 'inspector') {
@@ -131,7 +130,7 @@ const Login = () => {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
-          
+        
         
         </form>
       </div>

@@ -80,34 +80,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     
     try {
-      const response = await axiosInstance.post<ApiAuthResponse>('auth/sign-in', {
+      const response: any = await axiosInstance.post<ApiAuthResponse>('auth/sign-in', {
         email,
         password
       });
+
+  
+      if(response.status === 200 || response.status === 201){
+        const { data } = response;
       
-      const { data } = response;
+        // Store tokens
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        
+        // Map API response to AuthUser format
+        const userData: AuthUser = {
+          id: data.id.toString(),
+          name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+          email: data.email,
+          role: data.role.name.toLowerCase() === 'inspector' ? 'inspector' : data.role.name.includes('Support Agent') ? 'call-center' : 'admin'
+        };
+        
+        localStorage.setItem('baddelha_user', JSON.stringify(userData));
+        setUser(userData);
       
-      // Store tokens
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      
-      // Map API response to AuthUser format
-      const userData: AuthUser = {
-        id: data.id.toString(),
-        name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
-        email: data.email,
-        role: data.role.name.toLowerCase() === 'inspector' ? 'inspector' : data.role.name.includes('Support Agent') ? 'call-center' : 'admin'
-      };
-      
-      localStorage.setItem('baddelha_user', JSON.stringify(userData));
-      setUser(userData);
-    
-    
-      // Return the role for redirection in the Login component
-      return userData.role;
+        // Return the role for redirection in the Login component
+        return userData.role;
+      } else {
+        // Extract error message from response
+        const errorMessage = typeof response.data.message === 'string' 
+          ? response.data.message 
+          : 'Failed to login. Please check your credentials.';
+        
+        setError(errorMessage);
+        return null;
+      }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      
+      // Extract error message from error response
+      let errorMessage = 'Failed to login. Please check your credentials.';
+      
+      if (err.response?.data) {
+        if (typeof err.response.data.message === 'string') {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.message && typeof err.response.data.message === 'object') {
+          // If message is an object, try to extract a useful string
+          errorMessage = JSON.stringify(err.response.data.message);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
