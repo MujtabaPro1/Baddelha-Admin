@@ -1,12 +1,46 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser } from '../types';
+import axiosInstance from '../service/api';
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
   loading: boolean;
   error: string | null;
+}
+
+interface ApiAuthResponse {
+  id: number;
+  firstName: string;
+  lastName: string | null;
+  email: string;
+  avatar: string | null;
+  phone: string;
+  access_token: string;
+  refresh_token: string;
+  role: {
+    name: string;
+    Permission: Array<{
+      roleId: number;
+      appModuleId: number;
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
+      module: {
+        name: string;
+        path: string;
+      }
+    }>
+  };
+  inspector?: Array<{
+    userId: number;
+    working_start_hour: string;
+    working_end_hour: string;
+    branch_id: number | null;
+    status: string;
+  }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,50 +61,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check if user is already logged in
   useEffect(() => {
     const storedUser = localStorage.getItem('baddelha_user');
-    if (storedUser) {
+    const token = localStorage.getItem('token');
+    
+    if (storedUser && token) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (e) {
         localStorage.removeItem('baddelha_user');
+        localStorage.removeItem('token');
       }
     }
     setLoading(false);
   }, []);
 
-  // Mock login function (replace with actual API call)
+  // Integrated login function with API
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await axiosInstance.post<ApiAuthResponse>('auth/sign-in', {
+        email,
+        password
+      });
       
-      // Mock validation for both admin and inspector
-      let userData: AuthUser | null = null;
+      const { data } = response;
       
-      if (email === 'admin@baddelha.com' && password === 'admin123') {
-        userData = {
-          id: '1',
-          name: 'Admin User',
-          email: 'admin@baddelha.com',
-          role: 'admin'
-        };
-      } else if (email === 'inspector@baddelha.com' && password === 'inspector123') {
-        userData = {
-          id: '2',
-          name: 'Inspector User',
-          email: 'inspector@baddelha.com',
-          role: 'inspector'
-        };
-      } else {
-        throw new Error('Invalid email or password');
-      }
+      // Store tokens
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      
+      // Map API response to AuthUser format
+      const userData: AuthUser = {
+        id: data.id.toString(),
+        name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+        email: data.email,
+        role: data.role.name.toLowerCase() === 'inspector' ? 'inspector' : data.role.name.includes('Support Agent') ? 'call-center' : 'admin'
+      };
       
       localStorage.setItem('baddelha_user', JSON.stringify(userData));
       setUser(userData);
-    } catch (err) {
-      setError((err as Error).message);
+    
+    
+      // Return the role for redirection in the Login component
+      return userData.role;
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -78,7 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('baddelha_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     setUser(null);
+    // Navigation will be handled by the protected routes
   };
 
   const value = {

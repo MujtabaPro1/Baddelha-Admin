@@ -15,7 +15,11 @@ const Login = () => {
     if (user) {
       if (user.role === 'inspector') {
         navigate('/inspections');
-      } else {
+      }
+      if(user.role === 'call-center'){
+        navigate('/dashboard/call-center');
+      }
+      else {
         navigate('/');
       }
     }
@@ -23,7 +27,22 @@ const Login = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    const role = await login(email, password);
+
+    console.log(role);
+  
+    if (role) {
+      // Navigate based on user role
+      if (role == 'inspector') {
+        navigate('/dashboard/inspections');
+      }
+      if(role == 'call-center'){
+        navigate('/call-center');
+      }
+      else {
+        navigate('/');
+      }
+    }
   };
 
   return (
@@ -113,10 +132,7 @@ const Login = () => {
             </button>
           </div>
           
-          <div className="mt-4 text-center text-sm text-gray-600 space-y-1">
-            <p><strong>Admin:</strong> admin@baddelha.com / admin123</p>
-            <p><strong>Inspector:</strong> inspector@baddelha.com / inspector123</p>
-          </div>
+        
         </form>
       </div>
     </div>

@@ -14,7 +14,6 @@ import Inspections from './pages/Inspections';
 import InspectionDetail from './pages/InspectionDetail';
 import InspectionReport from './pages/InspectionReport';
 import Layout from './components/Layout';
-import CallCenterLogin from './pages/CallCenterLogin';
 import CallCenter from './pages/CallCenter';
 import MakeModel from './pages/MakeModel';
 
@@ -47,11 +46,6 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Call Center route component
 const CallCenterRoute = ({ children }: { children: React.ReactNode }) => {
-  const callCenterUser = localStorage.getItem('call_center_user');
-  
-  if (!callCenterUser) {
-    return <Navigate to="/call-center-login" replace />;
-  }
   
   return <>{children}</>;
 };
@@ -63,8 +57,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          <Route path="/call-center-login" element={<CallCenterLogin />} />
-          
+       
           {/* Call Center Routes - Standalone */}
           <Route path="/call-center" element={
             <CallCenterRoute>

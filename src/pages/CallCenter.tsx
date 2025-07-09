@@ -3,10 +3,13 @@ import { format } from 'date-fns';
 import { 
   Phone, PhoneCall, Calendar, Clock, MapPin, User, Mail, 
   Car as CarIcon, Search, Filter, RefreshCw, CheckCircle, 
-  XCircle, AlertCircle, MessageSquare, History, Star
+  XCircle, AlertCircle, MessageSquare, History, Star,
+  LogOut
 } from 'lucide-react';
 import { Appointment, User as UserInterface, Car } from '../types';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 // Mock data for appointments (same structure as before)
 
 
@@ -28,6 +31,8 @@ const CallCenter = () => {
   const [activeCall, setActiveCall] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<{ [key: string]: string }>({});
   const [showCallModal, setShowCallModal] = useState<string | null>(null);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const filteredAppointments = appointments.filter((appointment) => {
     const searchStr = `${appointment.userDetails.name} ${appointment.userDetails.phone} ${appointment.carDetails.make} ${appointment.carDetails.model}`.toLowerCase();
@@ -179,12 +184,26 @@ const CallCenter = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Call Center Agent</p>
+                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                 <p className="text-xs text-gray-500">Online</p>
               </div>
               <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">CA</span>
+                <span className="text-white font-medium">{user?.name.charAt(0)}</span>
               </div>
+
+              <button
+                onClick={()=>{
+                  if(confirm("Are you sure you want to logout?")){
+                    logout();
+                    navigate('/login');
+                  }
+                }}
+                className="flex items-center text-dark"
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+              </button>
+
+
             </div>
           </div>
         </div>
@@ -214,7 +233,7 @@ const CallCenter = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Calls Made Today</p>
-                <p className="text-2xl font-bold text-gray-900">12</p>
+                <p className="text-2xl font-bold text-gray-900">0</p>
               </div>
             </div>
           </div>
