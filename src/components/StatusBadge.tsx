@@ -4,7 +4,7 @@ type StatusType =
   | 'active' | 'inactive'
   | 'available' | 'sold' | 'pending'
   | 'scheduled' | 'completed' | 'cancelled'
-  | 'approved' | 'rejected';
+  | 'approved' | 'confirmed' | 'rejected';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -12,11 +12,13 @@ interface StatusBadgeProps {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const getStatusStyles = () => {
-    switch (status) {
+    console.log(status);
+    switch (status.toLowerCase()) {
       case 'active':
       case 'available':
       case 'completed':
       case 'approved':
+      case 'confirmed':
         return 'bg-green-100 text-green-800';
       case 'inactive':
       case 'cancelled':

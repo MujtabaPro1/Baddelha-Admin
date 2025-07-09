@@ -107,15 +107,26 @@ const CallCenter = () => {
   const handleCall = (appointmentId: string, phone: string) => {
     setActiveCall(appointmentId);
     // In a real app, this would integrate with a phone system
-    window.open(`tel:${phone}`, '_self');
+   // window.open(`tel:${phone}`, '_self');
     setShowCallModal(appointmentId);
   };
 
   const endCall = (appointmentId: string, outcome: string) => {
     setActiveCall(null);
     setShowCallModal(null);
+    setCallNotes({});
     // Save call record logic here
-    console.log('Call ended:', { appointmentId, outcome, notes: callNotes[appointmentId] });
+
+    if(outcome == 'confirmed' || outcome == 'cancelled'){
+    axiosInstance.patch(`/1.0/book-appointment/status-update/${appointmentId}/${outcome == 'confirmed' ? 'Confirmed' : 'Cancelled'}`).then((res)=>{
+      console.log(res);
+      alert('Appointment status updated successfully');
+      fetchAppointments();
+    }).catch((err)=>{
+      console.log(err);
+      alert('Failed to update appointment status');
+    });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -446,11 +457,11 @@ const CallCenter = () => {
                 Confirmed
               </button>
               <button
-                onClick={() => endCall(showCallModal, 'rescheduled')}
+                onClick={() => endCall(showCallModal, 'cancelled')}
                 className="flex items-center justify-center px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
               >
                 <Clock className="h-4 w-4 mr-1" />
-                Reschedule
+                Cancel
               </button>
               <button
                 onClick={() => endCall(showCallModal, 'no_answer')}

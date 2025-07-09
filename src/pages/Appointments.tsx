@@ -173,7 +173,7 @@ const Appointments = () => {
                          {appointment.car?.make} {appointment.car?.model} {appointment.car?.year}
                         </h3>
                         <span className="ml-3">
-                          <StatusBadge status={'scheduled'} />
+                          <StatusBadge status={appointment.status} />
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-gray-600">

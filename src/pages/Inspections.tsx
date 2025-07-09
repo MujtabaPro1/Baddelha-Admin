@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import PageHeader from '../components/PageHeader';
@@ -9,188 +9,43 @@ import {
   ChevronRight, AlertTriangle, Clock, User
 } from 'lucide-react';
 import { InspectionRequest, User as UserInterface, Car } from '../types';
+import axiosInstance from '../service/api';
 
-// Mock data for inspection requests
-const mockInspections: (InspectionRequest & { userDetails: UserInterface, carDetails: Car })[] = [
-  {
-    id: '1',
-    userId: '1',
-    carId: '3',
-    requestDate: '2025-04-25',
-    inspectionDate: '2025-04-28',
-    location: 'Baddelha Riyadh Branch',
-    status: 'scheduled',
-    priority: 'high',
-    inspectorId: '2',
-    notes: 'Customer wants comprehensive inspection before purchase',
-    userDetails: {
-      id: '1',
-      name: 'Ahmed Mohammed',
-      email: 'ahmed@example.com',
-      phone: '+966 50 123 4567',
-      role: 'customer',
-      status: 'active',
-      createdAt: '2023-05-15T08:30:00Z'
-    },
-    carDetails: {
-      id: '3',
-      make: 'Nissan',
-      model: 'Patrol',
-      year: 2023,
-      price: 235000,
-      condition: 'new',
-      mileage: 0,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Silver',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '2',
-    userId: '2',
-    carId: '5',
-    requestDate: '2025-04-24',
-    location: 'Customer Location - Jeddah',
-    status: 'pending',
-    priority: 'medium',
-    notes: 'Pre-sale inspection required for trade-in evaluation',
-    userDetails: {
-      id: '2',
-      name: 'Fatima Al-Saud',
-      email: 'fatima@example.com',
-      phone: '+966 55 987 6543',
-      role: 'customer',
-      status: 'active',
-      createdAt: '2023-07-22T14:45:00Z'
-    },
-    carDetails: {
-      id: '5',
-      make: 'Hyundai',
-      model: 'Sonata',
-      year: 2021,
-      price: 85000,
-      condition: 'used',
-      mileage: 30000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Red',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/112460/pexels-photo-112460.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '3',
-    userId: '4',
-    carId: '2',
-    requestDate: '2025-04-23',
-    inspectionDate: '2025-04-26',
-    location: 'Baddelha Dammam Branch',
-    status: 'in-progress',
-    priority: 'high',
-    inspectorId: '2',
-    notes: 'Insurance claim inspection - check for accident damage',
-    userDetails: {
-      id: '4',
-      name: 'Nora Al-Qahtani',
-      email: 'nora@example.com',
-      phone: '+966 56 234 5678',
-      role: 'customer',
-      status: 'inactive',
-      createdAt: '2023-08-05T09:15:00Z'
-    },
-    carDetails: {
-      id: '2',
-      make: 'Honda',
-      model: 'Accord',
-      year: 2021,
-      price: 95000,
-      condition: 'used',
-      mileage: 25000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Black',
-      status: 'sold',
-      thumbnailUrl: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '4',
-    userId: '5',
-    carId: '1',
-    requestDate: '2025-04-22',
-    inspectionDate: '2025-04-25',
-    location: 'Baddelha Riyadh Branch',
-    status: 'completed',
-    priority: 'low',
-    inspectorId: '2',
-    notes: 'Routine inspection completed successfully',
-    userDetails: {
-      id: '5',
-      name: 'Khalid Al-Harbi',
-      email: 'khalid@example.com',
-      phone: '+966 53 876 5432',
-      role: 'dealer',
-      status: 'active',
-      createdAt: '2023-04-30T16:40:00Z'
-    },
-    carDetails: {
-      id: '1',
-      make: 'Toyota',
-      model: 'Camry',
-      year: 2022,
-      price: 110000,
-      condition: 'new',
-      mileage: 0,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'White',
-      status: 'available',
-      thumbnailUrl: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-  {
-    id: '5',
-    userId: '3',
-    carId: '4',
-    requestDate: '2025-04-21',
-    location: 'Customer Location - Riyadh',
-    status: 'cancelled',
-    priority: 'low',
-    notes: 'Customer cancelled inspection request',
-    userDetails: {
-      id: '3',
-      name: 'Mohammed Abdullah',
-      email: 'mohammed@example.com',
-      phone: '+966 54 456 7890',
-      role: 'dealer',
-      status: 'active',
-      createdAt: '2023-06-10T11:20:00Z'
-    },
-    carDetails: {
-      id: '4',
-      make: 'Mercedes-Benz',
-      model: 'C-Class',
-      year: 2020,
-      price: 180000,
-      condition: 'used',
-      mileage: 45000,
-      fuelType: 'Petrol',
-      transmission: 'automatic',
-      color: 'Blue',
-      status: 'pending',
-      thumbnailUrl: 'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=800'
-    }
-  },
-];
+
 
 const Inspections = () => {
   const { user } = useAuth();
-  const [inspections] = useState(mockInspections);
+  const [inspections,setInspections]: any = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
+  const [loading, setLoading]: any = useState<boolean>(true);
+  const [error, setError]: any = useState<string | null>(null);
+
+
+  useEffect(() => {
+    fetchInspections();
+  }, []);
+
+  const fetchInspections = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get('/1.0/inspection-requests');
+      const data = response.data.map((a: any)=>{
+        return {
+          ...a,
+          car: JSON.parse(a.carDetail),
+        }
+      });
+      setInspections(data);
+    } catch (err) {
+      console.error('Error fetching inspections:', err);
+      setError('Failed to load inspections. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter inspections based on user role
   const getFilteredInspections = () => {
