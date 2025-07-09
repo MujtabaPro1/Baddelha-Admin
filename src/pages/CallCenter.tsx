@@ -130,10 +130,10 @@ const CallCenter = () => {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'scheduled':
         return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'completed':
+      case 'confirmed':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'cancelled':
         return <XCircle className="h-4 w-4 text-red-500" />;
@@ -143,10 +143,10 @@ const CallCenter = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'scheduled':
         return 'bg-blue-100 text-blue-800';
-      case 'completed':
+      case 'confirmed':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
@@ -167,7 +167,7 @@ const CallCenter = () => {
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case 'high':
         return 'border-l-red-500 bg-red-50';
       case 'medium':
@@ -373,7 +373,7 @@ const CallCenter = () => {
                     </div>
                     
                     <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col sm:flex-row gap-2">
-                      <button
+                      {appointment.status.toLowerCase() == 'scheduled' && <button
                         onClick={() => handleCall(appointment.id, appointment.userDetails.phone)}
                         disabled={isActive}
                         className={`flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors ${
@@ -393,7 +393,7 @@ const CallCenter = () => {
                             Call
                           </>
                         )}
-                      </button>
+                      </button>}
                       
                       <button className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
                         <MessageSquare className="h-4 w-4 mr-2" />
