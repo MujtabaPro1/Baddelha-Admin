@@ -200,7 +200,7 @@ const Appointments = () => {
 
                 <div className="mt-4 p-2 w-full flex  bg-gray-50 rounded-md">
                     <div className="w-full flex flex-row items-center justify-between">
-                      {appointment.car?.carPrice && <p>Price - <b>SAR {numberWithComma(appointment.car?.carPrice)}</b></p>}
+                      {appointment.car?.carPrice ? <p>Price - <b>SAR {numberWithComma(appointment.car?.carPrice)}</b></p> : <p>Price - <b>SAR 0</b></p>}
                       <p className="text-sm font-medium text-gray-700">
                         Sell
                       </p>
