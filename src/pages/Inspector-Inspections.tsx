@@ -49,7 +49,7 @@ const MyInspections = () => {
         return {
           ...a,
           priority: 'high',
-          car: JSON.parse(a.carDetail),
+          car: a.Car,
         }
       });
     
