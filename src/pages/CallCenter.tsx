@@ -118,7 +118,7 @@ const CallCenter = () => {
     // Save call record logic here
 
     if(outcome == 'confirmed' || outcome == 'cancelled'){
-    axiosInstance.patch(`/1.0/book-appointment/status-update/${appointmentId}/${outcome == 'confirmed' ? 'Confirmed' : 'Cancelled'}`).then((res)=>{
+    axiosInstance.post(`/1.0/book-appointment/status-update/${appointmentId}/${outcome == 'confirmed' ? 'Confirmed' : 'Cancelled'}`).then((res)=>{
       console.log(res);
       alert('Appointment status updated successfully');
       fetchAppointments();
