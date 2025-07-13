@@ -16,7 +16,8 @@ const Inspectors = () => {
   },[])
 
   const getInspectors = async () => {
-    const res = await axiosInstance.get('/1.0/inspector/branch/1');
+    const branchId = JSON.parse(localStorage.getItem('baddelha_user') || '{}')?.branchId;
+    const res = await axiosInstance.get(`/1.0/inspector/branch/${branchId}`);
     console.log(res);
     setUsers(res?.data)
     

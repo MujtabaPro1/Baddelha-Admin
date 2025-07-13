@@ -37,6 +37,7 @@ const Layout = () => {
       { name: 'Appointments', href: '/appointments', icon: Calendar },
       { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+      { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
     ];
   };

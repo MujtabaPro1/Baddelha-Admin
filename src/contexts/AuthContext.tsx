@@ -94,13 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('refresh_token', data.refresh_token);
         
         // Map API response to AuthUser format
-        const userData: AuthUser = {
+        let userData: any = {
           id: data.id.toString(),
           name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
           email: data.email,
           role: data.role.name.toLowerCase() === 'supervisor' ? 'supervisor' : data.role.name.includes('Support Agent') ? 'call-center' : data.role.name.toLowerCase().includes('inspector') ?  'inspector' : 'admin'
         };
         
+
+        if(data.role.name.toLowerCase() === 'supervisor' || data.role.name.toLowerCase() === 'inspector'){
+          userData.branchId = data.branchId;
+        }
+
         localStorage.setItem('baddelha_user', JSON.stringify(userData));
         setUser(userData);
       
