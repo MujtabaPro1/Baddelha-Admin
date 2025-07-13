@@ -43,7 +43,7 @@ const MyInspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/1.0/book-appointment');
+      const response = await axiosInstance.get('/1.0/inspection/find-all');
      
       const data = response?.data.map((a: any)=>{
         return {
