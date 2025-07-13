@@ -18,7 +18,7 @@ const Layout = () => {
 
     if (user?.role === 'inspector') {
       return [
-        { name: 'My Inspections', href: '/inspections', icon: ClipboardCheck },
+        { name: 'My Inspections', href: '/my-inspections', icon: ClipboardCheck },
       ];
     }
 
