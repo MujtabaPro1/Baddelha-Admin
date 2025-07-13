@@ -38,9 +38,13 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
-  if (user.role !== 'admin') {
+
+  if(user.role == 'supervisor'){
     return <Navigate to="/inspections" replace />;
+  }
+  
+  if (user.role == 'inspector') {
+    return <Navigate to="/my-inspections" replace />;
   }
   
   return <>{children}</>;

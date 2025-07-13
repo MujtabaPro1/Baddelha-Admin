@@ -37,8 +37,11 @@ const Login = () => {
     
     if (role) {
       // Navigate based on user role
-      if (role == 'supervisor' || role == 'inspector') {
+      if (role == 'supervisor') {
         navigate('/dashboard/inspections');
+      }
+      if(role == 'inspector'){
+        navigate('/dashboard/my-inspections');
       }
       if(role == 'call-center'){
         navigate('/call-center');
