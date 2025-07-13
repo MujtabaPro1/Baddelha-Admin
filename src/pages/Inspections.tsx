@@ -76,8 +76,9 @@ const Inspections = () => {
   
   const handleAssignInspector = async (inspectorId: number) => {
     try {
-      await axiosInstance.post('/1.0/inspection/assign', {
-        inspectionId: currentInspection.uid,
+
+      await axiosInstance.post('/1.0/inspection/assign-inspector', {
+        appointmentId: currentInspection.uid,
         inspectorId: inspectorId
       });
       
@@ -329,7 +330,7 @@ const Inspections = () => {
                {inspection?.car?.make} {inspection?.car?.model} {inspection?.car?.year}
               </div> : <div className="text-gray-500 text-sm font-medium">No car details</div>}
               
-              <button 
+             {inspection?.inspectorUserId == null && <button 
                 onClick={(e) => {
                   e.preventDefault();
                   openAssignModal(inspection);
@@ -337,7 +338,7 @@ const Inspections = () => {
                 className="btn btn-sm btn-outline-primary flex items-center"
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Assign to Inspector
-              </button>
+              </button>}
             </div>
           </div>
         ))}
