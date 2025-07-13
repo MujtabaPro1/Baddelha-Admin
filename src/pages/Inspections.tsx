@@ -36,6 +36,7 @@ const Inspections = () => {
       const data = response?.data.map((a: any)=>{
         return {
           ...a,
+          priority: 'high',
           car: JSON.parse(a.carDetail),
         }
       });

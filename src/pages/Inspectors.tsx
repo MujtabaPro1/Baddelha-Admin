@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Filter, Plus, RefreshCw, Users } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, Users, Clock } from 'lucide-react';
 import { User } from '../types';
 import axiosInstance from '../service/api';
 
@@ -35,6 +35,13 @@ const Inspectors = () => {
       day: 'numeric',
     });
   };
+
+  const Loader = () => {
+    return   <div className="w-full py-12 text-center bg-white rounded-lg shadow-sm">
+    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+    <p className="text-gray-500">No inspector found.</p>
+  </div>
+  }
 
   return (
     <div>
@@ -77,16 +84,18 @@ const Inspectors = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Performance</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {users?.length > 0 ?  users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50 animated-transition">
                 <td className="font-medium text-gray-900">{user.name}</td>
                 <td>{user.email || 'seedinspector@gmail.com'}</td>
                 <td>{user.phone || '966588248733'}</td>
+                <td>{user.performance}</td>
                 <td>
                   <StatusBadge status={'active'} />
                 </td>
@@ -99,9 +108,11 @@ const Inspectors = () => {
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : <></>}
           </tbody>
         </table>
+
+        {users?.length == 0 && <Loader/>}
         
       </div>
     </div>

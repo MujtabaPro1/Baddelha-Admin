@@ -6,6 +6,7 @@ export interface User {
   role: 'admin' | 'customer' | 'dealer';
   createdAt: string;
   status: 'active' | 'inactive';
+  performance: string;
 }
 
 export interface Car {
