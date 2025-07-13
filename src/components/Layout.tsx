@@ -15,9 +15,17 @@ const Layout = () => {
 
   // Different navigation based on user role
   const getNavigation = () => {
+
     if (user?.role === 'inspector') {
       return [
+        { name: 'My Inspections', href: '/inspections', icon: ClipboardCheck },
+      ];
+    }
+
+    if (user?.role === 'supervisor') {
+      return [
         { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+        { name: 'Inspectors', href: '/inspectors', icon: Calendar },
       ];
     }
     

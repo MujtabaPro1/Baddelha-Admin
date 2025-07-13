@@ -16,6 +16,7 @@ import InspectionReport from './pages/InspectionReport';
 import Layout from './components/Layout';
 import CallCenter from './pages/CallCenter';
 import MakeModel from './pages/MakeModel';
+import Inspectors from './pages/Inspectors';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -116,6 +117,7 @@ function App() {
             } />
             <Route path="inspections" element={<Inspections />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
+            <Route path="inspectors" element={<Inspectors />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />

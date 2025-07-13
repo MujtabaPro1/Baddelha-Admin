@@ -13,9 +13,10 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      if (user.role === 'inspector') {
+      if (user.role === 'supervisor' || user.role == 'inspector') {
         navigate('/inspections');
       }
+      
       if(user.role === 'call-center'){
         navigate('/dashboard/call-center');
       }
@@ -32,7 +33,7 @@ const Login = () => {
     
     if (role) {
       // Navigate based on user role
-      if (role == 'inspector') {
+      if (role == 'supervisor' || role == 'inspector') {
         navigate('/dashboard/inspections');
       }
       if(role == 'call-center'){

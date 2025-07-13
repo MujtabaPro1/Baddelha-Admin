@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: data.id.toString(),
           name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
           email: data.email,
-          role: data.role.name.toLowerCase() === 'inspector' ? 'inspector' : data.role.name.includes('Support Agent') ? 'call-center' : 'admin'
+          role: data.role.name.toLowerCase() === 'supervisor' ? 'supervisor' : data.role.name.includes('Support Agent') ? 'call-center' : data.role.name.toLowerCase().includes('inspector') ?  'inspector' : 'admin'
         };
         
         localStorage.setItem('baddelha_user', JSON.stringify(userData));
