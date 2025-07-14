@@ -92,6 +92,8 @@ const Inspections = () => {
       
       setInspections(updatedInspections);
       setIsModalOpen(false);
+      fetchInspections();
+      
       
       // You might want to add a success notification here
     } catch (err) {
