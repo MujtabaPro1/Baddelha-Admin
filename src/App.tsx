@@ -19,6 +19,7 @@ import MakeModel from './pages/MakeModel';
 import Inspectors from './pages/Inspectors';
 import RolesPermission from './pages/roles-permission/roles';
 import MyInspections from './pages/Inspector-Inspections';
+import SupervisorInspections from './pages/Supervisor-Inspections';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -40,7 +41,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if(user.role == 'supervisor'){
-    return <Navigate to="/inspections" replace />;
+    return <Navigate to="/supervisor-inspections" replace />;
   }
   
   if (user.role == 'inspector') {
@@ -125,6 +126,7 @@ function App() {
             <Route path="roles-permission" element={<RolesPermission />} />
 
             <Route path="inspections" element={<Inspections />} />
+            <Route path="supervisor-inspections" element={<SupervisorInspections />} />
             <Route path="my-inspections" element={<MyInspections />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />

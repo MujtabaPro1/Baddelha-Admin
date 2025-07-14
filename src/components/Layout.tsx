@@ -24,7 +24,7 @@ const Layout = () => {
 
     if (user?.role === 'supervisor') {
       return [
-        { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+        { name: 'Inspections', href: '/supervisor-inspections', icon: ClipboardCheck },
         { name: 'Inspectors', href: '/inspectors', icon: Calendar },
       ];
     }

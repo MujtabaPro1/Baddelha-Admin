@@ -21,7 +21,7 @@ interface Inspector {
   branchId: number;
 }
 
-const Inspections = () => {
+const SupervisorInspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -267,7 +267,9 @@ const Inspections = () => {
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {inspections.map((inspection: any) => (
+        {inspections.filter((inspection: any) => {
+          return inspection.status == 'Confirmed';
+        }).map((inspection: any) => (
           <div 
             key={inspection.uid} 
             className="card p-6 block hover:shadow-md animated-transition"
@@ -354,4 +356,4 @@ const Inspections = () => {
   );
 };
 
-export default Inspections;
+export default SupervisorInspections;
