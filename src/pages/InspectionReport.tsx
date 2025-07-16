@@ -1,943 +1,711 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { 
-  ArrowLeft, ArrowRight, Check, Camera, Upload, Star,
-  Car, User, FileText, DollarSign, Send, Save,
-  AlertTriangle, CheckCircle, X, Plus, Minus, ChevronDown
-} from 'lucide-react';
+import { Controller, FormProvider, useForm } from "react-hook-form";
 
-interface InspectionData {
-  // General Information
-  inspectorName: string;
-  inspectionDate: string;
-  location: string;
-  mileage: number;
-  
-  // Vehicle Details
-  exteriorCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  interiorCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  exteriorDefects: string[];
-  interiorDefects: string[];
-  exteriorNotes: string;
-  interiorNotes: string;
-  
-  // Engine & Mechanical
-  engineCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  transmissionCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  brakeCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  suspensionCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  tiresCondition: 'excellent' | 'good' | 'fair' | 'poor';
-  mechanicalDefects: string[];
-  mechanicalNotes: string;
-  
-  // Documentation
-  registrationValid: boolean;
-  insuranceValid: boolean;
-  serviceHistoryAvailable: boolean;
-  accidentHistory: boolean;
-  ownershipHistory: number;
-  documentNotes: string;
-  
-  // Valuation & Final
-  marketValue: number;
-  recommendedPrice: number;
-  overallRating: number;
-  finalRecommendation: 'approve' | 'conditional' | 'reject';
-  finalNotes: string;
-  images: File[];
-}
+import AppSelectV2 from "../components/AppSelectV2";
+import AppDatePicker from "../components/AppDatePicker";
+import {ChangeEvent, useEffect, useState} from "react";
+import { toast } from "react-toastify";
+import { saveInspection, getInspectionSchema } from "../service/inspection";
+import { createMedia } from "../service/media";
+import { dataURLToBlob } from "../types/dataUrlToBlob";
+import { MinusCircle, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import axiosInstance from "../service/api";
+import { useNavigate, useParams } from "react-router-dom";
+import { axiosErrorHandler } from "../types/utils";
+import PageHeader from "../components/PageHeader";
+import CarImage from "../images/img.png";
 
-const MobileInspection = () => {
-  const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+
+
+const InspectionForm = () => {
+  // Initialize the form state and action
+
+  let mode = 'create';
+  const [loading, setLoading] = useState(false);
+  const [submitState, setSubmitState] = useState("");
+  const [httpError, setHttpError] = useState(null);
+  const [mediaFiles, setMediaFiles] = useState<any>({});
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialData, setInitialData]: any = useState<any>(null);
+  const params = useParams();
+  const [images, setImages] = useState<any>([]);
   
-  const [inspectionData, setInspectionData] = useState<InspectionData>({
-    inspectorName: user?.name || '',
-    inspectionDate: new Date().toISOString().split('T')[0],
-    location: '',
-    mileage: 0,
-    exteriorCondition: 'good',
-    interiorCondition: 'good',
-    exteriorDefects: [],
-    interiorDefects: [],
-    exteriorNotes: '',
-    interiorNotes: '',
-    engineCondition: 'good',
-    transmissionCondition: 'good',
-    brakeCondition: 'good',
-    suspensionCondition: 'good',
-    tiresCondition: 'good',
-    mechanicalDefects: [],
-    mechanicalNotes: '',
-    registrationValid: true,
-    insuranceValid: true,
-    serviceHistoryAvailable: true,
-    accidentHistory: false,
-    ownershipHistory: 1,
-    documentNotes: '',
-    marketValue: 0,
-    recommendedPrice: 0,
-    overallRating: 4,
-    finalRecommendation: 'approve',
-    finalNotes: '',
-    images: []
+  // Stepper state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [steps, setSteps] = useState<string[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  
+  // Timer state - 30 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(30 * 60);
+  const [timerActive, setTimerActive] = useState(false);
+
+ 
+
+  const [defaultValues, setDefaultValues] = useState<any>({});
+  const methods = useForm({
+    defaultValues
+  });
+  
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    getValues,
+    reset,
+    formState: { errors },
+  } = methods;
+
+  const watchFieldsWarranty = watch(["Warranty_Plan"])
+  const watchFieldsService = watch(["Service_Plan"])
+
+
+
+
+
+
+  useEffect(()=>{
+     getInspectionData();
+  },[]);
+  
+  // Update form values when defaultValues change
+  useEffect(() => {
+    if (Object.keys(defaultValues).length > 0) {
+      reset(defaultValues);
+    }
+  }, [defaultValues, reset]);
+  
+  // Set up steps based on initialData
+  useEffect(() => {
+    if (initialData) {
+      // Extract section names for steps
+      const sectionNames = initialData.map((section: any) => section.name);
+      setSteps(sectionNames);
+      
+      // Start the timer when data is loaded
+      setTimerActive(true);
+    }
+  }, [initialData]);
+  
+  // Countdown timer effect
+  useEffect(() => {
+    let interval: number | undefined;
+    
+    if (timerActive && timeRemaining > 0) {
+      interval = window.setInterval(() => {
+        setTimeRemaining(prev => prev - 1);
+      }, 1000);
+    } else if (timeRemaining === 0) {
+      // Optional: Handle timer expiration
+      toast.warning("Time limit reached for inspection form");
+    }
+    
+    return () => {
+      if (interval) window.clearInterval(interval);
+    };
+  }, [timerActive, timeRemaining]);
+  
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getInspectionData = async () => {
+    try {
+      const inspection = await getInspectionSchema(params.id);
+      
+      let formValues = {};
+      inspection?.data?.map((item:any)=>{
+        if(item.name !== 'Car Media' && item.name !== 'Document Images') {
+          let val = item['fields'].reduce((acc: any, field: any) => ({
+            ...acc,
+            [field.fieldName.replace(/\s/g, "_")]: field.value,
+          }), {});
+          formValues = {
+            ...formValues,
+            ...val,
+          };
+    
+        }
+      })
+
+      console.log("inspection---",inspection);
+      setDefaultValues(formValues);
+      setInitialData(inspection);
+    } catch (ex: any) {
+      return axiosErrorHandler(ex);
+    }
+  }
+
+
+
+  const onSubmit = handleSubmit(async (data) => {
+
+    let result = {};
+
+    initialData?.inspection?.map((i:any)=>{
+         result['General Information']  = {
+           problem: 0,
+           non_problem: 14,
+         }
+         if(i.name != 'General Information' && i.name != 'Document Images' && i.name != 'Car Media') {
+           result[i.name] = {
+              problem: 0,
+              non_problem: 0,
+           }
+           i.fields.map((ins) => {
+                 Object.keys(data).map((d)=>{
+                    if(ins.fieldName == d.split("_").join(" ")){
+                         if(i.name == 'Car Body'){
+                           if(data[d]?.['label'] == 'Good' || data[d]?.label == 'No' || data[d]?.label == 'Okay' ||  data[d]?.label == 'Original Paint'){
+                             result[i.name]['non_problem'] += 1;
+                           }else{
+                             result[i.name]['problem'] += 1;
+                           }
+                         }else{
+                           if(ins.fieldName == 'Floor Mat'){
+                             if(data[d]?.['label'] == 'Yes'){
+                               result[i.name]['non_problem'] += 1;
+                             }
+                             if(data[d]?.['label'] == 'No'){
+                               result[i.name]['problem'] += 1;
+                             }
+                           }
+                           else if(ins.fieldName == 'Tire Matching'){
+                             if(data[d]?.['label'] == 'Yes'){
+                               result[i.name]['non_problem'] += 1;
+                             }
+                             if(data[d]?.['label'] == 'No'){
+                               result[i.name]['problem'] += 1;
+                             }
+                           }
+                           else {
+                             if (data[d]?.['label'] == 'Okay' || data[d]?.['label'] == 'Available' || data[d]?.['label'] == 'No' || data[d]?.['label'] == 'Original Paint') {
+                               result[i.name]['non_problem'] += 1;
+                             } else {
+                               result[i.name]['problem'] += 1;
+                             }
+                           }
+                         }
+
+                    }
+                 })
+           })
+         }
+    })
+    data['overview'] = result;
+
+    const inspectionId = initialData?.id;
+    const body = {
+      buyingPrice: "",
+      inspectionStatus: "",
+      inspection: JSON.stringify(data),
+    };
+
+    setLoading(true);
+
+    setSubmitState("Uploading Images");
+    //upload document images
+    await uploadImages();
+
+    //upload car images
+
+    setSubmitState("Saving Inspection");
+    //update inspection
+    const response = await saveInspection(inspectionId, body);
+
+    if (!response.error) {
+      toast.success("Inspection Saved Successfully");
+      navigate("/dashboard/inspections");
+    } else {
+      //redirect
+      setHttpError(response.error);
+      toast.error("Inspectin failed to save");
+    }
+
+    setLoading(false);
+    setSubmitState("Inspection Saved");
   });
 
-  // Mock vehicle data
-  const vehicleData = {
-    make: 'Toyota',
-    model: 'Camry',
-    year: 2022,
-    color: 'White',
-    vin: 'JTDKARFP0N0123456',
-    customerName: 'Ahmed Mohammed',
-    customerPhone: '+966 50 123 4567'
-  };
+  const uploadImages = async () => {
+    for (let field in mediaFiles) {
+      let file = mediaFiles[field];
 
-  const steps = [
-    { number: 1, title: 'Contact Information', icon: User },
-    { number: 2, title: 'Vehicle Information', icon: Car },
-    { number: 3, title: 'Condition Assessment', icon: AlertTriangle },
-    { number: 4, title: 'Documentation', icon: FileText },
-    { number: 5, title: 'Final Report', icon: DollarSign }
-  ];
+      if (!file.selectedImage) {
+        continue;
+      }
 
-  const exteriorDefectOptions = [
-    'Scratches', 'Dents', 'Rust', 'Paint damage', 'Bumper damage',
-    'Headlight damage', 'Taillight damage', 'Mirror damage', 'Windshield crack'
-  ];
+      file = dataURLToBlob(file.selectedImage);
 
-  const interiorDefectOptions = [
-    'Seat wear', 'Dashboard cracks', 'Carpet stains', 'Electronics malfunction',
-    'AC issues', 'Steering wheel wear', 'Door panel damage', 'Console damage'
-  ];
+      setSubmitState("Uploading Image " + field);
 
-  const mechanicalDefectOptions = [
-    'Engine noise', 'Oil leaks', 'Coolant leaks', 'Brake issues',
-    'Transmission problems', 'Suspension noise', 'Tire wear', 'Exhaust issues'
-  ];
+      const data = {
+        imageableId: initialData?.id,
+        imageableType: "Inspection",
+        fileCaption: field,
+      };
 
-  const updateData = (field: keyof InspectionData, value: any) => {
-    setInspectionData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleDefect = (category: 'exteriorDefects' | 'interiorDefects' | 'mechanicalDefects', defect: string) => {
-    setInspectionData(prev => ({
-      ...prev,
-      [category]: prev[category].includes(defect)
-        ? prev[category].filter(d => d !== defect)
-        : [...prev[category], defect]
-    }));
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setInspectionData(prev => ({
-      ...prev,
-      images: [...prev.images, ...files]
-    }));
-  };
-
-  const removeImage = (index: number) => {
-    setInspectionData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
-
-  const nextStep = () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
+      let mediaResp = await createMedia(file, data);
+      if (mediaResp.error) {
+        toast.error("Image upload error");
+      }
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+  const handleImageChange = (field: string, event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0]; // Get the selected file
+    if (selectedFile) {
+      const reader = new FileReader(); // Create a FileReader object
+      reader.onload = () => {
+        setMediaFiles((old: any) => {
+          return { ...old, [field]: { selectedImage: reader.result } };
+        }); // Set the selected image to the reader result
+      };
+      reader.readAsDataURL(selectedFile); // Read the selected file as a Data URL
     }
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    console.log('Submitting inspection:', inspectionData);
-    setIsSubmitting(false);
-    navigate('/inspections');
+  const handleImageRemove = (field: string) => {
+    setMediaFiles((old: any) => {
+      return { ...old, [field]: null };
+    }); // Set the selected image to the reader result
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="bg-white p-4">
-            {/* Header Notice */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8 flex items-center">
-              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                <Check className="h-3 w-3 text-white" />
-              </div>
-              <span className="text-green-800 text-sm">Fields with * are required.</span>
-            </div>
-
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Contact Information</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *First Name:
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={inspectionData.inspectorName.split(' ')[0] || ''}
-                        onChange={(e) => {
-                          const lastName = inspectionData.inspectorName.split(' ').slice(1).join(' ');
-                          updateData('inspectorName', `${e.target.value} ${lastName}`.trim());
-                        }}
-                        placeholder="First Name"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Last Name:
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={inspectionData.inspectorName.split(' ').slice(1).join(' ') || ''}
-                        onChange={(e) => {
-                          const firstName = inspectionData.inspectorName.split(' ')[0] || '';
-                          updateData('inspectorName', `${firstName} ${e.target.value}`.trim());
-                        }}
-                        placeholder="Last Name"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Middle Name:
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Middle Name"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *E-mail:
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                        </svg>
-                      </div>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Phone:
-                    </label>
-                    <div className="flex">
-                      <div className="relative">
-                        <select className="appearance-none bg-white border border-gray-300 rounded-l-lg px-4 py-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                          <option value="+971">+971</option>
-                          <option value="+966">+966</option>
-                          <option value="+1">+1</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                      </div>
-                      <input
-                        type="tel"
-                        placeholder="Phone Number"
-                        className="flex-1 px-4 py-3 border border-l-0 border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="bg-white p-4">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Vehicle Information</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Make:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Make</option>
-                        <option value="toyota">Toyota</option>
-                        <option value="honda">Honda</option>
-                        <option value="nissan">Nissan</option>
-                        <option value="mercedes">Mercedes-Benz</option>
-                        <option value="bmw">BMW</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Model:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Model</option>
-                        <option value="camry">Camry</option>
-                        <option value="corolla">Corolla</option>
-                        <option value="accord">Accord</option>
-                        <option value="civic">Civic</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Model Year:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Model Year</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                        <option value="2021">2021</option>
-                        <option value="2020">2020</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      VIN:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="VIN"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Engine:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Engine"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      *Mileage:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Mileage</option>
-                        <option value="0-10000">0 - 10,000 km</option>
-                        <option value="10000-50000">10,000 - 50,000 km</option>
-                        <option value="50000-100000">50,000 - 100,000 km</option>
-                        <option value="100000+">100,000+ km</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Gear Type:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Gear Type</option>
-                        <option value="automatic">Automatic</option>
-                        <option value="manual">Manual</option>
-                        <option value="cvt">CVT</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Body Type:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Body Type</option>
-                        <option value="sedan">Sedan</option>
-                        <option value="suv">SUV</option>
-                        <option value="hatchback">Hatchback</option>
-                        <option value="coupe">Coupe</option>
-                        <option value="pickup">Pickup</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Car Color:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Car Color</option>
-                        <option value="white">White</option>
-                        <option value="black">Black</option>
-                        <option value="silver">Silver</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Engine Type:
-                    </label>
-                    <div className="relative">
-                      <select className="w-full appearance-none px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-                        <option value="">Select a Engine Type</option>
-                        <option value="petrol">Petrol</option>
-                        <option value="diesel">Diesel</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="electric">Electric</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="bg-white p-4">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Condition Assessment</h2>
-                
-                <div className="space-y-8">
-                  {/* Exterior Condition */}
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900 mb-4">Exterior Condition</h3>
-                    
-                    <div className="mb-6">
-                      <label className="block text-sm text-gray-700 mb-3">
-                        Overall Exterior Condition
-                      </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {['excellent', 'good', 'fair', 'poor'].map((condition) => (
-                          <button
-                            key={condition}
-                            onClick={() => updateData('exteriorCondition', condition)}
-                            className={`p-4 rounded-lg border-2 transition-all text-center ${
-                              inspectionData.exteriorCondition === condition
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                            }`}
-                          >
-                            <span className="capitalize font-medium">{condition}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm text-gray-700 mb-3">
-                        Exterior Defects (Select all that apply)
-                      </label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {exteriorDefectOptions.map((defect) => (
-                          <button
-                            key={defect}
-                            onClick={() => toggleDefect('exteriorDefects', defect)}
-                            className={`p-3 text-sm rounded-lg border transition-all text-center ${
-                              inspectionData.exteriorDefects.includes(defect)
-                                ? 'border-red-500 bg-red-50 text-red-700'
-                                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                            }`}
-                          >
-                            {defect}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">
-                        Exterior Notes
-                      </label>
-                      <textarea
-                        value={inspectionData.exteriorNotes}
-                        onChange={(e) => updateData('exteriorNotes', e.target.value)}
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                        placeholder="Additional notes about exterior condition..."
-                      />
-                    </div>
-                  </div>
-
-                  {/* Interior Condition */}
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900 mb-4">Interior Condition</h3>
-                    
-                    <div className="mb-6">
-                      <label className="block text-sm text-gray-700 mb-3">
-                        Overall Interior Condition
-                      </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {['excellent', 'good', 'fair', 'poor'].map((condition) => (
-                          <button
-                            key={condition}
-                            onClick={() => updateData('interiorCondition', condition)}
-                            className={`p-4 rounded-lg border-2 transition-all text-center ${
-                              inspectionData.interiorCondition === condition
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                            }`}
-                          >
-                            <span className="capitalize font-medium">{condition}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm text-gray-700 mb-3">
-                        Interior Defects (Select all that apply)
-                      </label>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {interiorDefectOptions.map((defect) => (
-                          <button
-                            key={defect}
-                            onClick={() => toggleDefect('interiorDefects', defect)}
-                            className={`p-3 text-sm rounded-lg border transition-all text-center ${
-                              inspectionData.interiorDefects.includes(defect)
-                                ? 'border-red-500 bg-red-50 text-red-700'
-                                : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                            }`}
-                          >
-                            {defect}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">
-                        Interior Notes
-                      </label>
-                      <textarea
-                        value={inspectionData.interiorNotes}
-                        onChange={(e) => updateData('interiorNotes', e.target.value)}
-                        rows={4}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                        placeholder="Additional notes about interior condition..."
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="bg-white p-4">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Documentation & History</h2>
-                
-                <div className="space-y-6">
-                  {[
-                    { key: 'registrationValid', label: 'Registration Valid' },
-                    { key: 'insuranceValid', label: 'Insurance Valid' },
-                    { key: 'serviceHistoryAvailable', label: 'Service History Available' },
-                    { key: 'accidentHistory', label: 'Accident History' }
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="font-medium text-gray-900">{label}</span>
-                      <button
-                        onClick={() => updateData(key as keyof InspectionData, !inspectionData[key as keyof InspectionData])}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          inspectionData[key as keyof InspectionData]
-                            ? 'bg-blue-600'
-                            : 'bg-gray-200'
-                        }`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          inspectionData[key as keyof InspectionData]
-                            ? 'translate-x-6'
-                            : 'translate-x-1'
-                        }`} />
-                      </button>
-                    </div>
-                  ))}
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-3">
-                      Number of Previous Owners
-                    </label>
-                    <div className="flex items-center justify-center space-x-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <button
-                        onClick={() => updateData('ownershipHistory', Math.max(1, inspectionData.ownershipHistory - 1))}
-                        className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-                      >
-                        <Minus className="h-4 w-4 text-gray-600" />
-                      </button>
-                      <span className="text-2xl font-bold text-gray-900 w-12 text-center">
-                        {inspectionData.ownershipHistory}
-                      </span>
-                      <button
-                        onClick={() => updateData('ownershipHistory', inspectionData.ownershipHistory + 1)}
-                        className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-                      >
-                        <Plus className="h-4 w-4 text-gray-600" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Documentation Notes
-                    </label>
-                    <textarea
-                      value={inspectionData.documentNotes}
-                      onChange={(e) => updateData('documentNotes', e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      placeholder="Notes about documentation, service history, accidents, etc..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="bg-white p-4">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Final Report & Valuation</h2>
-                
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">
-                        Market Value (SAR)
-                      </label>
-                      <input
-                        type="number"
-                        value={inspectionData.marketValue}
-                        onChange={(e) => updateData('marketValue', parseInt(e.target.value))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-2">
-                        Recommended Price (SAR)
-                      </label>
-                      <input
-                        type="number"
-                        value={inspectionData.recommendedPrice}
-                        onChange={(e) => updateData('recommendedPrice', parseInt(e.target.value))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-3">
-                      Overall Rating ({inspectionData.overallRating}/5)
-                    </label>
-                    <div className="flex justify-center space-x-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <button
-                          key={rating}
-                          onClick={() => updateData('overallRating', rating)}
-                          className="p-2 transition-transform hover:scale-110"
-                        >
-                          <Star
-                            className={`h-8 w-8 ${
-                              rating <= inspectionData.overallRating
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-3">
-                      Final Recommendation
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {[
-                        { value: 'approve', label: 'Approve', color: 'green' },
-                        { value: 'conditional', label: 'Conditional', color: 'yellow' },
-                        { value: 'reject', label: 'Reject', color: 'red' }
-                      ].map(({ value, label, color }) => (
-                        <button
-                          key={value}
-                          onClick={() => updateData('finalRecommendation', value)}
-                          className={`p-4 rounded-lg border-2 transition-all text-center ${
-                            inspectionData.finalRecommendation === value
-                              ? color === 'green' ? 'border-green-500 bg-green-50 text-green-700' :
-                                color === 'yellow' ? 'border-yellow-500 bg-yellow-50 text-yellow-700' :
-                                'border-red-500 bg-red-50 text-red-700'
-                              : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                          }`}
-                        >
-                          <span className="font-medium">{label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Inspection Images
-                    </label>
-                    <div className="space-y-4">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
-                        <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <label className="cursor-pointer">
-                          <span className="text-blue-600 font-medium hover:text-blue-500">Upload images</span>
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                        <p className="text-sm text-gray-500 mt-2">
-                          Take photos of exterior, interior, engine, and any defects
-                        </p>
-                      </div>
-                      
-                      {inspectionData.images.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3">
-                          {inspectionData.images.map((image, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={URL.createObjectURL(image)}
-                                alt={`Inspection ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                              />
-                              <button
-                                onClick={() => removeImage(index)}
-                                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Final Notes
-                    </label>
-                    <textarea
-                      value={inspectionData.finalNotes}
-                      onChange={(e) => updateData('finalNotes', e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      placeholder="Final summary and recommendations..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
+  const handleImageRemoveMedia = (field: any) => {
+    if(confirm('Are you sure you want to delete?')) {
+      axiosInstance.get('/api/1.0/media/delete/' + field.id).then((res) => {
+                    window.location.reload();
+      }).catch((err) => {
+        alert(err);
+      })
     }
-  };
+  }
+
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/inspections')}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              <span className="font-medium">Back</span>
-            </button>
-            <h1 className="text-lg font-semibold text-gray-900">
-              Vehicle Inspection
-            </h1>
-            <div className="w-16" />
+
+  <div>
+      <PageHeader 
+        title="Inspection Report" 
+        description=""
+      />
+      
+      {/* Countdown Timer */}
+      <div className="mb-4 flex items-center justify-end">
+        <div className="flex items-center bg-gray-100 px-4 py-2 rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="font-medium text-gray-800">
+            Time Remaining: <span className={`${timeRemaining < 300 ? 'text-red-600' : ''}`}>{formatTime(timeRemaining)}</span>
+          </span>
+        </div>
+      </div>
+      
+      {/* Filters and search */}
+      <div className="mb-8 flex flex-col sm:flex-row gap-4">
+      <div className="relative flex-1">
+      <div className="flex justify-between">
+        <h3 className="font-medium text-black">{mode == "edit" ? "Update" : "Create"} an Inspection</h3>
+
+        <div>
+          <p className="text-red">(Labels marked- * -are required)</p>
+        </div>
+      </div>
+      
+      {/* Stepper UI */}
+      {steps.length > 0 && (
+        <div className="my-8">
+         
+          
+          {/* Progress indicator - Colorful bars */}
+          <div className="mt-6 space-y-4">
+            {/* All steps progress bar */}
+            <p>Showing Step {currentStep + 1} of {steps.length}</p>
+            <div className="relative w-full h-6 bg-gray-200 rounded-md overflow-hidden">
+            
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-800 to-blue-900 bg-stripes" 
+                style={{ 
+                  width: `${(completedSteps.length / steps.length) * 100}%`,
+                  backgroundSize: '20px 20px',
+                  backgroundColor: 'blue'
+                }}
+              />
+            </div>
+            
+        
           </div>
         </div>
-      </div>
+      )}
+      
+      {httpError && <div className="text-red">{JSON.stringify(httpError)}</div>}
 
-      {/* Progress Steps */}
-      <div className="bg-white border-b px-4 py-4">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          {steps.map((step, index) => (
-            <div key={step.number} className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                currentStep >= step.number
-                  ? 'bg-blue-600 border-blue-600 text-white'
-                  : 'border-gray-300 text-gray-400'
-              }`}>
-                {currentStep > step.number ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <step.icon className="h-4 w-4" />
-                )}
-              </div>
-              <div className="ml-2 hidden sm:block">
-                <p className={`text-xs font-medium ${
-                  currentStep >= step.number ? 'text-blue-600' : 'text-gray-400'
-                }`}>
-                  {step.title}
-                </p>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`w-8 sm:w-16 h-0.5 mx-2 ${
-                  currentStep > step.number ? 'bg-blue-600' : 'bg-gray-300'
-                }`} />
+      <form onSubmit={onSubmit}>
+        {initialData && initialData?.map((i: any, index: number) => {
+          // Only render the current step
+          if (index !== currentStep) return null;
+          
+          return (
+            <div key={i.name + index}>
+              <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] ">{i.name}</div>
+
+              {i.name === "Document Images" && (
+                <div className="flex flex-wrap  gap-5 mt-5 ">
+                  {             i.fields.map((field: any) => {
+                    return (
+                        <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
+                          <div className="overflow-hidden w-30  h-30 text-center">
+                            <label htmlFor={`${field}picker`}>
+                              <img
+                                  style={{
+                                    width: "100%",
+                                    height: "auto",
+                                  }}
+                                  alt="image"
+                                  src={mediaFiles[field]?.selectedImage ? mediaFiles[field].selectedImage : CarImage}
+                              />
+                            </label>
+                            <p className="text-[12px] absolute bottom-0 w-full">{field}</p>
+                            <input
+                                id={`${field}picker`}
+                                type="file"
+                                style={{ visibility: "hidden" }}
+                                onChange={(event) => {
+                                  handleImageChange(field, event);
+                                }}
+                                accept="image/*"
+                            />
+                          </div>
+                          {mediaFiles[field]?.selectedImage && (
+                              <button
+                                  type="button"
+                                  className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
+                                  onClick={() => {
+                                    handleImageRemove(field);
+                                  }}
+                              >
+                                <MinusCircle size={20} color="red" />
+                              </button>
+                          )}
+                        </div>
+                    );
+                  })})
+
+                </div>
               )}
+
+              {i.name == "Car Media" && (
+                <div className="flex flex-wrap  gap-5 mt-5 ">
+                  {i.fields.map((field: any) => {
+                    return (
+                      <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
+                        <div className="overflow-hidden w-30  h-30 text-center">
+                          <label htmlFor={`${field}picker`}>
+                            <img
+                              style={{
+                                width: "100%",
+                                height: "auto",
+                              }}
+                              alt="image"
+                              src={mediaFiles[field]?.selectedImage ? mediaFiles[field].selectedImage : CarImage}
+                            />
+                          </label>
+                          <p className="text-[12px] absolute bottom-0 w-full">{field}</p>
+                          <input
+                            id={`${field}picker`}
+                            type="file"
+                            style={{ visibility: "hidden" }}
+                            onChange={(event) => {
+                              handleImageChange(field, event);
+                            }}
+                            accept="image/*"
+                          />
+                        </div>
+                        {mediaFiles[field]?.selectedImage && (
+                          <button
+                            className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
+                            onClick={() => {
+                              handleImageRemove(field);
+                            }}
+                          >
+                            <MinusCircle size={20} color="red" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+
+              <div className="grid grid-cols-3">
+                {i.name !== "Document Images" &&
+                  i.name !== "Car Media" &&
+                  i.fields.map((field: any) => {
+                    const _fieldName = field.fieldName.replace(/\s/g, "_");
+
+                    const defaults: any = {};
+
+                    if (field.disabled) {
+                      defaults.disabled = true;
+                    }
+                    if(field.value){
+                      defaults.value = field.value;
+                    }
+
+                    return (
+                      <div className={"m-2"} key={_fieldName}>
+                        {_fieldName == "Warranty_Valid_Till" ?
+                          watchFieldsWarranty?.length > 0  && watchFieldsWarranty[0]?.label == "Yes" ?
+                            <p>
+                          {field.fieldName}
+                          {!!field.required && <span className="text-red">*</span>}
+                        </p> : <></> : _fieldName == "Service_Plan_Valid_Till" ?  watchFieldsService.length > 0  && watchFieldsService[0]?.label == "Yes"?   <p>
+                          {field.fieldName}
+                          {!!field.required && <span className="text-red">*</span>}
+                        </p>: <></>: <p>
+                              {field.fieldName}
+                              {!!field.required && <span className="text-red">*</span>}
+                            </p> }
+                        {field.fieldType == "Date" && _fieldName == "Warranty_Valid_Till" && watchFieldsWarranty.length > 0  && watchFieldsWarranty[0]?.label == "Yes"  && (
+                          <>
+                            <Controller
+                              name={_fieldName}
+                              control={control}
+                              rules={{
+                                required: {
+                                  value: !!field.required,
+                                  message: "Required",
+                                },
+                              }}
+                              render={(value) => <AppDatePicker field={value.field} selected={new Date()} />}
+                            />
+                            {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                          </>
+                        )}
+                        {field.fieldType == "Date" && _fieldName == "Service_Plan_Valid_Till" && watchFieldsService.length && watchFieldsService[0]?.label == "Yes" &&  (
+                            <>
+                              <Controller
+                                  name={_fieldName}
+                                  control={control}
+                                  rules={{
+                                    required: {
+                                      value: !!field.required,
+                                      message: "Required",
+                                    },
+                                  }}
+                                  render={(value) => <AppDatePicker field={value.field} selected={new Date()} />}
+                              />
+                              {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            </>
+                        )}
+                        {field.fieldType == "Date" && _fieldName != "Service_Plan_Valid_Till" && _fieldName !== "Warranty_Valid_Till" &&  (
+                            <>
+                              <Controller
+                                  name={_fieldName}
+                                  control={control}
+                                  rules={{
+                                    required: {
+                                      value: !!field.required,
+                                      message: "Required",
+                                    },
+                                  }}
+                                  render={(value) => <AppDatePicker field={value.field} selected={new Date()} />}
+                              />
+                              {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            </>
+                        )}
+                        {field.fieldType == "Field" && (
+                          <>
+                            <input
+                              {...register(_fieldName, {
+                                required: {
+                                  value: !!field.required,
+                                  message: "Required",
+                                },
+                              })}
+                              defaultValue={field.value}
+                              placeholder={"Enter " + field.fieldName}
+                              className={"form-control w-full border border-[#CCC] h-[40px] rounded-sm pl-2 pr-2"}
+                              {...defaults}
+                            />
+                            {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                          </>
+                        )}
+                        {field.fieldType == "Drop Down" && (
+                          <>
+                            <Controller
+                              name={_fieldName}
+                              control={control}
+                              rules={{
+                                required: {
+                                  value: !!field.required,
+                                  message: "Required",
+                                },
+                              }}
+                              render={(value) => (
+                                <AppSelectV2
+                                  field={value.field}
+                                  options={field.options?.map((v: any) => ({
+                                    label: v,
+                                    value: v,
+                                  }))}
+                                />
+                              )}
+                            />
+                            {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                          </>
+                        )}
+
+                        {field.fieldType == "Drop Down - Multiple" && (
+                          <>
+                            <Controller
+                              name={_fieldName}
+                              control={control}
+                              rules={{
+                                required: {
+                                  value: !!field.required,
+                                  message: "Required",
+                                },
+                              }}
+                              render={(value) => (
+                                <AppSelectV2
+                                  isMulti
+                                  field={value.field}
+                                  options={field.options?.map((v: any) => ({
+                                    label: v,
+                                    value: v,
+                                  }))}
+                                />
+                              )}
+                            />
+                            {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                          </>
+                        )}
+
+                        {field.fieldType == "TextArea" && (
+                            <>
+                                <textarea
+                                    {...register(_fieldName, {
+                                      required: {
+                                        value: !!field.required,
+                                        message: "Required",
+                                      },
+                                    })}
+                                    rows={6}
+                                    maxLength={255}
+                                    placeholder={"Enter " + field.fieldName}
+                                    className={"form-control mt-4 w-full border border-[#CCC] w-full rounded-sm pl-2 pr-2"}
+                                    {...defaults}
+                                />
+                                {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+
+                              {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            </>
+                        )}
+
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
-          ))}
+          );
+        })}
+
+
+        {images && images?.length ?  <div className="flex flex-wrap  gap-5 mt-5 ">
+          { images.map((field: any) => {
+            return (
+                <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
+                  <div className="overflow-hidden w-30  h-30 text-center">
+                    <label htmlFor={`${field}picker`}>
+                      <img
+                          style={{
+                            width: "100%",
+                            height: "auto",
+                          }}
+                          alt="image"
+                          src={field?.url ?? "/images/img.png"}
+                      />
+                    </label>
+                    <p className="text-[12px] absolute bottom-0 w-full">{field?.caption}</p>
+
+                  </div>
+                      <button
+                          type="button"
+                          className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
+                          onClick={() => {
+                            handleImageRemoveMedia(field);
+                          }}
+                      >
+                        <MinusCircle size={20} color="red" />
+                      </button>
+                </div>
+            );
+          })}
+
+        </div>: <></>}
+
+        {/* Navigation and submit buttons */}
+        <div className="flex justify-between mt-10">
+          <div className="flex items-center">
+            {submitState && (
+              <>
+                <h4>Saving..</h4>
+                <p>{submitState}</p>
+              </>
+            )}
+            
+            {/* Previous button */}
+            {currentStep > 0 && (
+              <button 
+                type="button" 
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 mr-2 text-center font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <ChevronLeft size={16} className="mr-1" />
+                Previous
+              </button>
+            )}
+          </div>
+          
+          <div>
+            {/* Next button */}
+            {currentStep < steps.length - 1 ? (
+              <button 
+                type="button" 
+                onClick={() => {
+                  // Mark current step as completed
+                  if (!completedSteps.includes(currentStep)) {
+                    setCompletedSteps(prev => [...prev, currentStep]);
+                  }
+                  // Move to next step
+                  setCurrentStep(prev => prev + 1);
+                }}
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
+              >
+                Next
+                <ChevronRight size={16} className="ml-1" />
+              </button>
+            ) : (
+              /* Submit button (only on last step) */
+              <button 
+                disabled={loading} 
+                type="submit" 
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+              >
+                {loading ? "Saving..." : "Submit"}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {renderStepContent()}
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="px-4 pb-24">
-        <div className="max-w-4xl mx-auto">
-          <button className="w-full bg-gray-200 text-gray-700 py-4 rounded-lg font-medium hover:bg-gray-300 transition-colors">
-            Save
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-4">
-        <div className="max-w-4xl mx-auto flex justify-between">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className={`flex items-center px-6 py-3 rounded-lg font-medium ${
-              currentStep === 1
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Previous
-          </button>
-
-          {currentStep < 5 ? (
-            <button
-              onClick={nextStep}
-              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-            >
-              Next
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Report
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom padding to account for fixed navigation */}
-      <div className="h-20" />
-
-      {/* Footer */}
-      <div className="bg-white border-t py-4">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-500">
-            Baddelha.com - 2025 © All rights reserved
-          </p>
-        </div>
-      </div>
+      </form>
+       </div>
+       </div>
     </div>
   );
 };
 
-export default MobileInspection;
+export default InspectionForm;

@@ -75,12 +75,7 @@ function App() {
           
 
           
-          {/* Mobile Inspection Route - Standalone */}
-          <Route path="/inspection-report/:id" element={
-            <ProtectedRoute>
-              <InspectionReport />
-            </ProtectedRoute>
-          } />
+          {/* Inspection Report Route moved inside Layout */}
           
           <Route path="/" element={
             <ProtectedRoute>
@@ -130,6 +125,7 @@ function App() {
             <Route path="my-inspections" element={<MyInspections />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />
+            <Route path="inspection-report/:id" element={<InspectionReport />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />

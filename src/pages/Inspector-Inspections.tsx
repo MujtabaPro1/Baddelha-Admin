@@ -9,8 +9,9 @@ import {
   ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
   Play
 } from 'lucide-react';
-import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
+import { useNavigate } from 'react-router-dom';
+
 
 
 
@@ -30,6 +31,7 @@ const MyInspections = () => {
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);
+  const navigate = useNavigate();
  
 
   useEffect(() => {
@@ -41,7 +43,7 @@ const MyInspections = () => {
     setError(null);
     try {
       const response = await axiosInstance.get('/1.0/inspection/find-all');
-      console.log(response?.data?.data);
+
     
       setInspections(response?.data?.data);
     } catch (err) {
@@ -153,6 +155,7 @@ const MyInspections = () => {
                 <button 
                             onClick={(e) => {
                               e.preventDefault();
+                              navigate(`/inspection-report/${inspection.id}`);
 
                             }}
                             className="btn mt-3 btn-sm btn-primary flex items-center"
