@@ -352,90 +352,126 @@ const InspectionForm = () => {
               <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] ">{i.name}</div>
 
               {i.name === "Document Images" && (
-                <div className="flex flex-wrap  gap-5 mt-5 ">
-                  {             i.fields.map((field: any) => {
-                    return (
-                        <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
-                          <div className="overflow-hidden w-30  h-30 text-center">
-                            <label htmlFor={`${field}picker`}>
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-3">Document Images</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {i.fields.map((field: any) => {
+                      const hasImage = mediaFiles[field]?.selectedImage;
+                      return (
+                        <div 
+                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${hasImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'}`} 
+                          key={field}
+                        >
+                          <div className="aspect-square overflow-hidden bg-gray-50">
+                            <label 
+                              htmlFor={`${field}picker`}
+                              className="flex items-center justify-center w-full h-full cursor-pointer"
+                            >
                               <img
-                                  style={{
-                                    width: "100%",
-                                    height: "auto",
-                                  }}
-                                  alt="image"
-                                  src={mediaFiles[field]?.selectedImage ? mediaFiles[field].selectedImage : CarImage}
+                                className={`w-full h-full object-cover ${!hasImage && 'opacity-60 p-2'}`}
+                                alt={field}
+                                src={hasImage ? mediaFiles[field].selectedImage : CarImage}
                               />
+                              {!hasImage && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="bg-blue-900 text-white text-xs px-2 py-1 rounded-full">Add Image</span>
+                                </div>
+                              )}
                             </label>
-                            <p className="text-[12px] absolute bottom-0 w-full">{field}</p>
                             <input
-                                id={`${field}picker`}
-                                type="file"
-                                style={{ visibility: "hidden" }}
-                                onChange={(event) => {
-                                  handleImageChange(field, event);
-                                }}
-                                accept="image/*"
+                              id={`${field}picker`}
+                              type="file"
+                              className="hidden"
+                              onChange={(event) => handleImageChange(field, event)}
+                              accept="image/*"
                             />
                           </div>
-                          {mediaFiles[field]?.selectedImage && (
-                              <button
+                          <div className="bg-white p-2">
+                            <p className="text-xs font-medium text-center truncate">{field}</p>
+                            {hasImage && (
+                              <div className="flex justify-center mt-1">
+                                <button
                                   type="button"
-                                  className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
-                                  onClick={() => {
-                                    handleImageRemove(field);
-                                  }}
-                              >
-                                <MinusCircle size={20} color="red" />
-                              </button>
+                                  className="inline-flex items-center text-xs text-red-600 hover:text-red-800"
+                                  onClick={() => handleImageRemove(field)}
+                                >
+                                  <MinusCircle size={12} className="mr-1" />
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {hasImage && (
+                            <div className="absolute top-2 right-2 bg-blue-900 rounded-full p-1 shadow-md">
+                              <Check size={12} color="white" />
+                            </div>
                           )}
                         </div>
-                    );
-                  })})
-
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               {i.name == "Car Media" && (
-                <div className="flex flex-wrap  gap-5 mt-5 ">
-                  {i.fields.map((field: any) => {
-                    return (
-                      <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
-                        <div className="overflow-hidden w-30  h-30 text-center">
-                          <label htmlFor={`${field}picker`}>
-                            <img
-                              style={{
-                                width: "100%",
-                                height: "auto",
-                              }}
-                              alt="image"
-                              src={mediaFiles[field]?.selectedImage ? mediaFiles[field].selectedImage : CarImage}
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-3">Car Media</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {i.fields.map((field: any) => {
+                      const hasImage = mediaFiles[field]?.selectedImage;
+                      return (
+                        <div 
+                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${hasImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'}`} 
+                          key={field}
+                        >
+                          <div className="aspect-square overflow-hidden bg-gray-50">
+                            <label 
+                              htmlFor={`${field}picker`}
+                              className="flex items-center justify-center w-full h-full cursor-pointer"
+                            >
+                              <img
+                                className={`w-full h-full object-cover ${!hasImage && 'opacity-60 p-2'}`}
+                                alt={field}
+                                src={hasImage ? mediaFiles[field].selectedImage : CarImage}
+                              />
+                              {!hasImage && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="bg-blue-900 text-white text-xs px-2 py-1 rounded-full">Add Image</span>
+                                </div>
+                              )}
+                            </label>
+                            <input
+                              id={`${field}picker`}
+                              type="file"
+                              className="hidden"
+                              onChange={(event) => handleImageChange(field, event)}
+                              accept="image/*"
                             />
-                          </label>
-                          <p className="text-[12px] absolute bottom-0 w-full">{field}</p>
-                          <input
-                            id={`${field}picker`}
-                            type="file"
-                            style={{ visibility: "hidden" }}
-                            onChange={(event) => {
-                              handleImageChange(field, event);
-                            }}
-                            accept="image/*"
-                          />
+                          </div>
+                          <div className="bg-white p-2">
+                            <p className="text-xs font-medium text-center truncate">{field}</p>
+                            {hasImage && (
+                              <div className="flex justify-center mt-1">
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center text-xs text-red-600 hover:text-red-800"
+                                  onClick={() => handleImageRemove(field)}
+                                >
+                                  <MinusCircle size={12} className="mr-1" />
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {hasImage && (
+                            <div className="absolute top-2 right-2 bg-blue-900 rounded-full p-1 shadow-md">
+                              <Check size={12} color="white" />
+                            </div>
+                          )}
                         </div>
-                        {mediaFiles[field]?.selectedImage && (
-                          <button
-                            className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
-                            onClick={() => {
-                              handleImageRemove(field);
-                            }}
-                          >
-                            <MinusCircle size={20} color="red" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
