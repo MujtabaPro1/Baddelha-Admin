@@ -479,7 +479,7 @@ const InspectionForm = () => {
               <div className="grid grid-cols-3">
                 {i.name !== "Document Images" &&
                   i.name !== "Car Media" &&
-                  i.fields.map((field: any) => {
+                  i?.fields?.map((field: any) => {
                     const _fieldName = field.fieldName.replace(/\s/g, "_");
 
                     const defaults: any = {};
