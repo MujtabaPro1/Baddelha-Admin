@@ -68,7 +68,7 @@ const MyInspections = () => {
   return (
     <div>
       <PageHeader 
-        title="My Inspection Requests" 
+        title="Inspection Requests" 
         description={user?.role === 'inspector' ? 
           "Manage your assigned inspection requests" : 
           "Manage all inspection requests on the platform"
@@ -118,7 +118,7 @@ const MyInspections = () => {
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {inspections.map((inspection: any) => (
+        {inspections.map((inspection: any,index:number) => (
           <div 
             key={inspection.uid} 
             className="card p-6 block hover:shadow-md animated-transition"
@@ -152,7 +152,7 @@ const MyInspections = () => {
                       Scheduled: {formatDate(inspection.createdAt)}
                   </span>
                 </div>
-                <button 
+                {index != 0 ? <button 
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/inspection-report/${inspection.id}`);
@@ -161,7 +161,16 @@ const MyInspections = () => {
                             className="btn mt-3 btn-sm btn-primary flex items-center"
                           >
                             Start Inspection
-                          </button>
+                          </button> : 
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(`/customer-checkin/${inspection.id}`);
+                            }}
+                            className="btn mt-3 btn-sm btn-secondary flex items-center"
+                          >
+                            Customer Check In
+                          </button>}
               </div>
             </div>
             

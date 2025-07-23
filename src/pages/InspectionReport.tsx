@@ -13,6 +13,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { axiosErrorHandler } from "../types/utils";
 import PageHeader from "../components/PageHeader";
 import CarImage from "../images/img.png";
+import CarBodySvg from "../components/CarBody";
+import CarPartModal from "../components/CarPartModal";
 
 
 
@@ -37,6 +39,11 @@ const InspectionForm = () => {
   // Timer state - 30 minutes in seconds
   const [timeRemaining, setTimeRemaining] = useState(30 * 60);
   const [timerActive, setTimerActive] = useState(false);
+
+  const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const [hoveredPart, setHoveredPart] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [partConditions, setPartConditions] = useState<Record<string, string>>({});
 
  
 
@@ -283,6 +290,8 @@ const InspectionForm = () => {
   }
 
 
+ 
+
   return (
 
   <div>
@@ -346,6 +355,81 @@ const InspectionForm = () => {
         {initialData && initialData?.map((i: any, index: number) => {
           // Only render the current step
           if (index !== currentStep) return null;
+
+          console.log("here",i.name);
+
+          if(i.name == 'Car Body Condition'){
+            console.log("here",i.name);
+            return (
+              <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] flex w-full justify-center items-center">
+                <CarBodySvg
+                  selectedPart={selectedPart}
+                  hoveredPart={hoveredPart}
+                  onSelectPart={(partName: string) => {
+                    setSelectedPart(partName);
+                    setIsModalOpen(true);
+                  }}
+                  onHoverPart={(partName: string | null) => {
+                    setHoveredPart(partName);
+                  }}
+                />
+                
+                {/* Display selected parts and their conditions */}
+                {Object.keys(partConditions).length > 0 && (
+                  <div className="mt-4 p-3 border border-gray-200 rounded-md">
+                    <h3 className="font-bold mb-2">Selected Parts Condition</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(partConditions).map(([part, condition]) => {
+                        const formattedPart = part
+                          .replace('c_n_', '')
+                          .split('_')
+                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(' ');
+                          
+                        let conditionColor = '';
+                        switch(condition) {
+                          case 'original': conditionColor = '#4CAF50'; break;
+                          case 'painted': conditionColor = '#2196F3'; break;
+                          case 'repainted': conditionColor = '#FFC107'; break;
+                          case 'damaged': conditionColor = '#F44336'; break;
+                        }
+                        
+                        return (
+                          <div 
+                            key={part} 
+                            className="flex items-center p-2 rounded-md" 
+                            style={{ backgroundColor: `${conditionColor}20`, borderLeft: `3px solid ${conditionColor}` }}
+                          >
+                            <div className="flex-1">{formattedPart}</div>
+                            <div className="font-medium capitalize">{condition}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                <CarPartModal
+                  isOpen={isModalOpen}
+                  onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedPart(null);
+                  }}
+                  partName={selectedPart}
+                  onSelectCondition={(condition: string) => {
+                    if (selectedPart) {
+                      setPartConditions(prev => ({
+                        ...prev,
+                        [selectedPart]: condition
+                      }));
+                      setIsModalOpen(false);
+                      setSelectedPart(null);
+                    }
+                  }}
+                />
+              </div>
+            )
+          }
           
           return (
             <div key={i.name + index}>

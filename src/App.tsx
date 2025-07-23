@@ -20,6 +20,7 @@ import Inspectors from './pages/Inspectors';
 import RolesPermission from './pages/roles-permission/roles';
 import MyInspections from './pages/Inspector-Inspections';
 import SupervisorInspections from './pages/Supervisor-Inspections';
+import CustomerCheckIn from './pages/customer-checkin';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -126,6 +127,7 @@ function App() {
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />
             <Route path="inspection-report/:id" element={<InspectionReport />} />
+            <Route path="customer-checkin/:id" element={<CustomerCheckIn />} />
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />
