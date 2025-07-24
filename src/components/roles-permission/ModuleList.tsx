@@ -55,9 +55,9 @@ const ModuleList = () => {
                 <p className=" text-black ">{item.path}</p>
               </div>
               <div className="flex items-center col-span-2 justify-center">
-                <Link href={`/dashboard/roles-permission?update=${item.id}`}>
+                <a href={`/roles-permission/update/${item.id}`}>
                   <PenSquare />
-                </Link>
+                </a>
               </div>
             </div>
           );

@@ -21,14 +21,16 @@ import RolesPermission from './pages/roles-permission/roles';
 import MyInspections from './pages/Inspector-Inspections';
 import SupervisorInspections from './pages/Supervisor-Inspections';
 import CustomerCheckIn from './pages/customer-checkin';
+import EditRolePage from './pages/roles-permission/edit';
+import CreateRolePage from './pages/roles-permission/create';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
   
   return <>{children}</>;
 };
@@ -36,18 +38,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Admin-only route component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
 
-  if(user.role == 'supervisor'){
-    return <Navigate to="/supervisor-inspections" replace />;
-  }
+  console.log(user);
   
-  if (user.role == 'inspector') {
-    return <Navigate to="/my-inspections" replace />;
-  }
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
+
+  // if(user.role == 'supervisor'){
+  //   return <Navigate to="/supervisor-inspections" replace />;
+  // }
+  
+  // if (user.role == 'inspector') {
+  //   return <Navigate to="/my-inspections" replace />;
+  // }
   
   return <>{children}</>;
 };
@@ -74,6 +78,12 @@ function App() {
             </CallCenterRoute>
           } />
           
+
+
+          
+
+
+                      
 
           
           {/* Inspection Report Route moved inside Layout */}
@@ -119,7 +129,8 @@ function App() {
               </AdminRoute>
             } />
 
-            <Route path="roles-permission" element={<RolesPermission />} />
+
+      
 
             <Route path="inspections" element={<Inspections />} />
             <Route path="supervisor-inspections" element={<SupervisorInspections />} />
@@ -128,6 +139,29 @@ function App() {
             <Route path="inspectors" element={<Inspectors />} />
             <Route path="inspection-report/:id" element={<InspectionReport />} />
             <Route path="customer-checkin/:id" element={<CustomerCheckIn />} />
+
+            <Route path="roles-permission" element={
+                                <AdminRoute>
+                                  <RolesPermission />
+                                </AdminRoute>
+                              } />
+
+
+          <Route path="roles-permission/create" element={
+                              <AdminRoute>
+                                <CreateRolePage />
+                              </AdminRoute>
+                            } />
+
+
+
+<Route path="roles-permission/update/:id" element={
+                              <AdminRoute>
+                                <EditRolePage />
+                              </AdminRoute>
+                            } />
+
+
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />

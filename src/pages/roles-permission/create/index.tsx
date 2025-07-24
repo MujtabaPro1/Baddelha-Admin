@@ -3,7 +3,7 @@ import axiosInstance from "../../../service/api";
 import { useEffect, useState } from "react";
 
 
-const CreateRolePage = async () => {
+const CreateRolePage = () => {
   const [modules,setModules] = useState([]);
 
 

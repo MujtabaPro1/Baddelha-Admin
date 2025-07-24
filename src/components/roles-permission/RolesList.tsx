@@ -68,9 +68,10 @@ const RolesList = () => {
               </div>
 
               <div className="flex items-center justify-center p-2.5 xl:p-5 col-span-1">
-                <Link href={`/dashboard/roles-permission/edit/${role.id}`}>
+               
+                <a href={`/roles-permission/update/${role.id}`}>
                   <PenSquare />
-                </Link>
+                </a>
               </div>
             </div>
           );

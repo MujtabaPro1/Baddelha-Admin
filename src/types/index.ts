@@ -84,3 +84,37 @@ export interface AuthUser {
   email: string;
   role: 'admin' | 'inspector' | 'call-center' | 'supervisor';
 }
+
+
+
+export type RolePermissionDto = {
+  id: number;
+
+  name: string;
+
+  description: string;
+
+  Permission: PermissionDto[];
+};
+
+export type PermissionDto = {
+  create: boolean;
+
+  read: boolean;
+
+  update: boolean;
+
+  delete: boolean;
+
+  appModuleId: number;
+  
+  appModule: AppModuleDto;
+};
+
+export type AppModuleDto = {
+  id?: string;
+  name: string;
+
+  path: string;
+};
+

@@ -84,9 +84,9 @@ const CustomerCheckIn = () => {
             
             // Construct query parameter based on identifier type
             const queryParam = identifierType === 'phone' ? 
-                `phone=${identifier}` : `email=${identifier}`;
+                `${identifier}` : `${identifier}`;
             
-            const response = await axiosInstance.get(`/1.0/book-appointment?${queryParam}&status=scheduled`);
+            const response = await axiosInstance.get(`/1.0/book-appointment?search=${queryParam}`);
             
             if (response.data && response.data.length > 0) {
                 // Get the most recent appointment
@@ -418,12 +418,12 @@ const CustomerCheckIn = () => {
             />
             
             {/* Timer display */}
-            <div className="mb-6 flex justify-center">
+            {/* <div className="mb-6 flex justify-center">
                 <div className="bg-blue-900 text-white px-4 py-2 rounded-md inline-flex items-center">
                     <span className="mr-2">Time Remaining:</span>
                     <span className="font-mono font-bold">{formatTime(timeRemaining)}</span>
                 </div>
-            </div>
+            </div> */}
             
             {/* Progress bar */}
             <div className="mb-8">

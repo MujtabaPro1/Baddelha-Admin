@@ -1,11 +1,18 @@
 
-import RolesPermissionForm from "../../../../components/roles-permission/Form";
-
 import { useEffect, useState } from "react";
-import axiosInstance from "../../../../service/api";
+import axiosInstance from "../../../service/api";
+import { useParams } from "react-router-dom";
 
-const EditRolePage = ({ params }: { params: { id: number } }) => {
+ import RolesPermissionForm from "../../../components/roles-permission/Form";
+import { useNavigate } from "react-router-dom";
+ 
+
+const EditRolePage = () => {
   const [role,setRole]: any = useState({});
+  const params = useParams();
+  const navigate = useNavigate();
+  const [modules,setModules] = useState([]);
+
 
 
   const findRolePermission = async (roleId: number) => {
@@ -17,8 +24,6 @@ const EditRolePage = ({ params }: { params: { id: number } }) => {
     }
   };
 
-
-  const [modules,setModules] = useState([]);
 
 
   useEffect(() => {
@@ -44,11 +49,12 @@ const EditRolePage = ({ params }: { params: { id: number } }) => {
       <span>Role not found</span>
     </div>
   }
+
+ 
  
   return (
     <>
-      <RolesPermissionForm
-
+       {role && role?.Permission &&  <RolesPermissionForm
         initialData={{
           id:role?.id,
           name: role?.name,
@@ -84,12 +90,12 @@ const EditRolePage = ({ params }: { params: { id: number } }) => {
             };
           }),
         }}
-      />
+      />}
       {!role && (
         <div className="m-10 text-center">
           <span>No Modules</span>
         </div>
-      )}
+      )} 
     </>
   );
 };
