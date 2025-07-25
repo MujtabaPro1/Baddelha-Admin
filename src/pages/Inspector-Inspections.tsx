@@ -152,7 +152,7 @@ const MyInspections = () => {
                       Scheduled: {formatDate(inspection.createdAt)}
                   </span>
                 </div>
-                {index != 0 ? <button 
+                {inspection?.BookAppointments?.customerCheckIn ? <button 
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/inspection-report/${inspection.id}`);

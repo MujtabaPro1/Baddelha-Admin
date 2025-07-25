@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { createInspection } from '../service/inspection';
 import PageHeader from '../components/PageHeader';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Calendar, Car } from 'lucide-react';
 
 const CustomerCheckIn = () => {
     const navigate = useNavigate();
@@ -23,8 +23,11 @@ const CustomerCheckIn = () => {
     const [identifierType, setIdentifierType] = useState('phone'); // 'phone' or 'email'
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [appointment, setAppointment] = useState<any>(null);
+    const [availableAppointments, setAvailableAppointments] = useState<any[]>([]);
+    const [showAppointmentModal, setShowAppointmentModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const params = useParams();
     
     // Steps in the check-in process
     const steps = [
@@ -33,6 +36,8 @@ const CustomerCheckIn = () => {
         'Appointment Details',
         'Start Inspection'
     ];
+    
+
     
     // Format time as MM:SS
     const formatTime = (seconds: number) => {
@@ -89,26 +94,45 @@ const CustomerCheckIn = () => {
             const response = await axiosInstance.get(`/1.0/book-appointment?search=${queryParam}`);
             
             if (response.data && response.data.length > 0) {
-                // Get the most recent appointment
+                // Get the most recent appointments
                 const sortedAppointments = response.data.sort((a: any, b: any) => 
                     new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
                 );
                 
-                const appointmentData = sortedAppointments[0];
-                // Parse car details if they exist
-                if (appointmentData.carDetail) {
-                    appointmentData.car = JSON.parse(appointmentData.carDetail);
+                // Filter appointments that haven't been checked in yet
+                const uncheckedAppointments = sortedAppointments.filter((item: any) => !item.customerCheckIn);
+                
+                if (uncheckedAppointments.length === 0) {
+                    throw new Error(`No pending appointments found for this ${identifierType}`);
                 }
                 
-                setAppointment(appointmentData);
+                // Parse car details for all appointments
+                const processedAppointments = uncheckedAppointments.map((apt: any) => {
+                    const processedApt = { ...apt };
+                    if (processedApt.carDetail) {
+                        processedApt.car = JSON.parse(processedApt.carDetail);
+                    }
+                    return processedApt;
+                });
+                
+                setAvailableAppointments(processedAppointments);
+                
+                // If there's only one appointment, select it automatically
+                if (processedAppointments.length === 1) {
+                    setAppointment(processedAppointments[0]);
+                }
                 
                 // Mark current step as completed
                 if (!completedSteps.includes(currentStep)) {
                     setCompletedSteps(prev => [...prev, currentStep]);
                 }
                 
-                // Move to next step
-                setCurrentStep(1);
+                // If multiple appointments, show modal, otherwise proceed to next step
+                if (processedAppointments.length === 1) {
+                    setCurrentStep(1);
+                } else {
+                    setShowAppointmentModal(true);
+                }
             } else {
                 throw new Error(`No scheduled appointments found for this ${identifierType}`);
             }
@@ -118,6 +142,13 @@ const CustomerCheckIn = () => {
         } finally {
             setLoading(false);
         }
+    };
+    
+    // Function to select a specific appointment
+    const selectAppointment = (selectedAppointment: any) => {
+        setAppointment(selectedAppointment);
+        setShowAppointmentModal(false);
+        setCurrentStep(1);
     };
     
     // Function to start the inspection process
@@ -130,20 +161,14 @@ const CustomerCheckIn = () => {
                 throw new Error('No appointment data available');
             }
             
-            // Create a new inspection
-            const inspectionData = {
-                appointmentId: appointment.uid,
-                customerId: appointment.customerId,
-                carId: appointment.carId,
-                branchId: appointment.branchId
-            };
+           
             
-            const response = await createInspection(inspectionData);
+            const response = await axiosInstance.get('/1.0/book-appointment/customer-checkin/' + appointment?.uid);
             
-            if (response && response.id) {
+            if (response && response.data) {
                 toast.success('Inspection started successfully!');
                 // Navigate to the inspection report page
-                navigate(`/inspection-report/${response.id}`);
+                navigate(`/inspection-report/${params.id}`);
             } else {
                 throw new Error('Failed to create inspection');
             }
@@ -217,6 +242,7 @@ const CustomerCheckIn = () => {
                     </div>
                 );
                 
+
             case 1: // Terms & Conditions
                 return (
                     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -410,6 +436,71 @@ const CustomerCheckIn = () => {
         }
     };
 
+    // Appointment selection modal
+    const renderAppointmentModal = () => {
+        if (!showAppointmentModal) return null;
+        
+        return (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="p-6">
+                        <h2 className="text-xl font-semibold mb-4">Select Your Appointment</h2>
+                        <p className="text-gray-600 mb-6">We found multiple appointments. Please select the one you'd like to check in for:</p>
+                        
+                        <div className="space-y-4">
+                            {availableAppointments.map((apt) => (
+                                <div 
+                                    key={apt.id} 
+                                    className="border rounded-md p-4 hover:bg-blue-50 cursor-pointer transition-colors duration-200 relative"
+                                    onClick={() => selectAppointment(apt)}
+                                >
+                                    <div className="flex flex-col md:flex-row md:justify-between">
+                                        <div className="mb-3 md:mb-0">
+                                            <div className="flex items-center mb-2">
+                                                <Calendar size={18} className="text-blue-900 mr-2" />
+                                                <span className="font-medium">
+                                                    {new Date(apt.appointmentDate).toLocaleDateString()} at {' '}
+                                                    {new Date(apt.appointmentTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <Car size={18} className="text-blue-900 mr-2" />
+                                                <span>
+                                                    {apt.car?.make} {apt.car?.model} ({apt.car?.year})
+                                                    {apt.car?.plateNumber && ` - ${apt.car.plateNumber}`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <div className="bg-blue-100 flex items-center justify-center text-blue-900 px-5 py-2 rounded-full text-sm capitalize">
+                                                Select
+                                                <ChevronRight size={20} className="text-blue-900" />    
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="flex justify-between mt-6">
+                            <button 
+                                onClick={() => {
+                                    setShowAppointmentModal(false);
+                                    setCurrentStep(0);
+                                }}
+                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <ChevronLeft size={16} className="mr-1" />
+                                Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="container mx-auto lg:px-4 px-0  lg:py-8 py-0 max-w-4xl">
             <PageHeader 
@@ -428,30 +519,37 @@ const CustomerCheckIn = () => {
             {/* Progress bar */}
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
-                    {steps.map((step, index) => (
-                        <div 
-                            key={index} 
-                            className="flex flex-col items-center relative"
-                        >
+                    {steps.map((step, index) => {
+                        // Determine if this step is active based on the current step
+                        const isActive = currentStep === index;
+                        
+                        return (
                             <div 
-                                className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStep === index ? 'bg-blue-900 text-white' : 
-                                    completedSteps.includes(index) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                key={index} 
+                                className="flex flex-col items-center relative"
                             >
-                                {completedSteps.includes(index) ? (
-                                    <Check size={20} />
-                                ) : (
-                                    index + 1
-                                )}
+                                <div 
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-blue-900 text-white' : 
+                                        completedSteps.includes(index) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                >
+                                    {completedSteps.includes(index) ? (
+                                        <Check size={20} />
+                                    ) : (
+                                        index + 1
+                                    )}
+                                </div>
+                                <span className="text-xs mt-2 text-center">{step}</span>
                             </div>
-                            <span className="text-xs mt-2 text-center">{step}</span>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 
                 <div className="relative pt-1">
                     <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
                         <div 
-                            style={{ width: `${(completedSteps.length / steps.length) * 100}%` }} 
+                            style={{ 
+                                width: `${(currentStep / (steps.length - 1)) * 100}%` 
+                            }} 
                             className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-900 transition-all duration-500"
                         ></div>
                     </div>
@@ -460,6 +558,9 @@ const CustomerCheckIn = () => {
             
             {/* Step content */}
             {renderStep()}
+            
+            {/* Appointment selection modal */}
+            {renderAppointmentModal()}
         </div>
     );
 };
