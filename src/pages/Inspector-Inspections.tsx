@@ -65,6 +65,8 @@ const MyInspections = () => {
 
 
 
+
+
   return (
     <div>
       <PageHeader 
@@ -152,13 +154,13 @@ const MyInspections = () => {
                       Scheduled: {formatDate(inspection.createdAt)}
                   </span>
                 </div>
-                {inspection?.BookAppointments?.customerCheckIn ? <button 
+                {inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/inspection-report/${inspection.id}`);
 
                             }}
-                            className="btn mt-3 btn-sm btn-primary flex items-center"
+                            className="btn mt-3  min-w-[175px] justify-center btn-sm btn-primary flex items-center"
                           >
                             Start Inspection
                           </button> : 
@@ -167,7 +169,7 @@ const MyInspections = () => {
                               e.preventDefault();
                               navigate(`/customer-checkin/${inspection.id}`);
                             }}
-                            className="btn mt-3 btn-sm btn-secondary flex items-center"
+                            className="btn mt-3 min-w-[175px] btn-sm btn-secondary flex items-center"
                           >
                             Customer Check In
                           </button>}
