@@ -41,17 +41,17 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   console.log(user);
   
-  // if (!user) {
-  //   return <Navigate to="/login" replace />;
-  // }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  // if(user.role == 'supervisor'){
-  //   return <Navigate to="/supervisor-inspections" replace />;
-  // }
+  if(user.role == 'supervisor'){
+    return <Navigate to="/supervisor-inspections" replace />;
+  }
   
-  // if (user.role == 'inspector') {
-  //   return <Navigate to="/my-inspections" replace />;
-  // }
+  if (user.role == 'inspector') {
+    return <Navigate to="/my-inspections" replace />;
+  }
   
   return <>{children}</>;
 };
