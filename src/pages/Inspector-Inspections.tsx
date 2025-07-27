@@ -154,7 +154,16 @@ const MyInspections = () => {
                       Scheduled: {formatDate(inspection.createdAt)}
                   </span>
                 </div>
-                {inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
+                {inspection?.inspectionStatus == 'Submit' ? <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                            
+
+                            }}
+                            className="btn mt-3  min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                          >
+                            QA Pending
+                          </button> :  inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/inspection-report/${inspection.id}`);

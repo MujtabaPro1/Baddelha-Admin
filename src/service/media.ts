@@ -23,7 +23,7 @@ export const createMedia = async (
 
   try {
     // Making an HTTP POST request with formData
-    const res = await axiosInstance.post("/api/1.0/media/upload", formData, {
+    const res = await axiosInstance.post("/1.0/media/upload", formData, {
       headers: {
         // Informing the server that the request contains form data
         "Content-Type": "multipart/form-data",
@@ -42,7 +42,7 @@ export const findAllMedia = async (search: string, page = 1, limit = 10) => {
       page: page.toString(),
       limit: limit.toString(),
     }).toString();
-    const res = await axiosInstance.get("/api/1.0/car/find-all?" + queryParams);
+    const res = await axiosInstance.get("/1.0/car/find-all?" + queryParams);
 
     return res.data;
   } catch (ex: any) {
@@ -51,7 +51,7 @@ export const findAllMedia = async (search: string, page = 1, limit = 10) => {
 };
 export const findMedia = async (carId: number) => {
   try {
-    const res = await axiosInstance.get("/api/1.0/car/find/" + carId);
+    const res = await axiosInstance.get("/1.0/car/find/" + carId);
 
     return res.data;
   } catch (ex: any) {
@@ -61,7 +61,7 @@ export const findMedia = async (carId: number) => {
 
 export const updateMedia = async (carId: string, body: any) => {
   try {
-    const res = await axiosInstance.put("/api/1.0/car/update/" + carId, body);
+    const res = await axiosInstance.put("/1.0/car/update/" + carId, body);
 
     return res.data;
   } catch (ex: any) {

@@ -35,6 +35,7 @@ const InspectionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<string[]>([]);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track if form is being submitted
   
   // Timer state - 30 minutes in seconds
   const [timeRemaining, setTimeRemaining] = useState(30 * 60);
@@ -148,6 +149,10 @@ const InspectionForm = () => {
 
 
   const onSubmit = handleSubmit(async (data) => {
+    // Only proceed if this is an actual submission (not just step navigation)
+    if (!isSubmitting) {
+      return;
+    }
 
     let result = {};
 
@@ -202,19 +207,20 @@ const InspectionForm = () => {
          }
     })
     data['overview'] = result;
-
-    const inspectionId = initialData?.id;
+ 
+    const inspectionId = params.id;
     const body = {
       buyingPrice: "",
       inspectionStatus: "",
       inspection: JSON.stringify(data),
+      carbody: partConditions,
     };
 
     setLoading(true);
 
     setSubmitState("Uploading Images");
     //upload document images
-    await uploadImages();
+   // await uploadImages();
 
     //upload car images
 
@@ -228,10 +234,11 @@ const InspectionForm = () => {
     } else {
       //redirect
       setHttpError(response.error);
-      toast.error("Inspectin failed to save");
+      toast.error("Inspection failed to save");
     }
 
     setLoading(false);
+    setIsSubmitting(false);
     setSubmitState("Inspection Saved");
   });
 
@@ -281,7 +288,7 @@ const InspectionForm = () => {
 
   const handleImageRemoveMedia = (field: any) => {
     if(confirm('Are you sure you want to delete?')) {
-      axiosInstance.get('/api/1.0/media/delete/' + field.id).then((res) => {
+      axiosInstance.get('/1.0/media/delete/' + field.id).then((res) => {
                     window.location.reload();
       }).catch((err) => {
         alert(err);
@@ -302,12 +309,12 @@ const InspectionForm = () => {
       
       {/* Countdown Timer */}
       <div className="mb-4 flex items-center justify-end">
-        <div className="flex items-center bg-gray-100 px-4 py-2 rounded-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center bg-blue-900 bg-opacity-10 px-4 py-2 rounded-lg shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-900 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-medium text-gray-800">
-            Time Remaining: <span className={`${timeRemaining < 300 ? 'text-red-600' : ''}`}>{formatTime(timeRemaining)}</span>
+            Time Remaining: <span className={`${timeRemaining < 300 ? 'text-red-600 font-bold' : 'text-blue-900'}`}>{formatTime(timeRemaining)}</span>
           </span>
         </div>
       </div>
@@ -335,11 +342,10 @@ const InspectionForm = () => {
             <div className="relative w-full h-6 bg-gray-200 rounded-md overflow-hidden">
             
               <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-800 to-blue-900 bg-stripes" 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-900 to-blue-800" 
                 style={{ 
-                  width: `${(completedSteps.length / steps.length) * 100}%`,
-                  backgroundSize: '20px 20px',
-                  backgroundColor: 'blue'
+                  width: `${((currentStep + 1) / steps.length) * 100}%`,
+                  transition: 'width 0.3s ease-in-out'
                 }}
               />
             </div>
@@ -349,7 +355,7 @@ const InspectionForm = () => {
         </div>
       )}
       
-      {httpError && <div className="text-red">{JSON.stringify(httpError)}</div>}
+      {httpError && <div className="text-red text-center text-danger">{JSON.stringify(httpError)}</div>}
 
       <form onSubmit={onSubmit}>
         {initialData && initialData?.map((i: any, index: number) => {
@@ -769,14 +775,15 @@ const InspectionForm = () => {
         </div>: <></>}
 
         {/* Navigation and submit buttons */}
-        <div className="flex justify-between mt-10">
-          <div className="flex items-center">
-            {submitState && (
+        {submitState && (
               <>
                 <h4>Saving..</h4>
                 <p>{submitState}</p>
               </>
             )}
+        <div className="flex justify-between mt-10">
+     
+          <div className="flex items-center">
             
             {/* Previous button */}
             {currentStep > 0 && (
@@ -804,7 +811,7 @@ const InspectionForm = () => {
                   // Move to next step
                   setCurrentStep(prev => prev + 1);
                 }}
-                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
+                className="inline-flex items-center justify-center rounded-md bg-blue-900 px-4 py-2 text-center font-medium text-white hover:bg-blue-800"
               >
                 Next
                 <ChevronRight size={16} className="ml-1" />
@@ -814,7 +821,8 @@ const InspectionForm = () => {
               <button 
                 disabled={loading} 
                 type="submit" 
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+                onClick={() => setIsSubmitting(true)}
+                className="inline-flex items-center justify-center rounded-md bg-blue-900 px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
               >
                 {loading ? "Saving..." : "Submit"}
               </button>
