@@ -220,7 +220,7 @@ const InspectionForm = () => {
 
     setSubmitState("Uploading Images");
     //upload document images
-   // await uploadImages();
+    await uploadImages();
 
     //upload car images
 
@@ -355,7 +355,23 @@ const InspectionForm = () => {
         </div>
       )}
       
-      {httpError && <div className="text-red text-center text-danger">{JSON.stringify(httpError)}</div>}
+      {httpError && (
+        <div className="p-4 mb-4 rounded-md bg-red-50 border-l-4 border-red-500">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="text-sm text-red-700">
+                {typeof httpError === 'object' ? JSON.stringify(httpError) : httpError}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={onSubmit}>
         {initialData && initialData?.map((i: any, index: number) => {
@@ -776,11 +792,26 @@ const InspectionForm = () => {
 
         {/* Navigation and submit buttons */}
         {submitState && (
-              <>
-                <h4>Saving..</h4>
-                <p>{submitState}</p>
-              </>
-            )}
+          <div className="my-4 p-4 rounded-md bg-blue-50 border border-blue-200">
+            <div className="flex items-center">
+              <div className="mr-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-900"></div>
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-900">Saving...</h4>
+                <div className="mt-1">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-900 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ width: submitState.includes('%') ? submitState : '100%' }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-blue-700 mt-1">{submitState}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between mt-10">
      
           <div className="flex items-center">
