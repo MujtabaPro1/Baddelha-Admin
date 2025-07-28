@@ -44,7 +44,32 @@ const InspectionForm = () => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [hoveredPart, setHoveredPart] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  // Initialize all car parts with "original" condition
   const [partConditions, setPartConditions] = useState<Record<string, string>>({});
+
+  // List of all car parts from CarBodySvg
+  const carParts = [
+    'c_n_wing_rear_left',
+    'c_n_door_front_left',
+    'c_n_door_rear_left',
+    'c_n_wing_front_left',
+    'c_n_boot',
+    'c_n_windscreen',
+    'c_n_rear_screen',
+    'c_n_bumper_front',
+    'c_n_bumber_rear',
+    'c_n_bonnet',
+    'c_n_roof',
+    'c_n_front_left_window',
+    'c_n_wing_rear_right',
+    'c_n_door_front_right',
+    'c_n_door_rear_right',
+    'c_n_wing_front_right',
+    'c_n_front_right_window',
+    'c_n_rear_left_window',
+    'c_n_rear_right_window',
+    'c_sunroof_moonroof'
+  ];
 
  
 
@@ -73,6 +98,13 @@ const InspectionForm = () => {
 
   useEffect(()=>{
      getInspectionData();
+     
+     // Initialize all car parts with "original" condition
+     const initialPartConditions: Record<string, string> = {};
+     carParts.forEach(part => {
+       initialPartConditions[part] = 'original';
+     });
+     setPartConditions(initialPartConditions);
   },[]);
   
   // Update form values when defaultValues change
@@ -378,10 +410,7 @@ const InspectionForm = () => {
           // Only render the current step
           if (index !== currentStep) return null;
 
-          console.log("here",i.name);
-
           if(i.name == 'Car Body Condition'){
-            console.log("here",i.name);
             return (
               <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] flex w-full justify-center items-center">
                 <CarBodySvg
