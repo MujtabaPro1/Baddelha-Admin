@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -31,10 +32,7 @@ const Inspections = () => {
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [inspectors, setInspectors] = useState<Inspector[]>([]);
-  const [loadingInspectors, setLoadingInspectors] = useState<boolean>(false);
-  const [currentInspection, setCurrentInspection] = useState<any>(null);
+  const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -67,19 +65,7 @@ const Inspections = () => {
     }
   };
   
-  const fetchInspectorsByBranch = async (branchId: number) => {
-    setLoadingInspectors(true);
-    try {
-      const response = await axiosInstance.get(`/1.0/inspector/branch/${branchId}`);
-      setInspectors(response.data);
-    } catch (err) {
-      console.error('Error fetching inspectors:', err);
-    } finally {
-      setLoadingInspectors(false);
-    }
-  };
-  
- 
+
   
 
   // Filter inspections based on user role
@@ -208,7 +194,9 @@ const Inspections = () => {
                   <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
                 </div>
                 
-                {inspection?.inspectionStatus == 'Submit' ? <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-primary text-white px-2 py-1 rounded">
+                {inspection?.inspectionStatus == 'Submit' ? <div 
+                onClick={() => navigate(`/inspections/${inspection.id}`)}
+                className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-primary text-white px-2 py-1 rounded">
                     <Eye className="mr-1 h-4 w-4"/> Inspection
                  </div> : <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-danger text-white px-2 py-1 rounded">
                     <Loader className="mr-1 h-4 w-4"/> In Progress
