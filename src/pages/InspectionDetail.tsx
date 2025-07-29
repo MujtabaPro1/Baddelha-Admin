@@ -98,7 +98,7 @@ const ViewInspectionPage = () => {
 
   let inspection = null;
     if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-      return <p>Unable to load inspection</p>
+      return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
     }else if(data && data?.inspection?.inspectionJson){
       inspection = JSON.parse(data?.inspection?.inspectionJson);
     }
