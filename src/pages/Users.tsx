@@ -1,73 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
 import { User } from '../types';
+import axiosInstance from '../service/api';
 
-// Mock data for users
-const mockUsers: User[] = [
-  { 
-    id: '1', 
-    name: 'Ahmed Mohammed', 
-    email: 'ahmed@example.com', 
-    phone: '+966 50 123 4567',
-    role: 'customer',
-    status: 'active',
-    createdAt: '2023-05-15T08:30:00Z'
-  },
-  { 
-    id: '2', 
-    name: 'Fatima Al-Saud', 
-    email: 'fatima@example.com', 
-    phone: '+966 55 987 6543',
-    role: 'customer',
-    status: 'active',
-    createdAt: '2023-07-22T14:45:00Z'
-  },
-  { 
-    id: '3', 
-    name: 'Mohammed Abdullah', 
-    email: 'mohammed@example.com', 
-    phone: '+966 54 456 7890',
-    role: 'dealer',
-    status: 'active',
-    createdAt: '2023-06-10T11:20:00Z'
-  },
-  { 
-    id: '4', 
-    name: 'Nora Al-Qahtani', 
-    email: 'nora@example.com', 
-    phone: '+966 56 234 5678',
-    role: 'customer',
-    status: 'inactive',
-    createdAt: '2023-08-05T09:15:00Z'
-  },
-  { 
-    id: '5', 
-    name: 'Khalid Al-Harbi', 
-    email: 'khalid@example.com', 
-    phone: '+966 53 876 5432',
-    role: 'dealer',
-    status: 'active',
-    createdAt: '2023-04-30T16:40:00Z'
-  },
-];
+
 
 const Users = () => {
-  const [users] = useState<User[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.phone.includes(searchQuery);
-    
-    const matchesRole = selectedRole === '' || user.role === selectedRole;
-    
-    return matchesSearch && matchesRole;
-  });
+  useEffect(()=>{
+      getUsers();
+  },[]);
+
+  const getUsers = () => {
+    setLoading(true);
+    axiosInstance.get('/1.0/user/find-all').then((res)=>{
+      setLoading(false);
+      setUsers(res.data.data);
+    }).catch((err)=>{
+      setLoading(false);
+      console.log(err);
+    })
+  }
+
+
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -144,36 +105,36 @@ const Users = () => {
               <th>Role</th>
               <th>Joined</th>
               <th>Status</th>
-              <th>Actions</th>
+              {/* <th>Actions</th> */}
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
+            {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50 animated-transition">
-                <td className="font-medium text-gray-900">{user.name}</td>
+                <td className="font-medium text-gray-900">{user.firstName + ' ' + (user.lastName ? user.lastName : '')}</td>
                 <td>{user.email}</td>
                 <td>{user.phone}</td>
                 <td>
-                  <span className="capitalize">{user.role}</span>
+                  <span className="capitalize">{user.roleId == 1 ? 'Admin' : user.roleId == 3 ? 'Inspector' : user.roleId == 6 ? 'Supervisor' : 'Agent'}</span>
                 </td>
                 <td>{formatDate(user.createdAt)}</td>
                 <td>
                   <StatusBadge status={user.status} />
                 </td>
-                <td className="text-right">
+                {/* <td className="text-right">
                   <button className="text-sm text-blue-600 hover:text-blue-900 mr-3">
                     Edit
                   </button>
                   <button className="text-sm text-red-600 hover:text-red-900">
                     Delete
                   </button>
-                </td>
+                </td> */}
               </tr>
             ))}
           </tbody>
         </table>
         
-        {filteredUsers.length === 0 && (
+        {users.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-gray-500">No users found matching your criteria.</p>
           </div>

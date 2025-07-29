@@ -6,7 +6,9 @@ import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Search, Filter, Plus, RefreshCw, Calendar, MapPin, 
-  ChevronRight, AlertTriangle, Clock, User, X, UserPlus
+  ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
+  Eye,
+  Loader
 } from 'lucide-react';
 import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
@@ -43,13 +45,16 @@ const Inspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/1.0/book-appointment');
+      const response = await axiosInstance.get('/1.0/inspection/find-all');
      
-      const data = response?.data.map((a: any)=>{
+      const data = response?.data?.data?.map((a: any)=>{
         return {
           ...a,
           priority: 'high',
-          car: JSON.parse(a.carDetail),
+          Branch: {
+            enName: a?.Branch?.enName || 'Riyadh Tahlia Branch'
+          },
+          car: a?.Car
         }
       });
     
@@ -74,44 +79,8 @@ const Inspections = () => {
     }
   };
   
-  const handleAssignInspector = async (inspectorId: number) => {
-    try {
-
-      await axiosInstance.post('/1.0/inspection/assign-inspector', {
-        appointmentId: currentInspection.uid,
-        inspectorId: inspectorId
-      });
-      
-      // Update local state to reflect the assignment
-      const updatedInspections = inspections.map((inspection: any) => {
-        if (inspection.uid === currentInspection.uid) {
-          return { ...inspection, inspectorId };
-        }
-        return inspection;
-      });
-      
-      setInspections(updatedInspections);
-      setIsModalOpen(false);
-      fetchInspections();
-      
-      
-      // You might want to add a success notification here
-    } catch (err) {
-      console.error('Error assigning inspector:', err);
-      // You might want to add an error notification here
-    }
-  };
+ 
   
-  const openAssignModal = (inspection: any) => {
-    setCurrentInspection(inspection);
-    if (inspection.Branch?.id) {
-      fetchInspectorsByBranch(inspection.Branch.id);
-      setIsModalOpen(true);
-    } else {
-      console.error('No branch ID found for this inspection');
-      // You might want to add an error notification here
-    }
-  };
 
   // Filter inspections based on user role
   
@@ -122,25 +91,6 @@ const Inspections = () => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    if (priority === 'high') {
-      return <AlertTriangle className="h-4 w-4 mr-1" />;
-    }
-    return null;
-  };
 
   return (
     <div>
@@ -158,57 +108,7 @@ const Inspections = () => {
           )
         }
       />
-      
-      {/* Inspector Assignment Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-medium">Assign Inspector</h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="p-4 max-h-96 overflow-y-auto">
-              {loadingInspectors ? (
-                <div className="py-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading inspectors...</p>
-                </div>
-              ) : inspectors.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-gray-600">No inspectors found for this branch.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {inspectors.map((inspector) => (
-                    <div 
-                      key={inspector.id}
-                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleAssignInspector(inspector.id)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">{inspector.name}</p>
-                          <p className="text-sm text-gray-600">{inspector.email}</p>
-                          <p className="text-sm text-gray-600">{inspector.phone}</p>
-                        </div>
-                        <button className="btn btn-sm btn-primary">
-                          Assign
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+    
       
       {/* Filters and search */}
       <div className="mb-8 flex flex-col sm:flex-row gap-4">
@@ -286,13 +186,9 @@ const Inspections = () => {
                     <h3 className="text-lg font-medium text-gray-900">
                       {inspection.car.year} {inspection.car.make} {inspection.car.model}
                     </h3>
-                    <StatusBadge status={inspection.status} />
                   </div>
                   <div className="mt-1 flex items-center text-sm text-gray-600">
-                    <User className="h-4 w-4 mr-1" />
-                    <span>{inspection.firstName + ' ' + inspection.lastName}</span>
-                    <span className="mx-2">•</span>
-                    <span>{inspection.phone}</span>
+                      <StatusBadge status={inspection.inspectionStatus} />
                   </div>
                 </div>
               </div>
@@ -301,9 +197,9 @@ const Inspections = () => {
                 <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                    {inspection.appointmentDate ? 
-                      `Scheduled: ${formatDate(inspection.appointmentDate)}` :
-                      `Requested: ${formatDate(inspection.appointmentDate)}`
+                    {inspection.createdAt ? 
+                      `Scheduled: ${formatDate(inspection.createdAt)}` :
+                      `Requested: ${formatDate(inspection.createdAt)}`
                     }
                   </span>
                 </div>
@@ -311,6 +207,12 @@ const Inspections = () => {
                   <MapPin className="h-4 w-4 text-gray-500 mr-1" />
                   <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
                 </div>
+                
+                {inspection?.inspectionStatus == 'Submit' ? <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-primary text-white px-2 py-1 rounded">
+                    <Eye className="mr-1 h-4 w-4"/> Inspection
+                 </div> : <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-danger text-white px-2 py-1 rounded">
+                    <Loader className="mr-1 h-4 w-4"/> In Progress
+                 </div>}
               </div>
             </div>
             
@@ -323,23 +225,7 @@ const Inspections = () => {
               </div>
             )}
             
-            <div className="mt-4 flex justify-between items-center">
-              {inspection?.car?.make ? <div 
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-               {inspection?.car?.make} {inspection?.car?.model} {inspection?.car?.year}
-              </div> : <div className="text-gray-500 text-sm font-medium">No car details</div>}
-              
-             {inspection?.inspectorUserId == null && <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  openAssignModal(inspection);
-                }}
-                className="btn btn-sm btn-outline-primary flex items-center"
-              >
-                <UserPlus className="h-4 w-4 mr-1" /> Assign to Inspector
-              </button>}
-            </div>
+           
           </div>
         ))}
 
