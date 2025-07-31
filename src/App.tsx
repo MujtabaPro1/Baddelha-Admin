@@ -36,10 +36,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Admin-only route component
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+const AdminRoute = ({ children}: { children: React.ReactNode }) => {
   const { user } = useAuth();
 
-  console.log(user);
+  console.log(user,window.location.pathname);
+  
+  if(window.location.pathname.includes("/roles-permission/update")){
+    return <>{children}</>;
+  }
   
   if (!user) {
     return <Navigate to="/login" replace />;
