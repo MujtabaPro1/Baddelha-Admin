@@ -109,7 +109,7 @@ const ViewInspectionPage = () => {
     <>
       <div className={'w-full flex justify-end'}>
         <button
-            className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
+            className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} bg-primary rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
             aria-disabled={reportLoader}
             onClick={() => {
               downloadReport(params.id);
