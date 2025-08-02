@@ -245,7 +245,7 @@ const InspectionForm = () => {
       buyingPrice: "",
       inspectionStatus: "",
       inspection: JSON.stringify(data),
-      carbody: partConditions,
+      carbody: JSON.stringify(partConditions),
     };
 
     setLoading(true);
