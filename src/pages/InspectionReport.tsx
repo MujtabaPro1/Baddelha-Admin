@@ -287,7 +287,7 @@ const InspectionForm = () => {
       setSubmitState("Uploading Image " + field);
 
       const data = {
-        imageableId: initialData?.id,
+        imageableId: params.id,
         imageableType: "Inspection",
         fileCaption: field,
       };
