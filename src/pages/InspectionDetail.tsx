@@ -11,6 +11,8 @@ import { findInspection } from "../service/inspection";
 import axiosInstance from "../service/api";
 import { Check, File, Trash } from "lucide-react";
 import { useParams } from "react-router-dom";
+import CarBodySvg from "../components/CarBody";
+import CarBodySvgView from "../components/CarBodyView";
 
 
 const isEmpty = (obj: any) => {
@@ -96,18 +98,19 @@ const ViewInspectionPage = () => {
 
 
 
+   
   let inspection = null;
-    if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-      return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-    }else if(data && data?.inspection?.inspectionJson){
-      inspection = JSON.parse(data?.inspection?.inspectionJson);
-    }
-
+  if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
+    //return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
+    inspection = null;
+  }else if(data && data?.inspection?.inspectionJson){
+    inspection = data?.inspection?.inspectionJson;
+  }
 
 
   return (
     <>
-      <div className={'w-full flex justify-end'}>
+      {/* <div className={'w-full flex justify-end'}>
         <button
             className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} bg-primary rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
             aria-disabled={reportLoader}
@@ -126,7 +129,7 @@ const ViewInspectionPage = () => {
           { !reportLoader && 'Generate Report' }
         </button>
         {data?.inspection?.inspectionStatus == "Submit" ? <button
-            className="rounded-md bg-success flex items-center px-1 py-1 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-4"
+            className="rounded-md bg-blue-900 flex items-center px-1 py-1 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-4"
             onClick={() => {
 
 
@@ -147,7 +150,7 @@ const ViewInspectionPage = () => {
           &nbsp;
           Mark as Completed
         </button>: <></>}
-      </div>
+      </div> */}
 
       {data?.error && <div className="text-red"> {JSON.stringify(data.error)} </div>}
       {showGallery ? (
@@ -181,20 +184,27 @@ const ViewInspectionPage = () => {
         </div>
       ) : (
         <div>
-          <div className={"grid grid-cols-2 gap-4"}>
+          <div className={"grid grid-cols-2 gap-4 bg-white p-2"}>
             <div >
               <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] flex justify-between items-center"}>
                 <h1>Information</h1>
               </div>
 
-              {inspection && Object.keys(inspection).length &&  Object.keys(inspection).map((i, index) => {
+              {inspection && Object.keys(inspection).length ?
+              Object.keys(inspection).map((i, index) => {
+
+              if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
+                return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
+              }else if(data && data?.inspection?.inspectionJson){
+                inspection = data?.inspection?.inspectionJson;
+              }
 
                 if(i == 'overview'){
                   return <></>;
                 }
 
                 return (
-                    <div key={i + index}>
+                    <div key={i + index} >
                       <div className={'w-full'}>
                         <div className={"m-2  border-b border-b-[#F7F7F7] flex items-center justify-between"} key={i + index}>
                           <p className={"font-bold text-[#000] mt-1 mb-1"}>{i.replace(/_/g, " ")}</p>
@@ -203,7 +213,9 @@ const ViewInspectionPage = () => {
                       </div>
                     </div>
                   );
-                })}
+                }) : <>
+                <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
+                </>}
             </div>
 
             <div >
@@ -228,6 +240,8 @@ const ViewInspectionPage = () => {
                   )
                 })}
               </div>
+              <p className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] text-lg">Car Body Condition</p>
+              {data?.inspection?.carBodyConditionJson && <CarBodySvgView data={data?.inspection?.carBodyConditionJson}/>}
             </div>
           </div>
         </div>
