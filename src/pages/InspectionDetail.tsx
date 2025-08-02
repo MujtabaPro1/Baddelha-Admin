@@ -114,6 +114,11 @@ const ViewInspectionPage = () => {
             onClick={() => {
               downloadReport(params.id);
             }}
+            style={{
+              background: '#ececec',
+              padding: '10px',
+              border: '1px solid',
+            }}
         >
           <File/>
           &nbsp;
