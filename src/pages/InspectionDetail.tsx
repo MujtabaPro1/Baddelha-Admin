@@ -184,7 +184,7 @@ const ViewInspectionPage = () => {
         </div>
       ) : (
         <div>
-          <div className={"grid grid-cols-2 gap-4 bg-white p-2"}>
+          <div className={"grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white p-2"}>
             <div >
               <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] flex justify-between items-center"}>
                 <h1>Information</h1>
