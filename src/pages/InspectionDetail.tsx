@@ -37,30 +37,35 @@ const ViewInspectionPage = () => {
 
   const [reportLoader, setReportLoader] = useState(false);
   const downloadReport = async (inspectionId: string) => {
-    // try {
-    //   setReportLoader(true);
-    //   const response = await fetchReport({ inspectionId });
+    try {
+      setReportLoader(true);
+      const response = await axiosInstance.post("/1.0/report/generate/inspection-report",{
+        inspectionId
+      },{
+        responseType: "blob", 
+      });
 
-    //   const url = window.URL.createObjectURL(new Blob([response]));
-    //   const a = document.createElement("a");
-    //   a.href = url;
-    //   a.download = `inspection-report-${inspectionId}.pdf`; // Change the file name and extension as needed
-    //   document.body.appendChild(a);
-    //   a.click();
-    //   a.remove();
-    //   window.URL.revokeObjectURL(url);
-    // } catch (error: any) {
-    //   toast.error(error?.message || "Something went wrong");
-    //   console.error("Error downloading report:", error);
-    // } finally {
-    //   setReportLoader(false);
-    // }
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `inspection-report-${inspectionId}.pdf`; // Change the file name and extension as needed
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error downloading report:", error);
+    } finally {
+      setReportLoader(false);
+    }
   };
 
   const markAsCompleted = async (inspectionId: string) => {
     try {
       axiosInstance.get("/1.0/inspection/mark-as-completed/" + inspectionId).then((res)=>{
         alert("Successfully updated your status");
+        window.location.reload();
       }).catch((err)=>{
         console.log('err',err);
       })
@@ -110,7 +115,7 @@ const ViewInspectionPage = () => {
 
   return (
     <>
-      {/* <div className={'w-full flex justify-end'}>
+      <div className={'w-full flex justify-end mb-4'}>
         <button
             className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} bg-primary rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
             aria-disabled={reportLoader}
@@ -150,7 +155,7 @@ const ViewInspectionPage = () => {
           &nbsp;
           Mark as Completed
         </button>: <></>}
-      </div> */}
+      </div>
 
       {data?.error && <div className="text-red"> {JSON.stringify(data.error)} </div>}
       {showGallery ? (

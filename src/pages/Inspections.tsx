@@ -8,7 +8,8 @@ import {
   Search, Filter, Plus, RefreshCw, Calendar, MapPin, 
   ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
   Eye,
-  Loader
+  Loader,
+  Check
 } from 'lucide-react';
 import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
@@ -198,6 +199,8 @@ const Inspections = () => {
                 onClick={() => navigate(`/inspections/${inspection.id}`)}
                 className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-primary text-white px-2 py-1 rounded">
                     <Eye className="mr-1 h-4 w-4"/> Inspection
+                 </div> : inspection?.inspectionStatus == 'Completed' ? <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer bg-green-500 text-white px-2 py-1 rounded">
+                    <Check className="mr-1 h-4 w-4"/> Completed
                  </div> : <div className="w-full flex items-center justify-center text-center mt-4 cursor-pointer btn-danger text-white px-2 py-1 rounded">
                     <Loader className="mr-1 h-4 w-4"/> In Progress
                  </div>}
