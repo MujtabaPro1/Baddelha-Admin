@@ -9,7 +9,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import { findInspection } from "../service/inspection";
 import axiosInstance from "../service/api";
-import { Check, File, Trash } from "lucide-react";
+import { Check, File, ShieldCloseIcon, TimerResetIcon, Trash } from "lucide-react";
 import { useParams } from "react-router-dom";
 import CarBodySvg from "../components/CarBody";
 import CarBodySvgView from "../components/CarBodyView";
@@ -22,7 +22,8 @@ const isEmpty = (obj: any) => {
 const ViewInspectionPage = () => {
   const [data, setData] = useState<any>(null);
   const params = useParams();
-
+  let _imageGallery1 = useRef<any>(null); 
+  
 
 
 
@@ -165,9 +166,9 @@ const ViewInspectionPage = () => {
                   setShowGallery(!showGallery);
                 }}
                 type="button"
-                className="button"
+                className="button cursor-pointer"
               >
-                <Trash size={30} color={"white"} />
+                 <p className="text-white font-bold text-2xl">X</p>
               </button>
             </div>
             <ImageGallery
