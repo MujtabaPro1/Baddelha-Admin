@@ -39,9 +39,7 @@ const ViewInspectionPage = () => {
   const downloadReport = async (inspectionId: string) => {
     try {
       setReportLoader(true);
-      const response = await axiosInstance.post("/1.0/report/generate/inspection-report",{
-        inspectionId
-      },{
+      const response = await axiosInstance.get("/1.0/report/inspection/" + inspectionId,{
         responseType: "blob", 
       });
 
