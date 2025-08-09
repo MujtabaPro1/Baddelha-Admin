@@ -170,7 +170,9 @@ const MyInspections = () => {
                           
 
                           }}
-                          className="btn mt-3  min-w-[175px] justify-center btn-sm bg-[#f7cb73] flex items-center"
+                          className="btn mt-3 
+                          text-white
+                          min-w-[175px] justify-center btn-sm bg-[#f7cb73] flex items-center"
                         >
                           Offer Pending
                         </button>
