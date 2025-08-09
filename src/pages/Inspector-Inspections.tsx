@@ -163,7 +163,18 @@ const MyInspections = () => {
                             className="btn mt-3  min-w-[175px] justify-center btn-sm btn-danger flex items-center"
                           >
                             QA Pending
-                          </button> :  inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
+                          </button> : inspection?.inspectionStatus == 'Completed' ? 
+                          <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                          
+
+                          }}
+                          className="btn mt-3  min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                        >
+                          Offer Generate Pending
+                        </button>
+                          :   inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(`/inspection-report/${inspection.id}`);
