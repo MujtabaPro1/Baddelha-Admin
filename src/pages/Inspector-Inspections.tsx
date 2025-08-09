@@ -172,7 +172,7 @@ const MyInspections = () => {
                           }}
                           className="btn mt-3  min-w-[175px] justify-center btn-sm btn-warning flex items-center"
                         >
-                          Offer Generate Pending
+                          Offer Pending
                         </button>
                           :   inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
                             onClick={(e) => {
