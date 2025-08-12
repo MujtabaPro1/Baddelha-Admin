@@ -82,7 +82,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'inspector' | 'call-center' | 'supervisor';
+  role: 'admin' | 'inspector' | 'call-center' | 'supervisor' | 'qa' | 'sale';
 }
 
 

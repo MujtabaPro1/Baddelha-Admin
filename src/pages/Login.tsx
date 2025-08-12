@@ -24,6 +24,15 @@ const Login = () => {
       if(user.role === 'call-center'){
         navigate('/dashboard/call-center');
       }
+
+      if(user.role === 'qa'){
+        navigate('/inspections');
+      }
+      
+      if(user.role === 'sale'){
+        navigate('/cars');
+      }
+      
       else {
         navigate('/');
       }
@@ -34,6 +43,8 @@ const Login = () => {
     e.preventDefault();
     const role = await login(email, password);
 
+
+   
     
     if (role) {
       // Navigate based on user role
@@ -45,6 +56,12 @@ const Login = () => {
       }
       if(role == 'call-center'){
         navigate('/call-center');
+      }
+      if(role == 'qa'){
+        navigate('/dashboard/inspections');
+      }
+      if(role == 'sale'){
+        navigate('/cars');
       }
       else {
         navigate('/');

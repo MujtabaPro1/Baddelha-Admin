@@ -22,6 +22,21 @@ const Layout = () => {
       ];
     }
 
+    if (user?.role === 'qa') {
+      return [
+        { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+        { name: 'Cars', href: '/cars', icon: Calendar },
+      ];
+    }
+
+    if (user?.role === 'sale') {
+      return [
+        { name: 'Cars', href: '/cars', icon: Calendar },
+      ];
+    }
+
+
+
     if (user?.role === 'supervisor') {
       return [
         { name: 'Inspections', href: '/supervisor-inspections', icon: ClipboardCheck },

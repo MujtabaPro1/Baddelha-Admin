@@ -56,6 +56,17 @@ const AdminRoute = ({ children}: { children: React.ReactNode }) => {
   if (user.role == 'inspector') {
     return <Navigate to="/my-inspections" replace />;
   }
+
+  if(user.role == 'qa'){
+    return <Navigate to="/inspections" replace />;
+  }
+
+  if(user.role == 'sale'){
+    return <Navigate to="/cars" replace />;
+  }
+
+  
+
   
   return <>{children}</>;
 };
@@ -107,11 +118,6 @@ function App() {
                 <Users />
               </AdminRoute>
             } />
-            <Route path="cars" element={
-              <AdminRoute>
-                <Cars />
-              </AdminRoute>
-            } />
             <Route path="appointments" element={
               <AdminRoute>
                 <Appointments />
@@ -137,6 +143,7 @@ function App() {
       
 
             <Route path="inspections" element={<Inspections />} />
+            <Route path="cars" element={<Cars/>}/>
             <Route path="supervisor-inspections" element={<SupervisorInspections />} />
             <Route path="my-inspections" element={<MyInspections />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />

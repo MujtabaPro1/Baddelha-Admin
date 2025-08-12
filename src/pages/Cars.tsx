@@ -102,11 +102,6 @@ const Cars = () => {
       <PageHeader 
         title="Cars" 
         description="Manage all cars in the Baddelha inventory"
-        actions={
-          <button className="btn btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-1" /> Add Car
-          </button>
-        }
       />
       
       {/* Filters and search */}
