@@ -1,100 +1,70 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
-import { Car } from '../types';
 
-// Mock data for cars
-const mockCars: Car[] = [
-  { 
-    id: '1', 
-    make: 'Toyota', 
-    model: 'Camry',
-    year: 2022,
-    price: 110000,
-    condition: 'new',
-    mileage: 0,
-    fuelType: 'Petrol',
-    transmission: 'automatic',
-    color: 'White',
-    status: 'available',
-    thumbnailUrl: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  { 
-    id: '2', 
-    make: 'Honda', 
-    model: 'Accord',
-    year: 2021,
-    price: 95000,
-    condition: 'used',
-    mileage: 25000,
-    fuelType: 'Petrol',
-    transmission: 'automatic',
-    color: 'Black',
-    status: 'sold',
-    thumbnailUrl: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  { 
-    id: '3', 
-    make: 'Nissan', 
-    model: 'Patrol',
-    year: 2023,
-    price: 235000,
-    condition: 'new',
-    mileage: 0,
-    fuelType: 'Petrol',
-    transmission: 'automatic',
-    color: 'Silver',
-    status: 'available',
-    thumbnailUrl: 'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  { 
-    id: '4', 
-    make: 'Mercedes-Benz', 
-    model: 'C-Class',
-    year: 2020,
-    price: 180000,
-    condition: 'used',
-    mileage: 45000,
-    fuelType: 'Petrol',
-    transmission: 'automatic',
-    color: 'Blue',
-    status: 'pending',
-    thumbnailUrl: 'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  { 
-    id: '5', 
-    make: 'Hyundai', 
-    model: 'Sonata',
-    year: 2021,
-    price: 85000,
-    condition: 'used',
-    mileage: 30000,
-    fuelType: 'Petrol',
-    transmission: 'automatic',
-    color: 'Red',
-    status: 'available',
-    thumbnailUrl: 'https://images.pexels.com/photos/112460/pexels-photo-112460.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-];
+import axiosInstance from '../service/api';
+
+
 
 const Cars = () => {
-  const [cars] = useState<Car[]>(mockCars);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCondition, setSelectedCondition] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any | null>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
 
-  const filteredCars = cars.filter((car) => {
-    const searchStr = `${car.make} ${car.model} ${car.year}`.toLowerCase();
+  useEffect(()=>{
+    fetchCars();
+  },[]);
+
+  async function fetchCars() {
+    setLoading(true);
+    try {
+      //let search = "";
+      const resp = await axiosInstance.get("/1.0/car/find-all", {
+        params: {
+          search,
+          page,
+          limit,
+        },
+      });
+
+      console.log(resp);
+      if (resp.data.error) {
+        setError(resp.data);
+      } else {
+        setData(resp.data.data);
+        setTotalCount(resp.data.totalCount);
+      }
+    } catch (ex: unknown) {
+      setError(ex);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  const filteredCars = data.filter((car) => {
+    const searchStr = `${car.make} ${car.model} ${car.modelYear}`.toLowerCase();
     const matchesSearch = searchStr.includes(searchQuery.toLowerCase());
-    const matchesCondition = selectedCondition === '' || car.condition === selectedCondition;
-    const matchesStatus = selectedStatus === '' || car.status === selectedStatus;
     
-    return matchesSearch && matchesCondition && matchesStatus;
+    // Adjust filtering based on the new API response structure
+    return matchesSearch;
   });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+    setSearch(e.target.value);
+  };
+  
+  const handleRefresh = () => {
+    fetchCars();
   };
 
   return (
@@ -150,7 +120,10 @@ const Cars = () => {
               <option value="pending">Pending</option>
             </select>
           </div>
-          <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+          <button 
+            onClick={handleRefresh}
+            className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+          >
             <RefreshCw className="h-5 w-5 text-gray-600" />
           </button>
         </div>
@@ -158,65 +131,71 @@ const Cars = () => {
       
       {/* Cars grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCars.map((car) => (
-          <div key={car.id} className="card overflow-hidden group hover:shadow-md transition-shadow duration-300">
-            <div className="h-48 bg-gray-200 overflow-hidden">
-              <img 
-                src={car.thumbnailUrl}
-                alt={`${car.year} ${car.make} ${car.model}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="p-5">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {car.year} {car.make} {car.model}
-                </h3>
-                <StatusBadge status={car.status} />
-              </div>
-              <p className="mt-2 text-xl font-bold text-blue-800">
-                SAR {car.price.toLocaleString()}
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <span>Condition:</span>
-                  <span className="ml-1 capitalize font-medium">{car.condition}</span>
-                </div>
-                <div className="flex items-center">
-                  <span>Mileage:</span>
-                  <span className="ml-1 font-medium">
-                    {car.mileage.toLocaleString()} km
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span>Fuel:</span>
-                  <span className="ml-1 font-medium">{car.fuelType}</span>
-                </div>
-                <div className="flex items-center">
-                  <span>Transmission:</span>
-                  <span className="ml-1 capitalize font-medium">
-                    {car.transmission}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end space-x-2">
-                <button className="text-sm text-blue-600 hover:text-blue-900">
-                  Edit
-                </button>
-                <button className="text-sm text-red-600 hover:text-red-900">
-                  Delete
-                </button>
-              </div>
-            </div>
+        {loading ? (
+          <div className="col-span-3 py-12 text-center">
+            <p className="text-blue-900 font-medium">Loading cars...</p>
           </div>
-        ))}
+        ) : filteredCars.length > 0 ? (
+          filteredCars.map((car) => (
+            <div key={car.id} className="card overflow-hidden group hover:shadow-md transition-shadow duration-300">
+              <div className="h-48 bg-gray-200 overflow-hidden">
+                {car.coverImage ? (
+                  <img 
+                    src={car.coverImage}
+                    alt={`${car.modelYear} ${car.make} ${car.model}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <img 
+                    src="https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"
+                    alt={`${car.modelYear} ${car.make} ${car.model}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                )}
+              </div>
+              <div className="p-5">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {car.modelYear} {car.make} {car.model}
+                  </h3>
+                  <StatusBadge status={car.carStatus == 'pending_inspection' ? 'pending' : 'available'} />
+                </div>
+                <p className="mt-2 text-xl font-bold text-blue-800">
+                  {car.sellingPrice ? `SAR ${Number(car.sellingPrice).toLocaleString()}` : 
+                   car.bookValue ? `SAR ${Number(car.bookValue).toLocaleString()}` : 'Price not set'}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600">
+                  <div className="flex items-center">
+                    <span>Engine:</span>
+                    <span className="ml-1 capitalize font-medium">{car.engine || car.engineType || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span>Mileage:</span>
+                    <span className="ml-1 font-medium">
+                      {car.mileage ? `${car.mileage.toLocaleString()} km` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span>Body:</span>
+                    <span className="ml-1 font-medium">{car.bodyType || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span>Gear:</span>
+                    <span className="ml-1 capitalize font-medium">
+                      {car.gearType || 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-3 py-12 text-center bg-white rounded-lg shadow-sm">
+            <p className="text-gray-500">No cars found matching your criteria.</p>
+          </div>
+        )}
       </div>
-      
-      {filteredCars.length === 0 && (
-        <div className="py-12 text-center bg-white rounded-lg shadow-sm">
-          <p className="text-gray-500">No cars found matching your criteria.</p>
-        </div>
-      )}
     </div>
   );
 };
