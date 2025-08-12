@@ -22,7 +22,7 @@ const Login = () => {
       }
       
       if(user.role === 'call-center'){
-        navigate('/dashboard/call-center');
+        navigate('/call-center');
       }
 
       if(user.role === 'qa'){

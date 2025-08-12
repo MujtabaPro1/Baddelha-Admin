@@ -65,6 +65,10 @@ const AdminRoute = ({ children}: { children: React.ReactNode }) => {
     return <Navigate to="/cars" replace />;
   }
 
+  if(user.role == 'call-center'){
+    return <Navigate to="/call-center" replace />;
+  }
+
   
 
   
