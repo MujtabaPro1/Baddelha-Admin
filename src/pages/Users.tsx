@@ -115,7 +115,7 @@ const Users = () => {
                 <td>{user.email}</td>
                 <td>{user.phone}</td>
                 <td>
-                  <span className="capitalize">{user.roleId == 1 ? 'Admin' : user.roleId == 3 ? 'Inspector' : user.roleId == 6 ? 'Supervisor' :  user?.roleId == 7 ? 'Seller' : user?.roleId == 5 ? 'Support Agent' :  'QA'}</span>
+                  <span className="capitalize">{user.role}</span>
                 </td>
                 <td>{formatDate(user.createdAt)}</td>
                 <td>
