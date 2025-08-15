@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
 
 import axiosInstance from '../service/api';
-
+import { useNavigate } from 'react-router-dom';
 
 
 const Cars = () => {
@@ -18,6 +18,8 @@ const Cars = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
+
 
   useEffect(()=>{
     fetchCars();
@@ -137,7 +139,9 @@ const Cars = () => {
           </div>
         ) : filteredCars.length > 0 ? (
           filteredCars.map((car) => (
-            <div key={car.id} className="card overflow-hidden group hover:shadow-md transition-shadow duration-300">
+            <div
+            onClick={() => navigate(`/cars/details/${car.id}`)}
+            key={car.id} className="card overflow-hidden group hover:shadow-md transition-shadow duration-300">
               <div className="h-48 bg-gray-200 overflow-hidden">
                 {car.coverImage ? (
                   <img 
