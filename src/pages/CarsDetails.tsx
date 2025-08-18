@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, ArrowUp, Clock10 } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 
 const CarsDetails = () => {
@@ -129,6 +129,90 @@ const CarsDetails = () => {
     );
   }
 
+
+  const markCarAsListed = async (carId: string) => {
+    try {
+
+        // let newPrice = Number(initialData.sellingPrice);
+
+        // if(initialData.carStatus == "unlisted"){
+        //   newPrice = Number(initialData.sellingPrice) * 1.02;
+        //   }else{
+        //   newPrice = Number(initialData.sellingPrice) * 1.05;
+        //   }
+
+
+        axiosInstance.put("/1.0/car/update/" + carId, {
+          carStatus: 'listed',
+          auctionEndTime: null,
+        }).then((res) => {
+          alert("Successfully updated your status");
+
+          setTimeout(()=>{
+            window.location.reload()
+          },1000);
+
+        }).catch((err) => {
+          console.log('err', err);
+        })
+
+
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error listing Car:", error);
+    }
+  }
+
+  const markCarAsAuctionListed = async (carId: string) => {
+    try {
+
+
+       // const newPrice =  Number(initialData.sellingPrice) * 1.10;
+
+        axiosInstance.put("/1.0/car/pushForAuction/" + carId, {
+          carStatus: 'listed',
+        }).then((res) => {
+          alert("Successfully updated your status");
+
+          setTimeout(()=>{
+              window.location.reload()
+          },1000);
+
+        }).catch((err) => {
+          console.log('err', err);
+        })
+
+
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error listing Car:", error);
+    }
+  }
+
+  const markCarStatus = async (carId: string,status:string) => {
+    try {
+
+      axiosInstance.put("/1.0/car/update/" + carId, {
+        carStatus: status,
+      }).then((res) => {
+
+        setTimeout(()=>{
+          window.location.reload()
+        },1000);
+
+      }).catch((err) => {
+        console.log('err', err);
+      })
+
+
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error listing Car:", error);
+    }
+  }
+
+
+
   return (
     <div>
      
@@ -137,6 +221,67 @@ const CarsDetails = () => {
         description={`Car ID: ${params.id}`}
       />
       
+
+
+        {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
+          <div className={'w-75 flex items-end justify-end'}>
+           <div onClick={()=>{
+             if(confirm("Are you sure you want to push this car for listing")) {
+               markCarAsListed(carDetails?.id);
+             }
+           }} className={'flex border bg-[#5cb85c] border-success p-2 rounded-md text-center text-white items-center cursor-pointer justify-center'}>
+             <ArrowUp/>&nbsp;
+             <div >Push to Listing</div>
+           </div>
+
+           <div onClick={()=>{
+             if(confirm("Are you sure you want to push this car for auction")) {
+               markCarAsAuctionListed(carDetails?.id);
+             }
+           }} className={`border bg-[#e9d502] cursor-pointer  p-2 flex items-center justify-center rounded-md text-center text-white ml-1 mr-1`}>
+             <Clock10/>&nbsp;
+             <div >
+               Push to Auction</div>
+           </div>
+           </div>
+
+            : <></>}
+             <div className={'w-75 flex items-end justify-end'}>
+             {carDetails?.carStatus == 'listed' || carDetails?.carStatus == 'hold' || carDetails?.carStatus == 'sold' || carDetails?.carStatus == 'returned'     ?  <div className={'flex items-center'}><div className={`mr-1 border-2 border-red-500 p-2 rounded-md text-center text-red-500`}>
+          <button onClick={()=>{
+            if(confirm("Are you sure you want to unlist this car from listing")) {
+              markCarStatus(carDetails?.id,'unlisted');
+            }
+
+          }}>Unlist the Car</button>
+        </div>
+            <div className={`border-blue-500 border-2 text-blue-500 ml-1 mr-1 p-2 rounded-md text-center`}>
+              <button onClick={()=>{
+                if(confirm("Are you sure you want to mark as reserved")) {
+                  markCarStatus(carDetails?.id,'hold');
+                }
+              }}>Mark as Reserved</button>
+            </div>
+              <div className={`border-gray-500 border-2 text-gray-500  ml-1 mr-1 p-2 rounded-md text-center `}>
+                <button onClick={()=>{
+                  if(confirm("Are you sure you want to mark as sold")) {
+                    markCarStatus(carDetails?.id,'sold');
+                  }
+                }}>Mark as Sold</button>
+              </div>
+              <div className={`border-black border-2 text-black  ml-1 mr-1 p-2 rounded-md text-center`}>
+                <button onClick={()=>{
+                  if(confirm("Are you sure you want to mark as hold")) {
+                    markCarStatus(carDetails?.id,'returned');
+                  }
+                }}>Mark as Returned</button>
+              </div>
+            </div>
+
+            : <></>}
+</div> 
+     
+
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
