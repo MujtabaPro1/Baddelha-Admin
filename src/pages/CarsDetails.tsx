@@ -165,22 +165,24 @@ const CarsDetails = () => {
 
   const markCarAsAuctionListed = async (carId: string) => {
     try {
+      // Get the selling price from initialData
+      const startPrice = Number(carDetails.bookValue);
+      const durationInMinutes = 30; // Default auction duration
 
+      axiosInstance.post("/1.0/auction/push", {
+        carId: carId,
+        startPrice: startPrice,
+        durationInMinutes: durationInMinutes
+      }).then((res) => {
+        alert("Successfully pushed car to auction");
 
-       // const newPrice =  Number(initialData.sellingPrice) * 1.10;
+        setTimeout(()=>{
+            window.location.reload()
+        },1000);
 
-        axiosInstance.put("/1.0/car/pushForAuction/" + carId, {
-          carStatus: 'listed',
-        }).then((res) => {
-          alert("Successfully updated your status");
-
-          setTimeout(()=>{
-              window.location.reload()
-          },1000);
-
-        }).catch((err) => {
-          console.log('err', err);
-        })
+      }).catch((err) => {
+        console.log('err', err);
+      })
 
 
     } catch (error: any) {

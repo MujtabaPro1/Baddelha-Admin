@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, Clock } from 'lucide-react';
 
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ const Cars = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any | null>(null);
   const [data, setData] = useState<any[]>([]);
+  const [auctionCars, setAuctionCars] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -23,7 +24,28 @@ const Cars = () => {
 
   useEffect(()=>{
     fetchCars();
+    fetchAuctionCars();
   },[]);
+
+  async function fetchAuctionCars() {
+    try {
+      const resp = await axiosInstance.get("/1.0/auction", {
+        params: {
+          search,
+          page,
+          limit,
+        },
+      });
+
+      if (resp.data.error) {
+        setError(resp.data);
+      } else {
+        setAuctionCars(resp.data || []);
+      }
+    } catch (ex: unknown) {
+      console.error('Error fetching auction cars:', ex);
+    }
+  }
 
   async function fetchCars() {
     setLoading(true);
@@ -67,13 +89,14 @@ const Cars = () => {
   
   const handleRefresh = () => {
     fetchCars();
+    fetchAuctionCars();
   };
 
   return (
     <div>
       <PageHeader 
-        title="Cars" 
-        description="Manage all cars in the Baddelha inventory"
+        title="Cars & Auctions" 
+        description="Manage all cars and auctions in the Baddelha inventory"
       />
       
       {/* Filters and search */}
@@ -131,8 +154,11 @@ const Cars = () => {
         </div>
       </div>
       
-      {/* Cars grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Cars grid - Left side */}
+        <div className="md:w-2/3">
+          <h2 className="text-xl font-semibold mb-4">Available Cars</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {loading ? (
           <div className="col-span-3 py-12 text-center">
             <p className="text-blue-900 font-medium">Loading cars...</p>
@@ -199,6 +225,60 @@ const Cars = () => {
             <p className="text-gray-500">No cars found matching your criteria.</p>
           </div>
         )}
+          </div>
+        </div>
+        
+        {/* Auction Cars - Right side */}
+        <div className="md:w-1/3 mt-6 md:mt-0">
+          <h2 className="text-xl font-semibold mb-4">Active Auctions</h2>
+          <div className="space-y-4">
+            {auctionCars && auctionCars.length > 0 ? (
+              auctionCars.map((auction) => (
+                <div 
+                  key={auction.id} 
+                  className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100 hover:shadow-md transition-shadow duration-300"
+                  onClick={() => navigate(`/cars/details/${auction.carId}`)}
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {auction.car?.modelYear} {auction.car?.make} {auction.car?.model}
+                      </h3>
+                      <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                        Auction
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 flex justify-between items-center">
+                      <p className="text-lg font-bold text-blue-800">
+                        SAR {Number(auction.currentPrice || auction.startPrice).toLocaleString()}
+                      </p>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span>{auction.timeLeft || 'Active'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <span>Starting Price:</span>
+                        <span className="font-medium">SAR {Number(auction.startPrice).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span>Bids:</span>
+                        <span className="font-medium">{auction.bidCount || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center bg-white rounded-lg shadow-sm">
+                <p className="text-gray-500">No active auctions at the moment.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
