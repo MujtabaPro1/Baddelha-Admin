@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AuctionCountdown from '../components/AuctionCountdown';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { Search, Filter, Plus, RefreshCw, Clock } from 'lucide-react';
@@ -267,6 +268,10 @@ const Cars = () => {
                       <div className="flex justify-between mt-1">
                         <span>Bids:</span>
                         <span className="font-medium">{auction.bidCount || 0}</span>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span>Time Left:</span>
+                        <AuctionCountdown endTime={auction.endTime} />
                       </div>
                     </div>
                   </div>
