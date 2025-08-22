@@ -256,7 +256,7 @@ const Cars = () => {
                   <img 
                     src={auction.coverImage}
                     alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-[120px] h-[120px] m-auto object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <img 
