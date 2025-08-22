@@ -16,8 +16,28 @@ const CarsDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('details');
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
-  
+  const [user, setUser] = useState<any>(null);
   const params = useParams();
+
+
+  useEffect(()=>{
+    const userDetails = localStorage.getItem('baddelha_user');
+    if(userDetails){
+      console.log(JSON.parse(userDetails || '{}'));
+      setUser(JSON.parse(userDetails || '{}'));
+    }
+  },[]);
+
+  const getUserDetails = () => {
+    setLoading(true);
+    axiosInstance.get('/1.0/user/find/' + params.id).then((res)=>{
+      setLoading(false);
+      setUser(res.data.user);
+    }).catch((err)=>{
+      setLoading(false);
+      console.log(err);
+    });
+  }
 
   useEffect(() => {
     fetchCarDetails();
@@ -214,6 +234,7 @@ const CarsDetails = () => {
   }
 
 
+  console.log(user.role);
 
   return (
     <div>
@@ -225,7 +246,8 @@ const CarsDetails = () => {
       
 
 
-        {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
+         {user && user?.role != 'sale' ?  <>
+          {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
           <div className={'w-75 flex items-end justify-end'}>
            <div onClick={()=>{
              if(confirm("Are you sure you want to push this car for listing")) {
@@ -249,7 +271,7 @@ const CarsDetails = () => {
 
             : <></>}
              <div className={'w-75 flex items-end justify-end'}>
-             {carDetails?.carStatus == 'listed' || carDetails?.carStatus == 'hold' || carDetails?.carStatus == 'sold' || carDetails?.carStatus == 'returned'     ?  <div className={'flex items-center'}><div className={`mr-1 border-2 border-red-500 p-2 rounded-md text-center text-red-500`}>
+             {carDetails?.carStatus == 'listed' || carDetails?.carStatus == 'hold' || carDetails?.carStatus == 'sold' || carDetails?.carStatus == 'returned' || carDetails?.carStatus == 'push_to_auction'     ?  <div className={'flex items-center'}><div className={`mr-1 border-2 border-red-500 p-2 rounded-md text-center text-red-500`}>
           <button onClick={()=>{
             if(confirm("Are you sure you want to unlist this car from listing")) {
               markCarStatus(carDetails?.id,'unlisted');
@@ -283,6 +305,8 @@ const CarsDetails = () => {
             : <></>}
 </div> 
      
+         </> : <></>}
+    
 
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-200">

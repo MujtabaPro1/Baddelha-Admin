@@ -105,6 +105,8 @@ const InspectionForm = () => {
        initialPartConditions[part] = 'original';
      });
      setPartConditions(initialPartConditions);
+
+
   },[]);
   
   // Update form values when defaultValues change

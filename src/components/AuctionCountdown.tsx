@@ -51,7 +51,7 @@ const AuctionCountdown: React.FC<AuctionCountdownProps> = ({ endTime }) => {
   }, [endTime]);
   
   return (
-    <span className={`font-medium ${timeLeft === 'Ended' ? 'text-red-600' : timeLeft === 'N/A' ? 'text-gray-500' : 'text-blue-600'}`}>
+    <span className={`font-medium ${timeLeft === 'Ended' ? 'text-red-600' : timeLeft === 'N/A' ? 'text-gray-500' : 'text-red-600 font-bold'}`}>
       {timeLeft}
     </span>
   );

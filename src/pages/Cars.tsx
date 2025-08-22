@@ -93,6 +93,17 @@ const Cars = () => {
     fetchAuctionCars();
   };
 
+  const checkIfAuctionEnded = (endTime: string) => {
+    const now = new Date();
+    const end = new Date(endTime);
+    const diff = end.getTime() - now.getTime();
+   
+    return diff <= 0;
+
+  };
+  
+
+
   return (
     <div>
       <PageHeader 
@@ -235,11 +246,25 @@ const Cars = () => {
           <div className="space-y-4">
             {auctionCars && auctionCars.length > 0 ? (
               auctionCars.map((auction) => (
+                checkIfAuctionEnded(auction.endTime) ? null : (
                 <div 
                   key={auction.id} 
                   className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100 hover:shadow-md transition-shadow duration-300"
                   onClick={() => navigate(`/cars/details/${auction.carId}`)}
                 >
+                   {auction.coverImage ? (
+                  <img 
+                    src={auction.coverImage}
+                    alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <img 
+                    src="https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"
+                    alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
+                    className="w-[120px] h-[120px] m-auto object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                )}
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-medium text-gray-900">
@@ -276,7 +301,7 @@ const Cars = () => {
                     </div>
                   </div>
                 </div>
-              ))
+              )))
             ) : (
               <div className="py-8 text-center bg-white rounded-lg shadow-sm">
                 <p className="text-gray-500">No active auctions at the moment.</p>
