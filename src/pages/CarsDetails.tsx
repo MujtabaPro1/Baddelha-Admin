@@ -18,6 +18,8 @@ const CarsDetails = () => {
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
   const [user, setUser] = useState<any>(null);
   const params = useParams();
+  const searchParams = new URLSearchParams(window.location.search);
+
 
 
   useEffect(()=>{
@@ -28,16 +30,7 @@ const CarsDetails = () => {
     }
   },[]);
 
-  const getUserDetails = () => {
-    setLoading(true);
-    axiosInstance.get('/1.0/user/find/' + params.id).then((res)=>{
-      setLoading(false);
-      setUser(res.data.user);
-    }).catch((err)=>{
-      setLoading(false);
-      console.log(err);
-    });
-  }
+ 
 
   useEffect(() => {
     fetchCarDetails();
@@ -237,6 +230,27 @@ const CarsDetails = () => {
 
   console.log(user.role);
 
+  const removeCarStatusFromAuction = async (auctionId: string) => {
+    try {
+      axiosInstance.post("/1.0/auction/close/" + auctionId,{
+        closeReason: 'User requested to close the auction',
+      }).then((res) => {
+        alert("Successfully removed car from auction");
+
+        setTimeout(()=>{
+          window.location.reload()
+        },1000);
+
+      }).catch((err) => {
+        console.log('err', err);
+      })
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error listing Car:", error);
+    }
+  }
+
+
   return (
     <div>
      
@@ -275,7 +289,12 @@ const CarsDetails = () => {
              {carDetails?.carStatus == 'listed' || carDetails?.carStatus == 'hold' || carDetails?.carStatus == 'sold' || carDetails?.carStatus == 'returned' || carDetails?.carStatus == 'push_to_auction'     ?  <div className={'flex items-center'}><div className={`mr-1 border-2 border-red-500 p-2 rounded-md text-center text-red-500`}>
           <button onClick={()=>{
             if(confirm("Are you sure you want to unlist this car from listing")) {
-              markCarStatus(carDetails?.id,'unlisted');
+
+              if(carDetails?.carStatus == 'push_to_auction'){
+                removeCarStatusFromAuction(searchParams.get('auctionId') || '');
+              }else{
+                markCarStatus(carDetails?.id,'unlisted');
+              }
             }
 
           }}>Unlist the Car</button>

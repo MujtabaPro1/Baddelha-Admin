@@ -21,6 +21,7 @@ const Cars = () => {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  
 
 
   useEffect(()=>{
@@ -30,7 +31,7 @@ const Cars = () => {
 
   async function fetchAuctionCars() {
     try {
-      const resp = await axiosInstance.get("/1.0/auction", {
+      const resp = await axiosInstance.get("/1.0/auction?status=LIVE", {
         params: {
           search,
           page,
@@ -38,10 +39,11 @@ const Cars = () => {
         },
       });
 
+      
       if (resp.data.error) {
         setError(resp.data);
       } else {
-        setAuctionCars(resp.data || []);
+        setAuctionCars(resp.data.data || []);
       }
     } catch (ex: unknown) {
       console.error('Error fetching auction cars:', ex);
@@ -246,11 +248,13 @@ const Cars = () => {
           <div className="space-y-4">
             {auctionCars && auctionCars.length > 0 ? (
               auctionCars.map((auction) => (
-                checkIfAuctionEnded(auction.endTime) ? null : (
+                console.log(auction?.status),
+                //|| checkIfAuctionEnded(auction.endTime)
+                auction?.status == 'ENDED'  || auction?.car?.carStatus == 'unlisted'  ? null : (
                 <div 
                   key={auction.id} 
                   className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100 hover:shadow-md transition-shadow duration-300"
-                  onClick={() => navigate(`/cars/details/${auction.carId}`)}
+                  onClick={() => navigate(`/cars/details/${auction.carId}?auctionId=${auction.id}`)}
                 >
                    {auction.coverImage ? (
                   <img 
