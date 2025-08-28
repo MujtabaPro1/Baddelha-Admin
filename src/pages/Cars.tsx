@@ -95,15 +95,6 @@ const Cars = () => {
     fetchAuctionCars();
   };
 
-  const checkIfAuctionEnded = (endTime: string) => {
-    const now = new Date();
-    const end = new Date(endTime);
-    const diff = end.getTime() - now.getTime();
-   
-    return diff <= 0;
-
-  };
-  
 
 
   return (

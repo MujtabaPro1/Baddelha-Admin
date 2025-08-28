@@ -4,8 +4,12 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle, ArrowUp, Clock10 } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
+
+const numberWithCommas = (x: number) => {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 const CarsDetails = () => {
   const [carDetails, setCarDetails] = useState<any>(null);
@@ -17,8 +21,11 @@ const CarsDetails = () => {
   const [activeTab, setActiveTab] = useState<string>('details');
   const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
   const [user, setUser] = useState<any>(null);
+  const [bidAmount, setBidAmount] = useState<number | null>(null);
+  const [placingBid, setPlacingBid] = useState<boolean>(false);
   const params = useParams();
   const searchParams = new URLSearchParams(window.location.search);
+  const [bids, setBids] = useState<any>([]);
 
 
 
@@ -53,19 +60,15 @@ const CarsDetails = () => {
     };
   }, [timeRemaining]);
   
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   async function fetchCarDetails() {
     setLoading(true);
     try {
       const resp = await axiosInstance.get("/1.0/car/find/" + params.id);
-      console.log("Car details:", resp.data);
+      console.log("Car details:", resp.data?.car?.Bid);
       setCarDetails(resp.data.car);
+      setBids(resp.data.car?.Bid);
       setInspectionDetails(resp.data.car?.Inspection?.[0]);
       setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
       
@@ -247,6 +250,45 @@ const CarsDetails = () => {
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
       console.error("Error listing Car:", error);
+    }
+  }
+
+  // Function to place an internal bid based on selling price
+  const placeInternalBid = async () => {
+    if (!carDetails?.id || !bidAmount) return;
+    
+    try {
+      setPlacingBid(true);
+      
+      const auctionId = searchParams.get('auctionId') || '';
+
+      axiosInstance.post(`/1.0/auction/${auctionId}/bid`, {
+        amount: bidAmount
+      })
+      .then(response => {
+        // Show success message
+        alert(`Your bid of SAR ${numberWithCommas(bidAmount)} has been submitted successfully!`);
+        // Redirect to listing page
+        window.location.reload(); 
+      })
+      .catch(error => {
+        console.error('Error submitting bid:', error);
+        alert(`Failed to submit bid: ${error.response?.data?.message || 'Please try again later'}`);
+      });
+
+      
+      toast.success("Internal bid placed successfully");
+      
+      // Refresh the page to show the new bid
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to place internal bid");
+      console.error("Error placing internal bid:", error);
+    } finally {
+      setPlacingBid(false);
     }
   }
 
@@ -522,14 +564,218 @@ const CarsDetails = () => {
           </div>
           
           <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-            {/* This is a placeholder for bids - will need to be updated when bid API is available */}
-            <div className="text-center py-8">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No bids yet</h3>
-              <p className="mt-1 text-sm text-gray-500">No bids have been placed on this car yet.</p>
-            </div>
+            {/* Sales role internal bid section */}
+            {user && user.role === 'sale' && carDetails?.bookValue && (
+              <div className="mb-8 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2 flex items-center">
+                  Place Internal Bid
+                </h4>
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <div className="flex-grow">
+                    <label htmlFor="bidAmount" className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (SAR)</label>
+                    <div className="mt-1 relative rounded-md shadow-sm">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">SAR</span>
+                      </div>
+                      <input
+                        type="number"
+                        id="bidAmount"
+                        className="pl-12 pr-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10"
+                        placeholder="0.00"
+                        min="0"
+                        step="1000"
+                        defaultValue={carDetails.bookValue}
+                        onChange={(e) => setBidAmount(Number(e.target.value))}
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center">
+                        <div className="flex px-2">
+                          <button 
+                            type="button" 
+                            className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                            onClick={() => {
+                              const input = document.getElementById('bidAmount') as HTMLInputElement;
+                              const currentValue = Number(input.value) || 0;
+                              input.value = String(currentValue + 1000);
+                              setBidAmount(currentValue + 1000);
+                            }}
+                          >
+                            +
+                          </button>
+                          <span className="mx-1 text-gray-400">|</span>
+                          <button 
+                            type="button" 
+                            className="text-blue-500 hover:text-blue-700 focus:outline-none"
+                            onClick={() => {
+                              const input = document.getElementById('bidAmount') as HTMLInputElement;
+                              const currentValue = Number(input.value) || 0;
+                              if (currentValue >= 1000) {
+                                input.value = String(currentValue - 1000);
+                                setBidAmount(currentValue - 1000);
+                              }
+                            }}
+                          >
+                            -
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Current book value: SAR {Number(carDetails.bookValue).toLocaleString()}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    onClick={placeInternalBid}
+                    disabled={placingBid || !bidAmount}
+                  >
+                    {placingBid ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                        Placing Bid...
+                      </>
+                    ) : (
+                      <>Place Bid</>
+                    )}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">This will place an internal bid based on the selling price of the car.</p>
+              </div>
+            )}
+            
+            {/* Bids list or empty state */}
+            {bids && bids.length > 0 ? (
+              <div className="overflow-x-auto">
+                <div className="py-2 align-middle inline-block min-w-full">
+                  <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-blue-900">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Bidder
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Amount
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Type
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Notes
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {bids.map((bid: any, index: number) => (
+                          <tr key={bid.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-900">
+                                  <DollarSign className="h-5 w-5" />
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {bid.bidderName || bid.userId || 'Anonymous'}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {bid.bidderEmail || bid.userEmail || ''}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">
+                                SAR {Number(bid.amount).toLocaleString()}
+                              </div>
+                              {bid.previousAmount && (
+                                <div className="text-xs text-gray-500">
+                                  Previous: SAR {Number(bid.previousAmount).toLocaleString()}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {new Date(bid.createdAt).toLocaleDateString()}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(bid.createdAt).toLocaleTimeString()}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${bid.status === 'accepted' ? 'bg-green-100 text-green-800' : 
+                                  bid.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                  bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                  'bg-blue-100 text-blue-800'}`}>
+                                {bid.status || 'Active'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {bid.bidType === 'internal' ? (
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                  Internal
+                                </span>
+                              ) : bid.bidType === 'auction' ? (
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                  Auction
+                                </span>
+                              ) : (
+                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                  Standard
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {bid.notes || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                {/* Bid progress indicator */}
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Bid Progress</h4>
+                  <div className="relative pt-1">
+                    <div className="flex mb-2 items-center justify-between">
+                      <div>
+                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-900 bg-blue-200">
+                          Starting: SAR {carDetails?.bookValue ? Number(carDetails.bookValue).toLocaleString() : '0'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-900 bg-blue-200">
+                          Current Highest: SAR {bids.length > 0 ? Number(Math.max(...bids.map((b: any) => b.amount))).toLocaleString() : '0'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                      <div 
+                        style={{ 
+                          width: `${bids.length > 0 ? 
+                            Math.min(100, ((Math.max(...bids.map((b: any) => b.amount)) - carDetails?.bookValue) / carDetails?.bookValue) * 100) : 0}%` 
+                        }} 
+                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-900"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No bids yet</h3>
+                <p className="mt-1 text-sm text-gray-500">No bids have been placed on this car yet.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
