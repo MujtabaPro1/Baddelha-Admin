@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 
 const numberWithCommas = (x: number) => {
@@ -23,6 +23,8 @@ const CarsDetails = () => {
   const [user, setUser] = useState<any>(null);
   const [bidAmount, setBidAmount] = useState<number | null>(null);
   const [placingBid, setPlacingBid] = useState<boolean>(false);
+  const [winner, setWinner] = useState<any>(null);
+  const [loadingWinner, setLoadingWinner] = useState<boolean>(false);
   const params = useParams();
   const searchParams = new URLSearchParams(window.location.search);
   const [bids, setBids] = useState<any>([]);
@@ -41,6 +43,13 @@ const CarsDetails = () => {
 
   useEffect(() => {
     fetchCarDetails();
+    
+    // Fetch auction winner if auctionId is available
+    const auctionId = searchParams.get('auctionId');
+    if (auctionId) {
+      fetchAuctionWinner(auctionId);
+      fetchAuctionBids(auctionId)
+    }
   }, []);
 
   // Countdown timer effect
@@ -68,7 +77,10 @@ const CarsDetails = () => {
       const resp = await axiosInstance.get("/1.0/car/find/" + params.id);
       console.log("Car details:", resp.data?.car?.Bid);
       setCarDetails(resp.data.car);
+      const auctionId = searchParams.get('auctionId');
+      if(!auctionId){
       setBids(resp.data.car?.Bid);
+      }
       setInspectionDetails(resp.data.car?.Inspection?.[0]);
       setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
       
@@ -85,7 +97,32 @@ const CarsDetails = () => {
       setLoading(false);
     }
   }
+
+  async function fetchAuctionBids(auctionId: string) {
+    setLoadingWinner(true);
+    try {
+      const response = await axiosInstance.get(`/1.0/auction/${auctionId}/bids`);
+      setBids(response.data);
+    } catch (error) {
+      console.error("Failed to fetch auction winner:", error);
+      // Don't show error toast as this is not critical
+    } finally {
+      setLoadingWinner(false);
+    }
+  }
   
+  const fetchAuctionWinner = async (auctionId: string) => {
+    setLoadingWinner(true);
+    try {
+      const response = await axiosInstance.get(`/1.0/auction/${auctionId}/winner`);
+      setWinner(response.data);
+    } catch (error) {
+      console.error("Failed to fetch auction winner:", error);
+      // Don't show error toast as this is not critical
+    } finally {
+      setLoadingWinner(false);
+    }
+  }
   
   
   // Function to render status badge
@@ -293,6 +330,67 @@ const CarsDetails = () => {
   }
 
 
+  // Winner section component
+  const renderWinnerSection = () => {
+    const auctionId = searchParams.get('auctionId');
+    
+    if (!auctionId || !carDetails?.carStatus?.toLowerCase().includes('auction')) {
+      return null;
+    }
+    
+    return (
+      <div className="mb-6">
+        {loadingWinner ? (
+          <div className="bg-blue-50 p-4 rounded-lg shadow-sm flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-900 mr-3"></div>
+            <p className="text-blue-900 font-medium">Loading auction results...</p>
+          </div>
+        ) : winner ? (
+          <div className="bg-blue-50 p-4 rounded-lg shadow-sm border-l-4 border-blue-900">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Trophy className="h-8 w-8 text-blue-900" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-blue-900">Auction Winner</h3>
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Winner</p>
+                    <p className="font-medium">{winner?.user?.firstName + " " + (winner?.user?.lastName || "" ) || 'Anonymous'}</p>
+                    {winner?.user?.email && <p className="text-sm text-gray-500">{winner?.user?.email}</p>}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Winning Bid</p>
+                    <p className="font-bold text-blue-900">SAR {numberWithCommas(winner?.winningAmount || 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      Winner
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 p-4 rounded-lg shadow-sm border-l-4 border-yellow-400">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <Clock className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  Auction in progress. No winner has been determined yet.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
      
@@ -300,6 +398,9 @@ const CarsDetails = () => {
         title={carDetails ? `${carDetails.make} ${carDetails.model} ${carDetails.modelYear}` : "Car Details"} 
         description={`Car ID: ${params.id}`}
       />
+      
+      {/* Winner Section */}
+      {renderWinnerSection()}
       
 
 
@@ -664,9 +765,6 @@ const CarsDetails = () => {
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                             Type
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Notes
-                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -679,10 +777,10 @@ const CarsDetails = () => {
                                 </div>
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">
-                                    {bid.bidderName || bid.userId || 'Anonymous'}
+                                    {bid.userJson?.firstName + " " +  (bid.userJson?.lastName || "") || 'Anonymous'}
                                   </div>
                                   <div className="text-xs text-gray-500">
-                                    {bid.bidderEmail || bid.userEmail || ''}
+                                    {bid.userJson?.email || ''}
                                   </div>
                                 </div>
                               </div>
@@ -715,22 +813,19 @@ const CarsDetails = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {bid.bidType === 'internal' ? (
+                              {bid.userJson?.type === 'Dealer' ? (
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                  Internal
+                                  Dealer
                                 </span>
-                              ) : bid.bidType === 'auction' ? (
+                              ) : bid.userJson?.type === 'Sales Agent' ? (
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                  Auction
+                                  Sales Agent
                                 </span>
                               ) : (
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                   Standard
                                 </span>
                               )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {bid.notes || '-'}
                             </td>
                           </tr>
                         ))}
