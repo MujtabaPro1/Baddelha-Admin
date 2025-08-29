@@ -230,7 +230,7 @@ const CarsDetails = () => {
         alert("Successfully pushed car to auction");
 
         setTimeout(()=>{
-            window.location.reload()
+            window.location.href = '/cars'
         },1000);
 
       }).catch((err) => {
@@ -352,15 +352,15 @@ const CarsDetails = () => {
                 <Trophy className="h-8 w-8 text-blue-900" />
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-blue-900">Auction Winner</h3>
+                <h3 className="text-lg font-medium text-blue-900">Current High Bidder</h3>
                 <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Winner</p>
+                    <p className="text-sm text-gray-600">Current High Bidder</p>
                     <p className="font-medium">{winner?.user?.firstName + " " + (winner?.user?.lastName || "" ) || 'Anonymous'}</p>
                     {winner?.user?.email && <p className="text-sm text-gray-500">{winner?.user?.email}</p>}
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Winning Bid</p>
+                    <p className="text-sm text-gray-600">Current High Bid</p>
                     <p className="font-bold text-blue-900">SAR {numberWithCommas(winner?.winningAmount || 0)}</p>
                   </div>
                   <div>
@@ -400,7 +400,7 @@ const CarsDetails = () => {
       />
       
       {/* Winner Section */}
-      {renderWinnerSection()}
+      {winner && winner?.winnerUserId && user?.role != 'sale' && renderWinnerSection()}
       
 
 
@@ -660,13 +660,13 @@ const CarsDetails = () => {
       {activeTab === 'bids' && (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Bids</h3>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">{ searchParams.get('auctionId') ? 'Bids' : 'Bids History'}</h3>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">All bids placed on this car.</p>
           </div>
           
           <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
             {/* Sales role internal bid section */}
-            {user && user.role === 'sale' && carDetails?.bookValue && (
+            {user && user.role === 'sale' && carDetails?.carStatus == 'push_to_auction'  && carDetails?.bookValue && (
               <div className="mb-8 p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-medium text-blue-900 mb-2 flex items-center">
                   Place Internal Bid
@@ -777,7 +777,7 @@ const CarsDetails = () => {
                                 </div>
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">
-                                    {bid.userJson?.firstName + " " +  (bid.userJson?.lastName || "") || 'Anonymous'}
+                                    {bid?.userJson ? bid.userJson?.firstName + " " +  (bid.userJson?.lastName || "") : 'Anonymous'}
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     {bid.userJson?.email || ''}
