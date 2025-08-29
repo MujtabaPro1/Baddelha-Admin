@@ -47,8 +47,22 @@ const CarsDetails = () => {
     // Fetch auction winner if auctionId is available
     const auctionId = searchParams.get('auctionId');
     if (auctionId) {
+      // Initial fetch
       fetchAuctionWinner(auctionId);
-      fetchAuctionBids(auctionId)
+      fetchAuctionBids(auctionId);
+      
+      // Set up polling every minute (60000 ms)
+      const pollingInterval = setInterval(() => {
+        console.log('Polling auction data...');
+        fetchAuctionWinner(auctionId);
+        fetchAuctionBids(auctionId);
+      }, 60000); // Poll every minute
+      
+      // Cleanup interval when component unmounts
+      return () => {
+        console.log('Clearing auction polling interval');
+        clearInterval(pollingInterval);
+      };
     }
   }, []);
 
@@ -808,8 +822,9 @@ const CarsDetails = () => {
                                 ${bid.status === 'accepted' ? 'bg-green-100 text-green-800' : 
                                   bid.status === 'rejected' ? 'bg-red-100 text-red-800' : 
                                   bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                  bid.userJson?.id == winner?.winnerUserId ? 'bg-green-100 text-green-800' : 
                                   'bg-blue-100 text-blue-800'}`}>
-                                {bid.status || 'Active'}
+                                {bid.userJson?.id == winner?.winnerUserId ? 'Winner' : bid.status || 'Active'}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
