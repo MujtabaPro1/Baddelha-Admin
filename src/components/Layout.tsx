@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, Car, Calendar, BadgeDollarSign, 
-  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon
+  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
+  Clock
 } from 'lucide-react';
 
 const Layout = () => {
@@ -54,6 +55,7 @@ const Layout = () => {
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
+      { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
     ];
   };
 

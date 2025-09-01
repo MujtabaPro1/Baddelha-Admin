@@ -24,10 +24,12 @@ import CustomerCheckIn from './pages/customer-checkin';
 import EditRolePage from './pages/roles-permission/edit';
 import CreateRolePage from './pages/roles-permission/create';
 import CarsDetails from './pages/CarsDetails';
+import BranchTiming from './pages/BranchTiming';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  // Commented out since we're not using user check currently
+  // const { user } = useAuth();
   
   // if (!user) {
   //   return <Navigate to="/login" replace />;
@@ -160,6 +162,12 @@ function App() {
             <Route path="roles-permission" element={
                                 <AdminRoute>
                                   <RolesPermission />
+                                </AdminRoute>
+                              } />
+
+            <Route path="branch-timing" element={
+                                <AdminRoute>
+                                  <BranchTiming />
                                 </AdminRoute>
                               } />
 

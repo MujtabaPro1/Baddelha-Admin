@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser } from '../types';
 import axiosInstance from '../service/api';
+import { setLogoutFunction, setupAuthInterceptor } from '../utils/authInterceptor';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -72,6 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setLoading(false);
+    
+    // Setup auth interceptor and provide logout function
+    setLogoutFunction(logout);
+    setupAuthInterceptor();
   }, []);
 
   // Integrated login function with API
