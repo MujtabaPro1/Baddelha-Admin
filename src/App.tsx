@@ -25,6 +25,8 @@ import EditRolePage from './pages/roles-permission/edit';
 import CreateRolePage from './pages/roles-permission/create';
 import CarsDetails from './pages/CarsDetails';
 import BranchTiming from './pages/BranchTiming';
+import TradeInDealerships from './pages/TradeInDealerships';
+import TradeInDealershipDetail from './pages/TradeInDealershipDetail';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -168,6 +170,18 @@ function App() {
             <Route path="branch-timing" element={
                                 <AdminRoute>
                                   <BranchTiming />
+                                </AdminRoute>
+                              } />
+
+            <Route path="tradein-dealerships" element={
+                                <AdminRoute>
+                                  <TradeInDealerships />
+                                </AdminRoute>
+                              } />
+
+            <Route path="tradein-dealerships/:id" element={
+                                <AdminRoute>
+                                  <TradeInDealershipDetail />
                                 </AdminRoute>
                               } />
 

@@ -56,6 +56,7 @@ const Layout = () => {
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
+      { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
     ];
   };
 
