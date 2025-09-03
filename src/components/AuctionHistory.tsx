@@ -76,15 +76,6 @@ const AuctionHistory: React.FC<AuctionHistoryProps> = ({ auctions }) => {
               </div>
             </div>
             
-            {auction.coverImage && (
-              <div className="mt-2">
-                <img 
-                  src={auction.coverImage} 
-                  alt="Car" 
-                  className="w-full h-[250px] object-cover rounded-md"
-                />
-              </div>
-            )}
           </div>
         ))}
       </div>
