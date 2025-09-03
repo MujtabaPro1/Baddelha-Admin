@@ -6,6 +6,7 @@ import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
 import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
+import AuctionHistory from '../components/AuctionHistory';
 
 const numberWithCommas = (x: number) => {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -28,6 +29,7 @@ const CarsDetails = () => {
   const params = useParams();
   const searchParams = new URLSearchParams(window.location.search);
   const [bids, setBids] = useState<any>([]);
+  const [auctionHistory, setAuctionHistory] = useState<any>([]);
 
 
 
@@ -63,8 +65,24 @@ const CarsDetails = () => {
         console.log('Clearing auction polling interval');
         clearInterval(pollingInterval);
       };
+    }else{
+      getAuctionDetails();
     }
   }, []);
+
+  const getAuctionDetails = async () => {
+    try {
+      const resp = await axiosInstance.get("/1.0/auction?status=ENDED&carId=" + params.id);
+      console.log(resp);
+      if (resp.data?.data && Array.isArray(resp.data?.data)) {
+        setAuctionHistory(resp.data?.data);
+      }
+    } catch (ex: unknown) {
+      console.error(ex);
+      setError("Failed to load auction details");
+      toast.error("Failed to load auction details");
+    }
+  }
 
   // Countdown timer effect
   useEffect(() => {
@@ -413,8 +431,11 @@ const CarsDetails = () => {
         description={`Car ID: ${params.id}`}
       />
       
-      {/* Winner Section */}
-      {winner && winner?.winnerUserId && user?.role != 'sale' && renderWinnerSection()}
+      {/* Main content layout with auction history in right corner */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-grow">
+          {/* Winner Section */}
+          {winner && winner?.winnerUserId && user?.role != 'sale' && renderWinnerSection()}
       
 
 
@@ -928,6 +949,13 @@ const CarsDetails = () => {
           </div>
         </div>
       )}
+        </div>
+        
+        {/* Auction History in right corner */}
+        <div className="md:w-1/4 lg:w-1/3">
+          <AuctionHistory auctions={auctionHistory} />
+        </div>
+      </div>
     </div>
   );
 };
