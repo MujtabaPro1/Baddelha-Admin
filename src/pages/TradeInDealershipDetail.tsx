@@ -6,6 +6,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import StatusBadge from '../components/StatusBadge';
+import TradeInDealershipForm from '../components/TradeInDealershipForm';
+import DealershipCarForm from '../components/DealershipCarForm';
 
 const TradeInDealershipDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +16,11 @@ const TradeInDealershipDetail = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  
+  // Form visibility states
+  const [showDealershipForm, setShowDealershipForm] = useState(false);
+  const [showCarForm, setShowCarForm] = useState(false);
+  const [editingDealership, setEditingDealership] = useState(false);
 
   useEffect(() => {
     // Simulate API call to fetch dealership details
@@ -40,6 +47,83 @@ const TradeInDealershipDetail = () => {
       setDealership({...dealership});
       setCars([...mockCars.filter(car => car.dealershipId === id)]);
     }
+  };
+  
+  // Dealership form handlers
+  const handleEditDealership = () => {
+    setEditingDealership(true);
+    setShowDealershipForm(true);
+  };
+  
+  const handleDealershipFormSubmit = (formData: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    logo?: File;
+  }) => {
+    // In a real app, this would send the data to an API
+    if (dealership) {
+      const updatedDealership = {
+        ...dealership,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.location,
+        // In a real app, we would handle the logo upload and get a URL back
+      };
+      setDealership(updatedDealership);
+    }
+    setShowDealershipForm(false);
+    setEditingDealership(false);
+  };
+  
+  // Car form handlers
+  const handleAddCar = () => {
+    setShowCarForm(true);
+  };
+  
+  const handleCarFormSubmit = (formData: {
+    make: string;
+    model: string;
+    year: string;
+    exactModel: string;
+    price: number;
+    image?: File;
+  }) => {
+    // In a real app, this would send the data to an API
+    if (dealership) {
+      // Create a new car with a mock ID
+      const newCar: Car = {
+        id: `new-${Date.now()}`,
+        make: formData.make,
+        model: formData.model,
+        year: formData.year,
+        exactModel: formData.exactModel,
+        price: formData.price,
+        status: 'available',
+        // In a real app, we would handle the image upload and get a URL back
+        imageUrl: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?ixlib=rb-4.0.3',
+        dealershipId: dealership.id,
+        listedDate: new Date().toISOString(),
+      };
+      
+      setCars([newCar, ...cars]);
+      
+      // Update dealership stats
+      setDealership({
+        ...dealership,
+        totalCars: dealership.totalCars + 1,
+        activeListings: dealership.activeListings + 1,
+      });
+    }
+    setShowCarForm(false);
+  };
+  
+  const handleCancelForm = () => {
+    setShowDealershipForm(false);
+    setShowCarForm(false);
+    setEditingDealership(false);
   };
 
   const filteredCars = cars.filter(car => {
@@ -71,7 +155,29 @@ const TradeInDealershipDetail = () => {
   }
 
   return (
-    <div>
+    <div>      
+      {/* Dealership Form */}
+      {showDealershipForm && dealership && (
+        <TradeInDealershipForm
+          onSubmit={handleDealershipFormSubmit}
+          onCancel={handleCancelForm}
+          initialData={{
+            name: dealership.name,
+            email: dealership.email,
+            phone: dealership.phone,
+            location: dealership.location,
+          }}
+          isEdit={editingDealership}
+        />
+      )}
+      
+      {/* Car Form */}
+      {showCarForm && (
+        <DealershipCarForm
+          onSubmit={handleCarFormSubmit}
+          onCancel={handleCancelForm}
+        />
+      )}
       {/* Header with back button */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -97,7 +203,7 @@ const TradeInDealershipDetail = () => {
             <RefreshCw className="h-5 w-5 text-gray-600" />
           </button>
           <button
-            onClick={() => {/* Edit dealership functionality */}}
+            onClick={handleEditDealership}
             className="flex items-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
           >
             <Edit className="h-5 w-5" />
@@ -206,7 +312,7 @@ const TradeInDealershipDetail = () => {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Car Listings</h3>
             <button
-              onClick={() => {/* Add car functionality */}}
+              onClick={handleAddCar}
               className="flex items-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
             >
               <Plus className="h-5 w-5" />

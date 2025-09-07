@@ -23,6 +23,7 @@ export interface Car {
   make: string;
   model: string;
   year: string;
+  exactModel?: string; // Added exactModel field
   price: number;
   status: 'available' | 'pending' | 'sold';
   imageUrl: string;

@@ -484,6 +484,13 @@ const CarsDetails = () => {
                 }
               }}>Mark as Reserved</button>
             </div>
+            <div className={`border-2 border-blue-800 text-blue-800 ml-1 mr-1 p-2 rounded-md text-center`}>
+              <button onClick={()=>{
+                if(confirm("Are you sure you want to push to inventory")) {
+           
+                }
+              }}>Push to Inventory</button>
+            </div>
               <div className={`border-gray-500 border-2 text-gray-500  ml-1 mr-1 p-2 rounded-md text-center `}>
                 <button onClick={()=>{
                   if(confirm("Are you sure you want to mark as sold")) {

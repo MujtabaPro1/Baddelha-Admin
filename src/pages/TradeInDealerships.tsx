@@ -7,12 +7,15 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
+import TradeInDealershipForm from '../components/TradeInDealershipForm';
 
 const TradeInDealerships = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [dealerships, setDealerships] = useState(mockDealerships);
   const navigate = useNavigate();
+  const [showDealershipForm, setShowDealershipForm] = useState(false);
+  
 
   // Filter dealerships based on search query and region
   const filteredDealerships = dealerships.filter((dealership) => {
@@ -57,12 +60,44 @@ const TradeInDealerships = () => {
     setDealerships([...mockDealerships]);
   };
 
+  const handleCancelForm = () => {
+    setShowDealershipForm(false);
+  };
+
+  const handleDealershipFormSubmit = (formData: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    logo?: File;
+  }) => {
+    // In a real app, this would send the data to an API
+    setShowDealershipForm(false);
+
+  };
+
+
   return (
     <div>
       <PageHeader 
         title="TradeIn Dealerships" 
         description="Manage all trade-in dealerships and their inventory"
       />
+
+    {showDealershipForm && (
+            <TradeInDealershipForm
+              onSubmit={handleDealershipFormSubmit}
+              onCancel={handleCancelForm}
+              initialData={{
+                name: '',
+                email: '',
+                phone: '',
+                location: '',
+              }}
+              isEdit={false}
+            />
+      )}
+
       
       {/* Filters and search */}
       <div className="mb-8 flex flex-col sm:flex-row gap-4">
@@ -103,7 +138,9 @@ const TradeInDealerships = () => {
           </button>
         </div>
         <button 
-          onClick={() => navigate('/tradein-dealerships/new')}
+          onClick={() => {
+            setShowDealershipForm(true);
+          }}
           className="sm:w-auto flex items-center justify-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
         >
           <Plus className="h-5 w-5" />

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Clock, DollarSign, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 
 interface AuctionHistoryProps {
   auctions: any[];
@@ -15,6 +17,10 @@ const numberWithCommas = (x: number) => {
 };
 
 const AuctionHistory: React.FC<AuctionHistoryProps> = ({ auctions }) => {
+
+  console.log(auctions);
+  const navigate = useNavigate();
+
   if (!auctions || auctions.length === 0) {
     return (
       <div className="bg-white shadow rounded-lg p-4 mb-4">
@@ -35,7 +41,10 @@ const AuctionHistory: React.FC<AuctionHistoryProps> = ({ auctions }) => {
         {auctions.map((auction, index) => (
           <div 
             key={auction.id} 
-            className="border border-gray-200 rounded-lg p-3 hover:bg-blue-50 transition-colors"
+            onClick={() => {
+              window.location.href = '/cars/details/' + auction.carId + '?auctionId=' + auction.id;
+            }}
+            className="border border-gray-200 rounded-lg p-3 hover:bg-blue-50 transition-colors cursor-pointer"
           >
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center">
