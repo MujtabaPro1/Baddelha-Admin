@@ -27,6 +27,9 @@ import CarsDetails from './pages/CarsDetails';
 import BranchTiming from './pages/BranchTiming';
 import TradeInDealerships from './pages/TradeInDealerships';
 import TradeInDealershipDetail from './pages/TradeInDealershipDetail';
+import Invoicing from './pages/Invoicing';
+import CreateInvoice from './pages/CreateInvoice';
+import InvoiceDetail from './pages/InvoiceDetail';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -148,9 +151,6 @@ function App() {
               </AdminRoute>
             } />
 
-
-      
-
             <Route path="inspections" element={<Inspections />} />
             <Route path="cars" element={<Cars/>}/>
             <Route path="cars/details/:id" element={<CarsDetails/>}/>
@@ -185,6 +185,23 @@ function App() {
                                 </AdminRoute>
                               } />
 
+            <Route path="invoicing" element={
+                                <AdminRoute>
+                                  <Invoicing />
+                                </AdminRoute>
+                              } />
+
+            <Route path="invoicing/create" element={
+                                <AdminRoute>
+                                  <CreateInvoice />
+                                </AdminRoute>
+                              } />
+
+            <Route path="invoicing/:id" element={
+                                <AdminRoute>
+                                  <InvoiceDetail />
+                                </AdminRoute>
+                              } />
 
           <Route path="roles-permission/create" element={
                               <AdminRoute>

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  LayoutDashboard, Users, Car, Calendar, BadgeDollarSign, 
+  LayoutDashboard, Users, Car, Calendar, 
   LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
-  Clock
+  Clock, FileText
 } from 'lucide-react';
 
 const Layout = () => {
@@ -57,6 +57,7 @@ const Layout = () => {
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
       { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
+      { name: 'Invoicing', href: '/invoicing', icon: FileText },
     ];
   };
 
