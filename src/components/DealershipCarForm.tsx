@@ -20,13 +20,15 @@ interface DealershipCarFormProps {
     imageUrl?: string;
   };
   isEdit?: boolean;
+  dealershipId?: string;
 }
 
 const DealershipCarForm = ({
   onSubmit,
   onCancel,
   initialData,
-  isEdit = false
+  isEdit = false,
+  dealershipId
 }: DealershipCarFormProps) => {
   const [formData, setFormData] = useState({
     make: initialData?.make || '',
@@ -34,6 +36,7 @@ const DealershipCarForm = ({
     year: initialData?.year || new Date().getFullYear().toString(),
     exactModel: initialData?.exactModel || '',
     price: initialData?.price || 0,
+    dealershipId: dealershipId || ''
   });
   
   const [carImage, setCarImage] = useState<File | null>(null);

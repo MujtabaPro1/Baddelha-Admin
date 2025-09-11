@@ -24,24 +24,12 @@ const TradeInDealerships = () => {
     pendingCars: 0,
   });
   
+  const [topDealerships, setTopDealerships] = useState<any[]>([]);
+  const [statusData, setStatusData] = useState<any[]>([
+    { name: 'Total Cars', value: 0, color: '#3B82F6' },
+  ]);
  
 
-  // Data for the top dealerships bar chart
-  const topDealershipsData = [...dealerships]
-    .filter(d => d.totalCars !== undefined)
-    .sort((a, b) => (b.totalCars || 0) - (a.totalCars || 0))
-    .slice(0, 5)
-    .map(d => ({
-      name: d.name ? d.name.split(' ')[0] : 'Unknown', // Use first word of name for shorter labels
-      cars: d.totalCars || 0
-    }));
-
-  // Data for the pie chart
-  const statusData = [
-    { name: 'Active', value: totalStats.activeListings, color: '#3B82F6' },
-    { name: 'Sold', value: totalStats.soldCars, color: '#10B981' },
-    { name: 'Pending', value: totalStats.pendingCars, color: '#F59E0B' }
-  ];
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B'];
 
@@ -55,12 +43,30 @@ const TradeInDealerships = () => {
     try {
       const response = await axiosInstance.get('/1.0/dealership/find-all');
       setDealerships(response.data?.data);
-      setTotalStats({
-        totalCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.totalCars || 0), 0),
-        activeListings: response.data?.data.reduce((sum: number, d: any) => sum + (d.activeListings || 0), 0),
-        soldCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.soldCars || 0), 0),
-        pendingCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.pendingCars || 0), 0),
-      });
+      if(response.data?.data){
+        const topDealershipsData = [...dealerships]
+        .filter(d => d.totalCars !== undefined)
+        .sort((a, b) => (b.totalCars || 0) - (a.totalCars || 0))
+        .slice(0, 5)
+        .map(d => ({
+          name: d.name ? d.name.split(' ')[0] : 'Unknown', // Use first word of name for shorter labels
+          cars: d.totalCars || 0
+        }));
+        setTopDealerships(topDealershipsData);
+      }
+      const dealershipCarsResponse = await axiosInstance.get('/1.0/dealership-car/find-all');
+      if(dealershipCarsResponse?.data){
+        setTotalStats({
+          totalCars: dealershipCarsResponse?.data?.data?.length,
+          activeListings: dealershipCarsResponse?.data?.data.reduce((sum: number, d: any) => sum + (d.activeListings || 0), 0),
+          soldCars: dealershipCarsResponse?.data?.data.reduce((sum: number, d: any) => sum + (d.soldCars || 0), 0),
+          pendingCars: dealershipCarsResponse?.data?.data.reduce((sum: number, d: any) => sum + (d.pendingCars || 0), 0),
+        });
+        setStatusData([
+          { name: 'Total Cars', value: dealershipCarsResponse?.data?.data?.length, color: '#3B82F6' },
+        ]);
+      }
+
     } catch (err: any) {
       console.error('Error fetching dealerships:', err);
       setError(err.response?.data?.message || 'Failed to fetch dealerships');
@@ -200,7 +206,7 @@ const TradeInDealerships = () => {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={topDealershipsData}
+                data={topDealerships}
                 margin={{ top: 5, right: 5, left: 5, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
@@ -267,14 +273,14 @@ const TradeInDealerships = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Logo
+                </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Dealership
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Contact Info
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cars
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date Created
@@ -291,6 +297,13 @@ const TradeInDealerships = () => {
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/tradein-dealerships/${dealership.id}`)}
                 >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <img
+                      src={dealership?.logo?.url}
+                      alt="Logo"
+                      className="w-16 h-16 object-cover rounded-full"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div>
@@ -315,20 +328,7 @@ const TradeInDealerships = () => {
                       {dealership.email}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">Total: {dealership.totalCars}</div>
-                    <div className="flex gap-2 mt-1">
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                        {dealership.activeListings} Active
-                      </span>
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        {dealership.soldCars} Sold
-                      </span>
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                        {dealership.pendingCars} Pending
-                      </span>
-                    </div>
-                  </td>
+                 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(dealership.createdAt).toLocaleDateString()}
                   </td>
