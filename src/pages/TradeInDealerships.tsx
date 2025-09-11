@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, RefreshCw, Phone, Mail, MapPin } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
-import { mockDealerships } from '../mock/dealershipData';
+import axiosInstance from '../service/api';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -12,34 +12,28 @@ import TradeInDealershipForm from '../components/TradeInDealershipForm';
 const TradeInDealerships = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('');
-  const [dealerships, setDealerships] = useState(mockDealerships);
+  const [dealerships, setDealerships] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showDealershipForm, setShowDealershipForm] = useState(false);
-  
-
-  // Filter dealerships based on search query and region
-  const filteredDealerships = dealerships.filter((dealership) => {
-    const matchesSearch = dealership.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          dealership.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRegion = selectedRegion === '' || dealership.location.includes(selectedRegion);
-    return matchesSearch && matchesRegion;
+  const [totalStats, setTotalStats] = useState({
+    totalCars: 0,
+    activeListings: 0,
+    soldCars: 0,
+    pendingCars: 0,
   });
-
-  // Calculate total statistics for all dealerships
-  const totalStats = {
-    totalCars: dealerships.reduce((sum, d) => sum + d.totalCars, 0),
-    activeListings: dealerships.reduce((sum, d) => sum + d.activeListings, 0),
-    soldCars: dealerships.reduce((sum, d) => sum + d.soldCars, 0),
-    pendingCars: dealerships.reduce((sum, d) => sum + d.pendingCars, 0),
-  };
+  
+ 
 
   // Data for the top dealerships bar chart
   const topDealershipsData = [...dealerships]
-    .sort((a, b) => b.totalCars - a.totalCars)
+    .filter(d => d.totalCars !== undefined)
+    .sort((a, b) => (b.totalCars || 0) - (a.totalCars || 0))
     .slice(0, 5)
     .map(d => ({
-      name: d.name.split(' ')[0], // Use first word of name for shorter labels
-      cars: d.totalCars
+      name: d.name ? d.name.split(' ')[0] : 'Unknown', // Use first word of name for shorter labels
+      cars: d.totalCars || 0
     }));
 
   // Data for the pie chart
@@ -55,9 +49,29 @@ const TradeInDealerships = () => {
     setSearchQuery(e.target.value);
   };
 
+  const fetchDealerships = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get('/1.0/dealership/find-all');
+      setDealerships(response.data?.data);
+      setTotalStats({
+        totalCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.totalCars || 0), 0),
+        activeListings: response.data?.data.reduce((sum: number, d: any) => sum + (d.activeListings || 0), 0),
+        soldCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.soldCars || 0), 0),
+        pendingCars: response.data?.data.reduce((sum: number, d: any) => sum + (d.pendingCars || 0), 0),
+      });
+    } catch (err: any) {
+      console.error('Error fetching dealerships:', err);
+      setError(err.response?.data?.message || 'Failed to fetch dealerships');
+      setDealerships([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRefresh = () => {
-    // In a real app, this would fetch fresh data from the API
-    setDealerships([...mockDealerships]);
+    fetchDealerships();
   };
 
   const handleCancelForm = () => {
@@ -69,13 +83,20 @@ const TradeInDealerships = () => {
     email: string;
     phone: string;
     location: string;
+    website?: string;
     logo?: File;
+    id?: string;
   }) => {
-    // In a real app, this would send the data to an API
     setShowDealershipForm(false);
-
+    // Refresh dealerships list to include the newly added dealership
+    fetchDealerships();
   };
 
+
+  // Fetch dealerships when component mounts
+  useEffect(() => {
+    fetchDealerships();
+  }, []);
 
   return (
     <div>
@@ -221,7 +242,27 @@ const TradeInDealerships = () => {
       </div>
       
       {/* Dealerships List */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-sm p-8 flex justify-center">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+            <p className="mt-4 text-gray-600">Loading dealerships...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="text-center text-red-500">
+            <p>{error}</p>
+            <button 
+              onClick={fetchDealerships}
+              className="mt-4 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -244,7 +285,7 @@ const TradeInDealerships = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDealerships.map((dealership) => (
+              {dealerships?.map((dealership) => (
                 <tr 
                   key={dealership.id} 
                   className="hover:bg-gray-50 cursor-pointer"
@@ -289,7 +330,7 @@ const TradeInDealerships = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(dealership.dateCreated).toLocaleDateString()}
+                    {new Date(dealership.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -300,7 +341,7 @@ const TradeInDealerships = () => {
                         {[...Array(5)].map((_, i) => (
                           <svg 
                             key={i} 
-                            className={`h-4 w-4 ${i < Math.floor(dealership.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                            className={`h-4 w-4 ${i < Math.floor(4) ? 'text-yellow-400' : 'text-gray-300'}`}
                             fill="currentColor" 
                             viewBox="0 0 20 20"
                           >
@@ -315,12 +356,13 @@ const TradeInDealerships = () => {
             </tbody>
           </table>
         </div>
-        {filteredDealerships.length === 0 && (
+        {dealerships.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-gray-500">No dealerships found matching your criteria.</p>
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

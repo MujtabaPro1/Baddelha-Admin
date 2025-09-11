@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axiosInstance from '../service/api';
 import { X } from 'lucide-react';
 
 interface TradeInDealershipFormProps {
@@ -7,7 +8,9 @@ interface TradeInDealershipFormProps {
     email: string;
     phone: string;
     location: string;
+    website?: string;
     logo?: File;
+    id?: string;
   }) => void;
   onCancel: () => void;
   initialData?: {
@@ -15,7 +18,9 @@ interface TradeInDealershipFormProps {
     email: string;
     phone: string;
     location: string;
+    website?: string;
     logoUrl?: string;
+    id?: string;
   };
   isEdit?: boolean;
 }
@@ -31,7 +36,11 @@ const TradeInDealershipForm = ({
     email: initialData?.email || '',
     phone: initialData?.phone || '',
     location: initialData?.location || '',
+    website: initialData?.website || '',
   });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   
   const [logo, setLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData?.logoUrl || null);
@@ -82,6 +91,10 @@ const TradeInDealershipForm = ({
       newErrors.location = 'Location is required';
     }
     
+    if (formData.website && !/^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(formData.website)) {
+      newErrors.website = 'Website URL is invalid';
+    }
+    
     if (!isEdit && !logo && !logoPreview) {
       newErrors.logo = 'Logo is required';
     }
@@ -90,14 +103,80 @@ const TradeInDealershipForm = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadLogo = async (dealershipId: string) => {
+    if (!logo) return null;
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', logo);
+      formData.append('imageableId', dealershipId);
+      formData.append('imageableType', 'Dealership'); // Using Dealership as the type instead of Inspection
+      formData.append('fileCaption', 'logo');
+      
+      const response = await axiosInstance.post('/1.0/media/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      throw error;
+    }
+  };
+
+  const createDealership = async () => {
+    try {
+      setIsLoading(true);
+      setApiError(null);
+      
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.location,
+        website: formData.website || undefined
+      };
+      
+      const response = await axiosInstance.post('/1.0/dealership/create', payload);
+      const dealershipId = response.data.id;
+      
+      // If we have a logo, upload it
+      if (logo) {
+        await uploadLogo(dealershipId);
+      }
+      
+      // Call the onSubmit with the created dealership data including the ID
+      onSubmit({
+        ...formData,
+        id: dealershipId,
+        logo: logo || undefined
+      });
+      
+      setIsLoading(false);
+    } catch (error: any) {
+      setIsLoading(false);
+      setApiError(error.response?.data?.message || 'An error occurred while creating the dealership');
+      console.error('Error creating dealership:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit({
-        ...formData,
-        logo: logo || undefined
-      });
+      if (isEdit) {
+        // For edit mode, use the original onSubmit function
+        onSubmit({
+          ...formData,
+          logo: logo || undefined,
+          id: initialData?.id
+        });
+      } else {
+        // For create mode, use our API function
+        await createDealership();
+      }
     }
   };
 
@@ -194,6 +273,25 @@ const TradeInDealershipForm = ({
               {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
             </div>
             
+            {/* Website Field */}
+            <div>
+              <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
+                Website
+              </label>
+              <input
+                type="text"
+                id="website"
+                name="website"
+                value={formData.website}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  errors.website ? 'border-red-500' : 'border-gray-300'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                placeholder="https://example.com"
+              />
+              {errors.website && <p className="mt-1 text-sm text-red-500">{errors.website}</p>}
+            </div>
+            
             {/* Logo Upload */}
             <div>
               <label htmlFor="logo" className="block text-sm font-medium text-gray-700 mb-1">
@@ -243,19 +341,37 @@ const TradeInDealershipForm = ({
             </div>
           </div>
           
+          {apiError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{apiError}</p>
+            </div>
+          )}
+          
           <div className="mt-8 flex justify-end space-x-3">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+              disabled={isLoading}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none"
+              disabled={isLoading}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none disabled:opacity-50 flex items-center"
             >
-              {isEdit ? 'Update Dealership' : 'Add Dealership'}
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {isEdit ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                isEdit ? 'Update Dealership' : 'Add Dealership'
+              )}
             </button>
           </div>
         </form>
