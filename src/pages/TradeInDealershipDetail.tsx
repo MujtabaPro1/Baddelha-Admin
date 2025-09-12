@@ -482,22 +482,22 @@ const TradeInDealershipDetail = () => {
                   <div className="h-48 bg-gray-200 overflow-hidden">
                     <img 
                       src={car?.images?.length ? car.images?.[0]?.url : 'data:image/jpeg;base64,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'}
-                      alt={`${car.year} ${car.make} ${car.model}`}
+                      alt={`${car?.year} ${car?.make} ${car?.model}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-4">
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {car.year} {car.make} {car.model}
+                        {car?.year} {car?.make} {car?.model}
                       </h3>
                       <StatusBadge status={car?.status || 'available'} />
                     </div>
                     <p className="mt-2 text-xl font-bold text-blue-800">
-                      SAR {car.sellingPrice.toLocaleString()}
+                      SAR {car?.sellingPrice?.toLocaleString()}
                     </p>
                     <p className="mt-2 text-sm text-gray-500">
-                      Listed on {new Date(car.createdAt).toLocaleDateString()}
+                      Listed on {new Date(car?.createdAt).toLocaleDateString()}
                     </p>
                     {/* <div className="mt-4 flex justify-end space-x-2">
                       <button className="p-2 text-blue-900 hover:bg-blue-50 rounded-md">
