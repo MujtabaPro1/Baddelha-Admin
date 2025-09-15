@@ -122,7 +122,7 @@ const BranchTiming: React.FC = () => {
         slots: day.slots.filter(slot => slot.label.trim() !== '')
       }));
       
-      await axiosInstance.put(`/1.0/branch-timing/${selectedBranchId}`, { data: dataToSave });
+      await axiosInstance.post(`/1.0/branch/${selectedBranchId}`, { data: dataToSave });
       toast.success('Branch timings saved successfully');
       setEditMode(false);
       fetchBranchTimings(); // Refresh data

@@ -248,6 +248,28 @@ const CarsDetails = () => {
     }
   }
 
+  const markCarAsInventory = async (carId: string) => {
+    try {
+      axiosInstance.post(`/1.0/car/${carId}/push/inventory`)
+        .then((res) => {
+
+          console.log(res);
+          alert("Successfully pushed car to inventory");
+          
+          setTimeout(() => {
+            window.location.href = '/cars'
+          }, 1000);
+        })
+        .catch((err) => {
+          alert(err?.response?.data?.message || "Something went wrong");
+          console.log('err', err);
+        });
+    } catch (error: any) {
+      toast.error(error?.message || "Something went wrong");
+      console.error("Error pushing car to inventory:", error);
+    }
+  }
+
   const markCarAsAuctionListed = async (carId: string) => {
     try {
       // Get the selling price from initialData
@@ -300,7 +322,7 @@ const CarsDetails = () => {
   }
 
 
-  console.log(user.role);
+
 
   const removeCarStatusFromAuction = async (auctionId: string) => {
     try {
@@ -321,6 +343,8 @@ const CarsDetails = () => {
       console.error("Error listing Car:", error);
     }
   }
+
+
 
   // Function to place an internal bid based on selling price
   const placeInternalBid = async () => {
@@ -451,6 +475,17 @@ const CarsDetails = () => {
              <div >Push to Listing</div>
            </div>
 
+
+           <div onClick={()=>{
+             if(confirm("Are you sure you want to push this car for inventory")) {
+               markCarAsInventory(carDetails?.id);
+             }
+           }} className={'ml-1 mr-1 flex border bg-red-500 border-red-500 p-2 rounded-md text-center text-white items-center cursor-pointer justify-center'}>
+             <ArrowUp/>&nbsp;
+             <div >Push to Inventory</div>
+           </div>
+
+
            <div onClick={()=>{
              if(confirm("Are you sure you want to push this car for auction")) {
                markCarAsAuctionListed(carDetails?.id);
@@ -484,10 +519,10 @@ const CarsDetails = () => {
                 }
               }}>Mark as Reserved</button>
             </div>
-            <div className={`border-2 border-blue-800 text-blue-800 ml-1 mr-1 p-2 rounded-md text-center`}>
+            <div className={`border-2 border-red-800 text-red-800 ml-1 mr-1 p-2 rounded-md text-center`}>
               <button onClick={()=>{
                 if(confirm("Are you sure you want to push to inventory")) {
-           
+                     markCarAsInventory(carDetails?.id);
                 }
               }}>Push to Inventory</button>
             </div>

@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Cars from './pages/Cars';
+import Inventory from './pages/Inventory';
 import Appointments from './pages/Appointments';
 import AppointmentDetail from './pages/AppointmentDetail';
 import ValuationRequests from './pages/ValuationRequests';
@@ -30,6 +31,7 @@ import TradeInDealershipDetail from './pages/TradeInDealershipDetail';
 import Invoicing from './pages/Invoicing';
 import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
+
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -153,6 +155,7 @@ function App() {
 
             <Route path="inspections" element={<Inspections />} />
             <Route path="cars" element={<Cars/>}/>
+            <Route path="inventory-cars" element={<Inventory/>}/>
             <Route path="cars/details/:id" element={<CarsDetails/>}/>
             <Route path="supervisor-inspections" element={<SupervisorInspections />} />
             <Route path="my-inspections" element={<MyInspections />} />

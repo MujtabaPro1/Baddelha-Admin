@@ -8,7 +8,7 @@ import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
 
 
-const Cars = () => {
+const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCondition, setSelectedCondition] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -26,35 +26,14 @@ const Cars = () => {
 
   useEffect(()=>{
     fetchCars();
-    fetchAuctionCars();
   },[]);
 
-  async function fetchAuctionCars() {
-    try {
-      const resp = await axiosInstance.get("/1.0/auction?status=LIVE", {
-        params: {
-          search,
-          page,
-          limit,
-        },
-      });
-
-      
-      if (resp.data.error) {
-        setError(resp.data);
-      } else {
-        setAuctionCars(resp.data.data || []);
-      }
-    } catch (ex: unknown) {
-      console.error('Error fetching auction cars:', ex);
-    }
-  }
 
   async function fetchCars() {
     setLoading(true);
     try {
-      //let search = "";
-      const resp = await axiosInstance.get("/1.0/car/find-all", {
+      let search = "";
+      const resp = await axiosInstance.get("/1.0/car/find-all?status=push_to_inventory", {
         params: {
           search,
           page,
@@ -62,16 +41,12 @@ const Cars = () => {
         },
       });
 
+      console.log(resp);
       if (resp.data.error) {
         setError(resp.data);
       } else {
-
-        let _cars = resp.data.data.filter((car: any) => {
-          return car.carStatus != 'push_to_inventory' && car.carStatus != 'push_to_auction';
-        });
-
-        setData(_cars);
-        setTotalCount(_cars.length);
+        setData(resp.data.data);
+        setTotalCount(resp.data.totalCount);
       }
     } catch (ex: unknown) {
       setError(ex);
@@ -96,7 +71,6 @@ const Cars = () => {
   
   const handleRefresh = () => {
     fetchCars();
-    fetchAuctionCars();
   };
 
 
@@ -104,8 +78,8 @@ const Cars = () => {
   return (
     <div>
       <PageHeader 
-        title="Cars & Auctions" 
-        description="Manage all cars and auctions in the Baddelha inventory"
+        title="Inventory" 
+        description="Manage all cars in the Baddelha inventory"
       />
       
       {/* Filters and search */}
@@ -165,8 +139,7 @@ const Cars = () => {
       
       <div className="flex flex-col md:flex-row gap-6">
         {/* Cars grid - Left side */}
-        <div className="md:w-2/3">
-          <h2 className="text-xl font-semibold mb-4">Available Cars</h2>
+        <div className="w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {loading ? (
           <div className="col-span-3 py-12 text-center">
@@ -237,80 +210,10 @@ const Cars = () => {
           </div>
         </div>
         
-        {/* Auction Cars - Right side */}
-        <div className="md:w-1/3 mt-6 md:mt-0">
-          <h2 className="text-xl font-semibold mb-4">Active Auctions</h2>
-          <div className="space-y-4">
-            {auctionCars && auctionCars.length > 0 ? (
-              auctionCars.map((auction) => (
-                console.log(auction?.status),
-                //|| checkIfAuctionEnded(auction.endTime)
-                auction?.status == 'ENDED'  || auction?.car?.carStatus == 'unlisted'  ? null : (
-                <div 
-                  key={auction.id} 
-                  className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100 hover:shadow-md transition-shadow duration-300"
-                  onClick={() => navigate(`/cars/details/${auction.carId}?auctionId=${auction.id}`)}
-                >
-                   {auction.coverImage ? (
-                  <img 
-                    src={auction.coverImage}
-                    alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
-                    className="w-[120px] h-[120px] m-auto object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <img 
-                    src="https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"
-                    alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
-                    className="w-[120px] h-[120px] m-auto object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                )}
-                  <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {auction.car?.modelYear} {auction.car?.make} {auction.car?.model}
-                      </h3>
-                      <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                        Auction
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 flex justify-between items-center">
-                      <p className="text-lg font-bold text-blue-800">
-                        SAR {Number(auction.currentPrice || auction.startPrice).toLocaleString()}
-                      </p>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>{auction.timeLeft || 'Active'}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-3 text-sm text-gray-600">
-                      <div className="flex justify-between">
-                        <span>Starting Price:</span>
-                        <span className="font-medium">SAR {Number(auction.startPrice).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <span>Bids:</span>
-                        <span className="font-medium">{auction.bidCount || 0}</span>
-                      </div>
-                      <div className="flex justify-between mt-1">
-                        <span>Time Left:</span>
-                        <AuctionCountdown endTime={auction.endTime} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )))
-            ) : (
-              <div className="py-8 text-center bg-white rounded-lg shadow-sm">
-                <p className="text-gray-500">No active auctions at the moment.</p>
-              </div>
-            )}
-          </div>
-        </div>
+   
       </div>
     </div>
   );
 };
 
-export default Cars;
+export default Inventory;

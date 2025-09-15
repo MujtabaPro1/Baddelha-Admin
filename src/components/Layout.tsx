@@ -50,6 +50,7 @@ const Layout = () => {
       { name: 'Dashboard', href: '/', icon: LayoutDashboard },
       { name: 'Users', href: '/users', icon: Users },
       { name: 'Cars', href: '/cars', icon: Car },
+      { name: 'Inventory Cars', href: '/inventory-cars', icon: CarIcon },
       { name: 'Appointments', href: '/appointments', icon: Calendar },
       // { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
