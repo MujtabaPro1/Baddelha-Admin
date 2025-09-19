@@ -141,9 +141,11 @@ const MyInspections = () => {
                     </h3>
 
                   </div>
+                  <p className="text-sm text-gray-600">Ref: {inspection?.id}</p>
                   <div className="mt-1 flex items-center text-sm text-gray-600">
                   <StatusBadge status={inspection.inspectionStatus} />
                   </div>
+
                 </div>
               </div>
               
