@@ -176,7 +176,7 @@ const Cars = () => {
           filteredCars.map((car) => (
             <div
             onClick={() => navigate(`/cars/details/${car.id}`)}
-            key={car.id} className="card overflow-hidden group hover:shadow-md transition-shadow duration-300">
+            key={car.id} className="card  max-w-[350px]overflow-hidden group hover:shadow-md transition-shadow duration-300">
               <div className="h-48 bg-gray-200 overflow-hidden">
                 {car.coverImage ? (
                   <img 
