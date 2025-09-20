@@ -172,6 +172,9 @@ const Inventory = () => {
                   </h3>
                   <StatusBadge status={car.carStatus == 'pending_inspection' ? 'pending' : 'available'} />
                 </div>
+                <div>
+                  <p className='text-[10px] text-gray-500 font-semibold'>Ref {car?.id}</p>
+                </div>
                 <p className="mt-2 text-xl font-bold text-blue-800">
                   {car.sellingPrice ? `SAR ${Number(car.sellingPrice).toLocaleString()}` : 
                    car.bookValue ? `SAR ${Number(car.bookValue).toLocaleString()}` : 'Price not set'}
