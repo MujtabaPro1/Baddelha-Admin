@@ -45,14 +45,17 @@ const Inspections = () => {
     setError(null);
     try {
       const response = await axiosInstance.get('/1.0/inspection/find-all');
+
+    
      
       const data = response?.data?.data?.map((a: any)=>{
         return {
           ...a,
           priority: 'high',
           Branch: {
-            enName: a?.Branch?.enName || 'Riyadh Tahlia Branch'
+            enName: a?.BookAppointments[0]?.Branch?.enName || 'Riyadh Tahlia Branch'
           },
+          appointmentId: a?.BookAppointments[0]?.uid,
           car: a?.Car
         }
       });
@@ -168,15 +171,21 @@ const Inspections = () => {
                     className="h-16 w-24 object-cover rounded-md"
                   />
                 </div>
+              
                 <div>
+
                   <div className="flex items-center flex-wrap gap">
                     <h3 className="text-lg font-medium text-gray-900">
                       {inspection.car.year} {inspection.car.make} {inspection.car.model}
                     </h3>
                   </div>
+                  <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 mb-2 rounded">
+                      Ref: {inspection.appointmentId}
+                  </div>
                   <div className="mt-1 flex items-center text-sm text-gray-600">
                       <StatusBadge status={inspection.inspectionStatus} />
                   </div>
+                  
                 </div>
               </div>
               
