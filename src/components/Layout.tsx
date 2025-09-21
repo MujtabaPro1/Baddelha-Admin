@@ -59,6 +59,7 @@ const Layout = () => {
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
       { name: 'Branches', href: '/branches', icon: Building },
+      { name: 'Notifications', href: '/notifications', icon: Bell },
       { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
       { name: 'Invoicing', href: '/invoicing', icon: FileText },
     ];

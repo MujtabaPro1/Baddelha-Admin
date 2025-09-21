@@ -32,6 +32,7 @@ import Invoicing from './pages/Invoicing';
 import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
 import Branches from './pages/Branches';
+import Notifications from './pages/Notifications';
 
 
 // Protected route component
@@ -180,6 +181,12 @@ function App() {
             <Route path="branches" element={
                                 <AdminRoute>
                                   <Branches />
+                                </AdminRoute>
+                              } />
+
+            <Route path="notifications" element={
+                                <AdminRoute>
+                                  <Notifications />
                                 </AdminRoute>
                               } />
 
