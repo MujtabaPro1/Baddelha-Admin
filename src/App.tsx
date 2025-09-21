@@ -31,6 +31,7 @@ import TradeInDealershipDetail from './pages/TradeInDealershipDetail';
 import Invoicing from './pages/Invoicing';
 import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
+import Branches from './pages/Branches';
 
 
 // Protected route component
@@ -176,9 +177,9 @@ function App() {
                                 </AdminRoute>
                               } />
 
-            <Route path="tradein-dealerships" element={
+            <Route path="branches" element={
                                 <AdminRoute>
-                                  <TradeInDealerships />
+                                  <Branches />
                                 </AdminRoute>
                               } />
 

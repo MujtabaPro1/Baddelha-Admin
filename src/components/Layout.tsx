@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, Users, Car, Calendar, 
   LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
-  Clock, FileText
+  Clock, FileText,
+  Building
 } from 'lucide-react';
 
 const Layout = () => {
@@ -57,6 +58,7 @@ const Layout = () => {
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
+      { name: 'Branches', href: '/branches', icon: Building },
       { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
       { name: 'Invoicing', href: '/invoicing', icon: FileText },
     ];
