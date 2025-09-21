@@ -216,7 +216,9 @@ const Layout = () => {
             <div className="ml-4 flex items-center md:ml-6">
               <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" aria-hidden="true" />
+                <Bell
+                  onClick={() => navigate('/notifications')}
+                  className="h-6 w-6" aria-hidden="true" />
               </button>
 
               {/* Profile dropdown */}
