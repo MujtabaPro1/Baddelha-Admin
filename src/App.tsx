@@ -190,6 +190,13 @@ function App() {
                                 </AdminRoute>
                               } />
 
+<Route path="tradein-dealerships" element={
+                                <AdminRoute>
+                                  <TradeInDealerships />
+                                </AdminRoute>
+                              } />
+
+
             <Route path="tradein-dealerships/:id" element={
                                 <AdminRoute>
                                   <TradeInDealershipDetail />
