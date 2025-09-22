@@ -28,6 +28,7 @@ import CarsDetails from './pages/CarsDetails';
 import BranchTiming from './pages/BranchTiming';
 import TradeInDealerships from './pages/TradeInDealerships';
 import TradeInDealershipDetail from './pages/TradeInDealershipDetail';
+import TradeInAppointments from './pages/TradeInAppointments';
 import Invoicing from './pages/Invoicing';
 import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
@@ -200,6 +201,12 @@ function App() {
             <Route path="tradein-dealerships/:id" element={
                                 <AdminRoute>
                                   <TradeInDealershipDetail />
+                                </AdminRoute>
+                              } />
+
+            <Route path="tradein-appointments" element={
+                                <AdminRoute>
+                                  <TradeInAppointments />
                                 </AdminRoute>
                               } />
 
