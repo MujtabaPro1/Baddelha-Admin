@@ -173,7 +173,7 @@ const TradeInDealershipDetail = () => {
           const imageFormData = new FormData();
           imageFormData.append('file', formData.image);
           imageFormData.append('imageableId', carId);
-          imageFormData.append('imageableType', 'Dealership'); // Assuming 'Car' is the correct type
+          imageFormData.append('imageableType', 'DealershipCar'); // Assuming 'Car' is the correct type
           imageFormData.append('fileCaption', 'logo');
           
           // Upload the image

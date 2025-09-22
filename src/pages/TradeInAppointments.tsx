@@ -6,6 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import { Search, Calendar, Filter, MapPin, RefreshCw } from 'lucide-react';
 import { findAllTradeInAppointments } from '../service/tradeInAppointment';
 import { TradeInAppointment } from '../types/tradeInAppointment';
+import axiosInstance from '../service/api';
 
 const numberWithComma = (num: number) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -20,6 +21,34 @@ const TradeInAppointments = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
+  // Fetch dealership details by ID
+  const fetchDealershipDetails = async (dealershipId: string) => {
+    try {
+      const response = await axiosInstance.get(`/1.0/dealership/find/${dealershipId}`);
+      if (response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching dealership details:', error);
+      return null;
+    }
+  };
+
+  // Fetch car details by ID
+  const fetchCarDetails = async (dealershipCarId: string) => {
+    try {
+      const response = await axiosInstance.get(`/1.0/dealership-car/find/${dealershipCarId}`);
+      if (response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching car details:', error);
+      return null;
+    }
+  };
+
   // Fetch trade-in appointments data from API
   const fetchTradeInAppointments = async () => {
     setLoading(true);
@@ -29,32 +58,50 @@ const TradeInAppointments = () => {
       
       console.log(response);
       if (response?.items) {
-        const data = response.items.map((a: any) => {
-          return {
-            ...a,
-            car: a?.carDetails,
-            // Map dealership data if available
-            dealership: a?.dealership ? {
-              id: a.dealership.id,
-              name: a.dealership.name,
-              email: a.dealership.email,
-              phone: a.dealership.phone,
-              image: a.dealership.image,
-              logo: a.dealership.logo,
-              address: a.dealership.address,
-              location: a.dealership.location,
-              website: a.dealership.website,
-              rating: a.dealership.rating,
-              reviews: a.dealership.reviews,
-              services: a.dealership.services,
-              specialties: a.dealership.specialties,
-              tradeInBonus: a.dealership.tradeInBonus,
-              processingTime: a.dealership.processingTime
-            } : undefined
-          };
-        });
+        // Process each appointment to fetch dealership and car details
+        const appointmentsWithDetails = await Promise.all(
+          response.items.map(async (appointment: any) => {
+            let dealershipData = null;
+            let carData = null;
+            
+            // Extract dealership ID and dealershipCarId from carDetails
+            if (appointment?.carDetails) {
+              const { dealership: dealershipId, dealershipCarId } = appointment.carDetails;
+              
+              // Fetch dealership details if dealershipId exists
+              if (dealershipId) {
+                dealershipData = await fetchDealershipDetails(dealershipId);
+              }
+              
+              // Fetch car details if dealershipCarId exists
+              if (dealershipCarId) {
+                carData = await fetchCarDetails(dealershipCarId);
+              }
+            }
+            
+            // Return appointment with additional data
+            console.log({
+              ...appointment,
+              car: {
+                ...appointment?.car,
+                ...carData,
+                dealership: dealershipData
+              },
+              tradeInVehicle: appointment?.carDetails?.tradeInVehicle || null
+            });
+            return {
+              ...appointment,
+              car: {
+                ...appointment?.car,
+                ...carData,
+                dealership: dealershipData
+              },
+              tradeInVehicle: appointment?.carDetails?.tradeInVehicle || null
+            };
+          })
+        );
         
-        setAppointments(data);
+        setAppointments(appointmentsWithDetails);
         if (response.meta) {
           setTotalPages(response.meta.totalPages);
         }
@@ -171,7 +218,7 @@ const TradeInAppointments = () => {
               filteredAppointments.map((appointment) => (
                 <Link 
                   to={`/tradein-appointments/${appointment.id}`}
-                  key={appointment.uid} 
+                  key={appointment.uid || appointment.id} 
                   className="card p-6 block hover:shadow-md animated-transition"
                 >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -182,12 +229,33 @@ const TradeInAppointments = () => {
                             {appointment.car?.make} {appointment.car?.model} {appointment.car?.year}
                           </h3>
                           <span className="ml-3">
-                            <StatusBadge status={appointment.status} />
+                            <StatusBadge status={appointment.status.toLowerCase() as 'scheduled' | 'completed' | 'cancelled'} />
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-gray-600">
-                          {appointment.customerName} • {appointment.phone} • {appointment.email}
+                          {appointment.firstName} {appointment.lastName} • {appointment.phone} • {appointment.email}
                         </p>
+                        
+                        {/* Trade-In Vehicle Information */}
+                        {appointment.tradeInVehicle && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded-md">
+                            <p className="text-xs text-blue-700 font-medium">Trade-In Vehicle:</p>
+                            <p className="text-sm font-medium">
+                              {appointment.tradeInVehicle.year} {appointment.tradeInVehicle.make} {appointment.tradeInVehicle.model}
+                              {appointment.tradeInVehicle.estimatedValue && (
+                                <span className="ml-2 text-green-600">
+                                  SAR {numberWithComma(appointment.tradeInVehicle.estimatedValue)}
+                                </span>
+                              )}
+                            </p>
+                            {appointment.tradeInVehicle.condition && (
+                              <p className="text-xs text-gray-600">
+                                Condition: <span className="capitalize">{appointment.tradeInVehicle.condition}</span> • 
+                                Mileage: {numberWithComma(typeof appointment.tradeInVehicle.mileage === 'string' ? parseInt(appointment.tradeInVehicle.mileage) : appointment.tradeInVehicle.mileage || 0)} km
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -241,9 +309,11 @@ const TradeInAppointments = () => {
                           {appointment.car?.dealership?.tradeInBonus && (
                             <p className="text-gray-600"><span className="font-medium">Trade-In Bonus:</span> SAR {numberWithComma(appointment.car?.dealership?.tradeInBonus)}</p>
                           )}
+                                                    <p className="text-gray-600"><span className="font-medium">Email:</span> {appointment.car?.dealership?.email}</p>
                         </div>
                         <div>
                           <p className="text-gray-600"><span className="font-medium">Contact:</span> {appointment.car?.dealership?.phone}</p>
+                          <p className="text-gray-600"><span className="font-medium">Phone:</span> {appointment.car?.dealership?.phone}</p>
                         </div>
                       </div>
                       
