@@ -11,6 +11,20 @@ export interface TradeInDealership {
   pendingCars: number;
   dateCreated: string;
   rating: number;
+  reviews?: number;
+  address?: string;
+  website?: string;
+  image?: string;
+  logo?: {
+    id: string;
+    url: string;
+    caption: string;
+    fileType: string;
+  };
+  services?: string[];
+  specialties?: string[];
+  tradeInBonus?: number;
+  processingTime?: string;
   monthlyPerformance: {
     month: string;
     sales: number;
@@ -34,17 +48,40 @@ export interface Car {
 export const mockDealerships: TradeInDealership[] = [
   {
     id: '1',
-    name: 'Premium Auto Exchange',
-    location: 'Riyadh, King Fahd Road',
+    name: 'TradeIn Test 1',
+    location: 'Dubai',
     contactPerson: 'Ahmed Al-Saud',
-    phone: '+966 50 123 4567',
-    email: 'contact@premiumauto.sa',
+    phone: '971588258739',
+    email: 'tradeintest1@gmail.com',
     totalCars: 45,
     activeListings: 28,
     soldCars: 12,
     pendingCars: 5,
-    dateCreated: '2023-06-15',
+    dateCreated: '2025-09-11T06:21:14.335Z',
     rating: 4.8,
+    reviews: 300,
+    address: 'Dubai',
+    website: 'www.example.com',
+    image: 'https://cau-stg-bucket.s3.af-south-1.amazonaws.com/Dealership/file-1757571674449-218323682.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ3EGRILCC65ZXTFT%2F20250922%2Faf-south-1%2Fs3%2Faws4_request&X-Amz-Date=20250922T080134Z&X-Amz-Expires=86400&X-Amz-Signature=9b6f5d73d7fda6167554ac0e5394e5d1219778f9c4dc537923a7a569e2534bdc&X-Amz-SignedHeaders=host',
+    logo: {
+      id: '1741828f-a709-49d0-b699-b966df4f8606',
+      url: 'https://cau-stg-bucket.s3.af-south-1.amazonaws.com/Dealership/file-1757571674449-218323682.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ3EGRILCC65ZXTFT%2F20250922%2Faf-south-1%2Fs3%2Faws4_request&X-Amz-Date=20250922T080134Z&X-Amz-Expires=86400&X-Amz-Signature=9b6f5d73d7fda6167554ac0e5394e5d1219778f9c4dc537923a7a569e2534bdc&X-Amz-SignedHeaders=host',
+      caption: 'logo',
+      fileType: 'image/webp'
+    },
+    services: [
+      'Free Inspection',
+      'Instant Valuation',
+      'Same Day Payment',
+      'Document Handling'
+    ],
+    specialties: [
+      'Luxury Cars',
+      'SUVs',
+      'Electric Vehicles'
+    ],
+    tradeInBonus: 5000,
+    processingTime: '24 hours',
     monthlyPerformance: [
       { month: 'Jan', sales: 8, listings: 12 },
       { month: 'Feb', sales: 10, listings: 15 },

@@ -21,6 +21,28 @@ export interface TradeInAppointment {
     enName: string;
     arName: string;
   };
+  dealership?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    image: string;
+    logo?: {
+      id: string;
+      url: string;
+      caption: string;
+      fileType: string;
+    };
+    address: string;
+    location: string;
+    website: string;
+    rating: number;
+    reviews: number;
+    services: string[];
+    specialties: string[];
+    tradeInBonus?: number;
+    processingTime?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
