@@ -20,6 +20,8 @@ const TradeInAppointments = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [pageLimit, setPageLimit] = useState<number>(10);
 
   // Fetch dealership details by ID
   const fetchDealershipDetails = async (dealershipId: string) => {
@@ -102,9 +104,11 @@ const TradeInAppointments = () => {
         );
         
         setAppointments(appointmentsWithDetails);
-        if (response.meta) {
-          setTotalPages(response.meta.totalPages);
-        }
+        // Handle pagination data
+        if (response.limit) setPageLimit(response.limit);
+        if (response.page) setCurrentPage(response.page);
+        if (response.total) setTotalItems(response.total);
+        if (response.totalPages) setTotalPages(response.totalPages);
       } else {
         throw new Error(response.message || 'Failed to fetch trade-in appointments');
       }
@@ -341,7 +345,7 @@ const TradeInAppointments = () => {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalPages > 0 && (
               <div className="flex justify-center mt-6">
                 <nav className="flex items-center">
                   <button
@@ -356,7 +360,7 @@ const TradeInAppointments = () => {
                     Previous
                   </button>
                   <span className="text-sm text-gray-700">
-                    Page {currentPage} of {totalPages}
+                    Page {currentPage} of {totalPages} • {totalItems} items • {pageLimit} per page
                   </span>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
