@@ -28,8 +28,8 @@ const TradeInAppointments = () => {
       const response = await findAllTradeInAppointments(searchQuery, currentPage);
       
       console.log(response);
-      if (response?.items) {
-        const data = response.items.map((a: any) => {
+      if (response?.data?.items) {
+        const data = response.data.items.map((a: any) => {
           return {
             ...a,
             car: a.carDetail ? JSON.parse(a.carDetail) : null,
