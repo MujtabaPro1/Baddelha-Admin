@@ -1,0 +1,59 @@
+/* RTL Support Styles */
+.rtl {
+  text-align: right;
+}
+
+.rtl .prose h1,
+.rtl .prose h2,
+.rtl .prose h3,
+.rtl .prose h4,
+.rtl .prose h5,
+.rtl .prose h6,
+.rtl .prose p {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl .ql-editor {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl .ql-container.ql-snow {
+  direction: rtl;
+}
+
+.rtl .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+  margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.rtl .flex-row {
+  flex-direction: row-reverse;
+}
+
+.rtl .ml-auto {
+  margin-left: unset;
+  margin-right: auto;
+}
+
+.rtl .mr-auto {
+  margin-right: unset;
+  margin-left: auto;
+}
+
+.rtl .ml-1, .rtl .ml-2, .rtl .ml-3, .rtl .ml-4 {
+  margin-left: unset;
+  margin-right: 0.25rem;
+}
+
+.rtl .mr-1, .rtl .mr-2, .rtl .mr-3, .rtl .mr-4 {
+  margin-right: unset;
+  margin-left: 0.25rem;
+}
+
+/* Fix for Quill editor toolbar in RTL mode */
+.rtl .ql-snow .ql-toolbar {
+  direction: ltr;
+}

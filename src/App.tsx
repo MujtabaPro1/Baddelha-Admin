@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 // Pages
 import Login from './pages/Login';
@@ -34,6 +35,7 @@ import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
 import Branches from './pages/Branches';
 import Notifications from './pages/Notifications';
+import ContentModeration from './pages/ContentModeration';
 
 
 // Protected route component
@@ -98,7 +100,8 @@ const CallCenterRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <LanguageProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
 
@@ -191,6 +194,12 @@ function App() {
                                 </AdminRoute>
                               } />
 
+            <Route path="content-moderation" element={
+                                <AdminRoute>
+                                  <ContentModeration />
+                                </AdminRoute>
+                              } />
+
 <Route path="tradein-dealerships" element={
                                 <AdminRoute>
                                   <TradeInDealerships />
@@ -247,7 +256,8 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
+        </Router>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

@@ -107,16 +107,16 @@ const CarsDetails = () => {
     setLoading(true);
     try {
       const resp = await axiosInstance.get("/1.0/car/find/" + params.id);
-      console.log("Car details:", resp.data?.car?.Bid);
+      console.log("Car details:", resp.data?.car);
       setCarDetails(resp.data.car);
+      setInspectionDetails(resp.data.car?.Inspection?.[0]);
+      setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
       const auctionId = searchParams.get('auctionId');
       if(!auctionId){
       setBids(resp.data.car?.Bid);
       }
-      setInspectionDetails(resp.data.car?.Inspection?.[0]);
-      setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
       
-    
+  
       // Fetch images if images exists
       if (resp.data?.images) {
         setImages(resp.data.images);
