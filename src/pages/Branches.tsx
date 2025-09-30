@@ -13,7 +13,7 @@ interface Branch {
   address?: string;
   city?: string;
   gmap?: string;
-  status: 'active' | 'inactive';
+  is_active: boolean;
   createdAt: string;
 }
 
@@ -53,7 +53,7 @@ const Branches = () => {
     try {
       const response = await axiosInstance.get('/1.0/branch');
       response?.data?.map((d: any)=>{
-        d['status'] = 'active';
+        d['status'] = d?.is_active ? 'active' : 'inactive';
         d['city'] = d?.enName?.split(' ')[0] || ''
         return d;
       })
@@ -127,7 +127,7 @@ const Branches = () => {
         is_active: formData.is_active
       };
       
-      await axiosInstance.post(`/1.0/branch/${selectedBranch.id}`, payload);
+      await axiosInstance.put(`/1.0/branch/${selectedBranch.id}`, payload);
       toast.success('Branch updated successfully');
       setShowEditModal(false);
       fetchBranches();
@@ -158,36 +158,11 @@ const Branches = () => {
       address: branch.address || '',
       city: branch.city || '',
       gmap: branch.gmap || '',
-      is_active: branch.status === 'active'
+      is_active: branch.is_active
     });
     setShowEditModal(true);
   };
 
-  const openSupervisorModal = async (branch: Branch) => {
-    setSelectedBranch(branch);
-    try {
-      // Fetch supervisors
-      const response = await axiosInstance.get('/1.0/users?role=supervisor');
-      setSupervisors(response.data || []);
-      setShowSupervisorModal(true);
-    } catch (error) {
-      console.error('Error fetching supervisors:', error);
-      toast.error('Failed to load supervisors');
-    }
-  };
-
-  const openInspectorModal = async (branch: Branch) => {
-    setSelectedBranch(branch);
-    try {
-      // Fetch inspectors
-      const response = await axiosInstance.get('/1.0/users?role=inspector');
-      setInspectors(response.data || []);
-      setShowInspectorModal(true);
-    } catch (error) {
-      console.error('Error fetching inspectors:', error);
-      toast.error('Failed to load inspectors');
-    }
-  };
 
   const assignSupervisor = async (userId: string) => {
     if (!selectedBranch) return;
@@ -213,15 +188,6 @@ const Branches = () => {
       console.error('Error assigning inspector:', error);
       toast.error('Failed to assign inspector');
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   return (
