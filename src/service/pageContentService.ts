@@ -39,7 +39,7 @@ export const savePageContent = async (pageContent: PageContent): Promise<PageCon
   try {
     // If the content has an ID, it's an update; otherwise, it's a new content
     const method = pageContent.id ? 'put' : 'post';
-    const endpoint = pageContent.slug 
+    const endpoint = pageContent.slug &&  method == 'put'
       ? `1.0/page-content/${pageContent.slug}` 
       : '1.0/page-content';
     
