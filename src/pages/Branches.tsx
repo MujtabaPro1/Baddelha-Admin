@@ -12,6 +12,7 @@ interface Branch {
   arName?: string;
   address?: string;
   city?: string;
+  gmap?: string;
   status: 'active' | 'inactive';
   createdAt: string;
 }
@@ -38,8 +39,9 @@ const Branches = () => {
     enName: '',
     arName: '',
     address: '',
+    gmap: '',
     city: '',
-    status: 'active' as 'active' | 'inactive'
+    is_active: true
   });
 
   useEffect(() => {
@@ -65,25 +67,44 @@ const Branches = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData({
+        ...formData,
+        [name]: checked
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const handleAddBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axiosInstance.post('/1.0/branch', formData);
+      // Format data according to API requirements
+      const payload = {
+        enName: formData.enName,
+        arName: formData.arName,
+        address: formData.address,
+        gmap: formData.gmap,
+        is_active: formData.is_active
+      };
+      
+      await axiosInstance.post('/1.0/branch', payload);
       toast.success('Branch added successfully');
       setShowAddModal(false);
       setFormData({
         enName: '',
         arName: '',
         address: '',
+        gmap: '',
         city: '',
-        status: 'active'
+        is_active: true
       });
       fetchBranches();
     } catch (error) {
@@ -97,7 +118,16 @@ const Branches = () => {
     if (!selectedBranch) return;
     
     try {
-      await axiosInstance.put(`/1.0/branch/${selectedBranch.id}`, formData);
+      // Format data according to API requirements
+      const payload = {
+        enName: formData.enName,
+        arName: formData.arName,
+        address: formData.address,
+        gmap: formData.gmap,
+        is_active: formData.is_active
+      };
+      
+      await axiosInstance.post(`/1.0/branch/${selectedBranch.id}`, payload);
       toast.success('Branch updated successfully');
       setShowEditModal(false);
       fetchBranches();
@@ -127,7 +157,8 @@ const Branches = () => {
       arName: branch.arName || '',
       address: branch.address || '',
       city: branch.city || '',
-      status: branch.status || 'active'
+      gmap: branch.gmap || '',
+      is_active: branch.status === 'active'
     });
     setShowEditModal(true);
   };
@@ -268,7 +299,7 @@ const Branches = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button
+                        {/* <button
                           className="text-green-600 hover:text-green-900 p-1 rounded-full hover:bg-green-100"
                           onClick={() => openSupervisorModal(branch)}
                         >
@@ -279,7 +310,7 @@ const Branches = () => {
                           onClick={() => openInspectorModal(branch)}
                         >
                           <UserPlus className="h-4 w-4" />
-                        </button>
+                        </button> */}
                         <button
                           className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100"
                           onClick={() => handleDeleteBranch(branch.id)}
@@ -353,16 +384,27 @@ const Branches = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
+                  <label className="block text-sm font-medium text-gray-700">Google Maps Link</label>
+                  <input
+                    type="text"
+                    name="gmap"
+                    value={formData.gmap}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  />
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="is_active"
+                    name="is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-900 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_active" className="ml-2 block text-sm font-medium text-gray-700">
+                    Active Branch
+                  </label>
                 </div>
               </div>
               <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 rounded-b-lg">
@@ -442,16 +484,27 @@ const Branches = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
+                  <label className="block text-sm font-medium text-gray-700">Google Maps Link</label>
+                  <input
+                    type="text"
+                    name="gmap"
+                    value={formData.gmap}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  />
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="edit_is_active"
+                    name="is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-900 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="edit_is_active" className="ml-2 block text-sm font-medium text-gray-700">
+                    Active Branch
+                  </label>
                 </div>
               </div>
               <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 rounded-b-lg">
