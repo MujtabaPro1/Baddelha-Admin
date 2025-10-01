@@ -36,6 +36,7 @@ import InvoiceDetail from './pages/InvoiceDetail';
 import Branches from './pages/Branches';
 import Notifications from './pages/Notifications';
 import ContentModeration from './pages/ContentModeration';
+import Leads from './pages/Leads';
 
 
 // Protected route component
@@ -197,6 +198,12 @@ function App() {
             <Route path="content-moderation" element={
                                 <AdminRoute>
                                   <ContentModeration />
+                                </AdminRoute>
+                              } />
+
+            <Route path="leads" element={
+                                <AdminRoute>
+                                  <Leads />
                                 </AdminRoute>
                               } />
 

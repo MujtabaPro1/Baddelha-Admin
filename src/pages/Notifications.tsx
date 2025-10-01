@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Bell, RefreshCw, Calendar, User, Info } from 'lucide-react';
+import { Bell, RefreshCw, Calendar, User, Info, Send } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
-import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import SendNotificationModal from '../components/SendNotificationModal';
+import { mockNotifications, MockNotification } from '../mock/notificationsData';
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  createdAt: string;
-  isRead: boolean;
-  type?: string;
-  userId?: string;
-}
+// Using the MockNotification interface from mock data
 
 const Notifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<MockNotification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetchNotifications();
@@ -26,12 +20,19 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/1.0/notification/find-all');
-      setNotifications(response.data?.data || []);
+      // Use mock data for testing
+      // In production, uncomment the API call below
+      // const response = await axiosInstance.get('/1.0/notification/find-all');
+      // setNotifications(response.data?.data || []);
+      
+      // Using mock data
+      setTimeout(() => {
+        setNotifications([...mockNotifications]);
+        setLoading(false);
+      }, 600); // Simulate API delay
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to load notifications');
-    } finally {
       setLoading(false);
     }
   };
@@ -61,12 +62,20 @@ const Notifications = () => {
         title="Notifications" 
         description="View all system notifications"
         actions={
-          <button 
-            className="btn btn-outline-primary flex items-center"
-            onClick={fetchNotifications}
-          >
-            <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-          </button>
+          <div className="flex gap-2">
+            <button 
+              className="btn btn-outline-primary flex items-center"
+              onClick={fetchNotifications}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+            </button>
+            <button 
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-900 border border-transparent rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 flex items-center"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Send className="h-4 w-4 mr-1" /> Send Notification
+            </button>
+          </div>
         }
       />
 
@@ -118,6 +127,13 @@ const Notifications = () => {
           </div>
         )}
       </div>
+      
+      {/* Send Notification Modal */}
+      <SendNotificationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSend={fetchNotifications}
+      />
     </div>
   );
 };
