@@ -23,8 +23,11 @@ const Leads = () => {
   const getLeads = async () => {
     setLoading(true);
     try {
-      const data = await fetchLeads();
-      setLeads(data);
+      const data: any = await fetchLeads();
+      data.data.map((lead: Lead) => {
+        lead['status'] = 'new';
+      });
+      setLeads(data?.data);
     } catch (error) {
       console.error('Failed to fetch leads:', error);
       toast.error('Failed to load leads');
@@ -116,7 +119,7 @@ const Leads = () => {
               <tr key={lead.id} className="hover:bg-gray-50 animated-transition">
                 <td className="font-medium text-gray-900">{lead.fullName}</td>
                 <td>{lead.email}</td>
-                <td>{lead.phone}</td>
+                <td>{lead.phoneNumber}</td>
                 <td>{lead.subject}</td>
                 <td>{formatDate(lead.createdAt)}</td>
                 <td>
@@ -132,12 +135,12 @@ const Leads = () => {
                     >
                       View
                     </button>
-                    <button 
+                    {/* <button 
                       className="text-sm text-blue-600 hover:text-blue-900"
                       onClick={() => openStatusModal(lead)}
                     >
                       Update Status
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

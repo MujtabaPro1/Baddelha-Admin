@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Car, Calendar, 
   LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
   Clock, FileText,
-  Building, Shield, MessageSquare
+  Building, Shield, MessageSquare, Mail
 } from 'lucide-react';
 
 const Layout = () => {
@@ -63,6 +63,7 @@ const Layout = () => {
       { name: 'Notifications', href: '/notifications', icon: Bell },
       { name: 'Content Moderation', href: '/content-moderation', icon: Shield },
       { name: 'Leads', href: '/leads', icon: MessageSquare },
+      { name: 'Contacts', href: '/contacts', icon: Mail },
       { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
       { name: 'Invoicing', href: '/invoicing', icon: FileText },
     ];

@@ -37,6 +37,8 @@ import Branches from './pages/Branches';
 import Notifications from './pages/Notifications';
 import ContentModeration from './pages/ContentModeration';
 import Leads from './pages/Leads';
+import Contacts from './pages/Contacts';
+import ContactDetail from './pages/ContactDetail';
 
 
 // Protected route component
@@ -204,6 +206,18 @@ function App() {
             <Route path="leads" element={
                                 <AdminRoute>
                                   <Leads />
+                                </AdminRoute>
+                              } />
+
+            <Route path="contacts" element={
+                                <AdminRoute>
+                                  <Contacts />
+                                </AdminRoute>
+                              } />
+
+            <Route path="contacts/:id" element={
+                                <AdminRoute>
+                                  <ContactDetail />
                                 </AdminRoute>
                               } />
 

@@ -3,7 +3,7 @@ import { Lead } from '../types/lead';
 import { mockLeads } from '../mock/leadsData';
 
 // Flag to toggle between mock data and real API
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 // Fetch all leads
 export const fetchLeads = async (): Promise<Lead[]> => {
@@ -15,7 +15,7 @@ export const fetchLeads = async (): Promise<Lead[]> => {
   }
   
   try {
-    const response = await axiosInstance.get('1.0/leads');
+    const response = await axiosInstance.get('1.0/contact/find-all');
     return response.data;
   } catch (error) {
     console.error('Error fetching leads:', error);
