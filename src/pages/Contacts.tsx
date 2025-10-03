@@ -22,6 +22,9 @@ const Contacts = () => {
     setLoading(true);
     try {
       const response = await fetchContacts(page, limit);
+      response?.data?.map((contact: Contact) => {
+        contact.status = 'new';
+      });
       setContacts(response.data);
       setTotal(response.meta?.total || 0);
       setLoading(false);
@@ -138,7 +141,7 @@ const Contacts = () => {
                             <Mail className="h-3 w-3 mr-1" /> {contact.email}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center">
-                            <Phone className="h-3 w-3 mr-1" /> {contact.phone}
+                            <Phone className="h-3 w-3 mr-1" /> {contact.phoneNumber}
                           </div>
                         </div>
                       </div>
@@ -165,7 +168,7 @@ const Contacts = () => {
                         >
                           <Eye className="h-5 w-5" />
                         </Link>
-                        {contact.status === 'new' && (
+                        {/* {contact.status === 'new' && (
                           <button
                             onClick={() => handleStatusChange(contact.id, 'read')}
                             className="text-green-600 hover:text-green-900"
@@ -182,7 +185,7 @@ const Contacts = () => {
                           >
                             <Archive className="h-5 w-5" />
                           </button>
-                        )}
+                        )} */}
                       </div>
                     </td>
                   </tr>

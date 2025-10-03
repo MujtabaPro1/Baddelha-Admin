@@ -3,7 +3,7 @@ import { Contact, ContactResponse } from '../types/contact';
 import { mockContacts } from '../mock/contactsData';
 
 // Flag to toggle between mock data and real API
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 /**
  * Fetch all contacts
