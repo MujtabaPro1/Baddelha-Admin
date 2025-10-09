@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy, Eye } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
 
@@ -30,8 +30,19 @@ const CarsDetails = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const [bids, setBids] = useState<any>([]);
   const [auctionHistory, setAuctionHistory] = useState<any>([]);
+  const [showPriceModal, setShowPriceModal] = useState<boolean>(false);
+  const [editedPrice, setEditedPrice] = useState<number | null>(null);
+  const [updatingPrice, setUpdatingPrice] = useState<boolean>(false);
+  const [coverImage,setCoverImage] = useState(null);
 
 
+
+  // Set initial edited price when car details are loaded
+  useEffect(() => {
+    if (carDetails?.sellingPrice) {
+      setEditedPrice(Number(carDetails.sellingPrice));
+    }
+  }, [carDetails]);
 
   useEffect(()=>{
     const userDetails = localStorage.getItem('baddelha_user');
@@ -111,6 +122,7 @@ const CarsDetails = () => {
       setCarDetails(resp.data.car);
       setInspectionDetails(resp.data.car?.Inspection?.[0]);
       setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
+      setCoverImage(resp?.data?.carImages?.[0]?.url);
       const auctionId = searchParams.get('auctionId');
       if(!auctionId){
       setBids(resp.data.car?.Bid);
@@ -299,6 +311,29 @@ const CarsDetails = () => {
     }
   }
 
+  // Function to update car selling price
+  const updateCarPrice = async () => {
+    if (!carDetails?.id || !editedPrice) return;
+    
+    try {
+      setUpdatingPrice(true);
+      
+      await axiosInstance.put("/1.0/car/update/" + carDetails.id, {
+        sellingPrice: editedPrice
+      });
+      
+      toast.success("Price updated successfully");
+      setCarDetails({...carDetails, sellingPrice: editedPrice});
+      setShowPriceModal(false);
+      
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update price");
+      console.error("Error updating price:", error);
+    } finally {
+      setUpdatingPrice(false);
+    }
+  };
+
   const markCarStatus = async (carId: string,status:string) => {
     try {
 
@@ -455,6 +490,78 @@ const CarsDetails = () => {
         description={`Car ID: ${params.id}`}
       />
       
+      {/* Reveal Price Modal */}
+      {showPriceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Reveal Price</h3>
+              
+              <div className="flex items-center mb-4">
+                {coverImage ? (
+                  <img 
+                    src={coverImage} 
+                    alt="Car thumbnail" 
+                    className="w-20 h-20 object-cover rounded-md mr-4" 
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )}
+                
+                <div>
+                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
+                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
+                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">SAR</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="sellingPrice"
+                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
+                    value={editedPrice || ''}
+                    onChange={(e) => setEditedPrice(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setShowPriceModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
+                  onClick={updateCarPrice}
+                  disabled={updatingPrice}
+                >
+                  {updatingPrice ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>Save</>  
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Main content layout with auction history in right corner */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-grow">
@@ -463,6 +570,8 @@ const CarsDetails = () => {
       
 
 
+        
+         
          {user && user?.role != 'sale' ?  <>
           {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
           <div className={'w-75 flex items-end justify-end'}>
@@ -994,7 +1103,20 @@ const CarsDetails = () => {
         </div>
         
         {/* Auction History in right corner */}
+        
         <div className="md:w-1/4 lg:w-1/3">
+         {/* Reveal Price button for QA users */}
+         {user && user?.role === 'qa' && (
+           <div className="mb-4">
+             <button
+               onClick={() => setShowPriceModal(true)}
+               className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+             >
+               <Eye className="mr-2 h-4 w-4" />
+               Reveal Price
+             </button>
+           </div>
+         )}
           <AuctionHistory auctions={auctionHistory} />
         </div>
       </div>

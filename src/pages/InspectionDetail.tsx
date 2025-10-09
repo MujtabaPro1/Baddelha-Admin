@@ -13,6 +13,8 @@ import { Check, File, ShieldCloseIcon, TimerResetIcon, Trash } from "lucide-reac
 import { useParams } from "react-router-dom";
 import CarBodySvg from "../components/CarBody";
 import CarBodySvgView from "../components/CarBodyView";
+import LanguageSelectionModal from "../components/LanguageSelectionModal";
+import { useLanguage } from "../contexts/LanguageContext";
 
 
 const isEmpty = (obj: any) => {
@@ -22,32 +24,41 @@ const isEmpty = (obj: any) => {
 const ViewInspectionPage = () => {
   const [data, setData] = useState<any>(null);
   const params = useParams();
-  let _imageGallery1 = useRef<any>(null); 
+  // Using ref for ImageGallery component
+  const imageGalleryRef = useRef<any>(null); 
   
 
 
 
   useEffect(() => {
-    findInspection(params?.id).then(async (res) => {
-      setData(res);
-    });
+    if (params?.id) {
+      findInspection(params.id).then(async (res) => {
+        setData(res);
+      });
+    }
   }, [params?.id]);
 
   const [showGallery, setShowGallery] = useState(false);
   const [itemIndex, setStartIndex] = useState(0);
 
   const [reportLoader, setReportLoader] = useState(false);
-  const downloadReport = async (inspectionId: string) => {
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const { language } = useLanguage();
+  
+  const downloadReport = async (inspectionId: string, reportLanguage: string = 'en') => {
     try {
       setReportLoader(true);
-      const response = await axiosInstance.get("/1.0/report/inspection/" + inspectionId,{
-        responseType: "blob", 
+      const response = await axiosInstance.get("/1.0/report/inspection/" + inspectionId, {
+        responseType: "blob",
+        params: {
+          language: reportLanguage
+        }
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `inspection-report-${inspectionId}.pdf`; // Change the file name and extension as needed
+      a.download = `inspection-report-${inspectionId}-${reportLanguage}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -57,6 +68,13 @@ const ViewInspectionPage = () => {
       console.error("Error downloading report:", error);
     } finally {
       setReportLoader(false);
+      setShowLanguageModal(false);
+    }
+  };
+
+  const handleGenerateReport = (language: string) => {
+    if (params?.id) {
+      downloadReport(params.id, language);
     }
   };
 
@@ -119,7 +137,7 @@ const ViewInspectionPage = () => {
             className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} bg-primary rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
             aria-disabled={reportLoader}
             onClick={() => {
-              downloadReport(params.id);
+              setShowLanguageModal(true);
             }}
             style={{
               background: '#ececec',
@@ -129,8 +147,8 @@ const ViewInspectionPage = () => {
         >
           <File/>
           &nbsp;
-          { reportLoader && 'Generating Report.....' }
-          { !reportLoader && 'Generate Report' }
+          { reportLoader && (language === 'en' ? 'Generating Report.....' : 'جاري إنشاء التقرير...') }
+          { !reportLoader && (language === 'en' ? 'Generate Report' : 'إنشاء تقرير') }
         </button>
         {data?.inspection?.inspectionStatus == "Submit" ? <button
             className="rounded-md bg-blue-900 flex items-center px-1 py-1 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-4"
@@ -172,7 +190,7 @@ const ViewInspectionPage = () => {
               </button>
             </div>
             <ImageGallery
-              ref={(i: any) => (_imageGallery1 = i)}
+              ref={imageGalleryRef}
               showPlayButton={false}
               startIndex={itemIndex}
               onErrorImageURL={"/images/loader.webp"}
@@ -250,6 +268,12 @@ const ViewInspectionPage = () => {
           </div>
         </div>
       )}
+      <LanguageSelectionModal
+        isOpen={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
+        onSelectLanguage={handleGenerateReport}
+        isLoading={reportLoader}
+      />
     </>
   );
 };
