@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { saveInspection, getInspectionSchema } from "../service/inspection";
 import { createMedia } from "../service/media";
 import { dataURLToBlob } from "../types/dataUrlToBlob";
-import { MinusCircle, Check, ChevronRight, ChevronLeft } from "lucide-react";
+import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus } from "lucide-react";
 import axiosInstance from "../service/api";
 import { useNavigate, useParams } from "react-router-dom";
 import { axiosErrorHandler } from "../types/utils";
@@ -15,7 +15,9 @@ import PageHeader from "../components/PageHeader";
 import CarImage from "../images/img.png";
 import CarBodySvg from "../components/CarBody";
 import CarPartModal from "../components/CarPartModal";
+import FieldDetailsModal from "../components/FieldDetailsModal";
 
+import useStateRef from 'react-usestateref'
 
 
 const InspectionForm = () => {
@@ -46,6 +48,11 @@ const InspectionForm = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   // Initialize all car parts with "original" condition
   const [partConditions, setPartConditions] = useState<Record<string, string>>({});
+  
+  // State for field details modal
+  const [isFieldDetailsModalOpen, setIsFieldDetailsModalOpen] = useState<boolean>(false);
+  const [selectedField, setSelectedField] = useState<string>('');
+  const [fieldExtraData, setFieldExtraData,fieldExtraDataRef] = useStateRef<Record<string, { comment: string; image: string | null }>>({});
 
   // List of all car parts from CarBodySvg
   const carParts = [
@@ -241,6 +248,8 @@ const InspectionForm = () => {
          }
     })
     data['overview'] = result;
+    // Add extra data for Car Body fields
+    data['extraData'] = fieldExtraDataRef?.current;
  
     const inspectionId = params.id;
     const body = {
@@ -252,14 +261,85 @@ const InspectionForm = () => {
 
     setLoading(true);
 
-    setSubmitState("Uploading Images");
-    //upload document images
+    setSubmitState("Uploading Regular Images");
+    // Upload document images
     await uploadImages();
 
-    //upload car images
+    // Create a temporary object to store updated extra data with URLs
+    const updatedExtraData = {...fieldExtraDataRef.current};
+    let hasExtraImages = false;
+
+    // Check if there are any extra data images to upload
+    for (let field in fieldExtraDataRef.current) {
+      if (fieldExtraDataRef.current[field]?.image && fieldExtraDataRef.current[field].image?.startsWith('data:')) {
+        hasExtraImages = true;
+        break;
+      }
+    }
+
+    // Only process if there are extra images to upload
+    if (hasExtraImages) {
+      setSubmitState("Uploading Extra Data Images");
+      
+      // Process each field with extra data images
+      for (let field in fieldExtraDataRef.current) {
+        const extraData = fieldExtraDataRef.current[field];
+        
+        // Skip if there's no image or if it's already a URL (not base64)
+        if (!extraData.image || !extraData.image.startsWith('data:')) {
+          continue;
+        }
+        
+        // Convert data URL to blob and then to File
+        const blob = dataURLToBlob(extraData.image);
+        // Create a File object from the Blob
+        const file = new File([blob], `${field}_extra.jpg`, { type: blob.type });
+        
+        setSubmitState(`Uploading Extra Image for ${field}`);
+        
+        const data = {
+          imageableId: params.id,
+          imageableType: "Inspection",
+          fileCaption: field + "_extra",
+        };
+        
+        try {
+          const mediaResp = await createMedia(file, data);
+          console.log(mediaResp);
+          if (mediaResp.error) {
+            toast.error(`Extra image upload error for ${field}`);
+          } else if (mediaResp.signedUrl) {
+            // Update our temporary object with the URL
+            updatedExtraData[field] = {
+              ...updatedExtraData[field],
+              image: mediaResp.signedUrl
+            };
+            
+            // Also update the state for UI consistency
+            setFieldExtraData(prev => ({
+              ...prev,
+              [field]: {
+                ...prev[field],
+                image: mediaResp.signedUrl
+              }
+            }));
+          }
+        } catch (error) {
+          console.error(`Error uploading image for ${field}:`, error);
+          toast.error(`Failed to upload image for ${field}`);
+        }
+      }
+    }
+
+    // Now use the updated extra data with all URLs (not base64) for the submission
+    body.inspection = JSON.stringify({
+      ...data,
+      extraData: updatedExtraData // Use the locally updated object with all URLs
+    });
+
 
     setSubmitState("Saving Inspection");
-    //update inspection
+    console.log("Final extra data being submitted:", updatedExtraData);
     const response = await saveInspection(inspectionId, body);
 
     if (!response.error) {
@@ -277,6 +357,8 @@ const InspectionForm = () => {
   });
 
   const uploadImages = async () => {
+    // Upload regular media files
+
     for (let field in mediaFiles) {
       let file = mediaFiles[field];
 
@@ -284,7 +366,9 @@ const InspectionForm = () => {
         continue;
       }
 
-      file = dataURLToBlob(file.selectedImage);
+      const blob = dataURLToBlob(file.selectedImage);
+      // Create a File object from the Blob
+      file = new File([blob], `${field}.jpg`, { type: blob.type });
 
       setSubmitState("Uploading Image " + field);
 
@@ -299,6 +383,9 @@ const InspectionForm = () => {
         toast.error("Image upload error");
       }
     }
+    
+    // Upload extra data images and update fieldExtraData with URLs
+ 
   };
 
   const handleImageChange = (field: string, event: ChangeEvent<HTMLInputElement>) => {
@@ -617,6 +704,7 @@ const InspectionForm = () => {
                 {i.name !== "Document Images" &&
                   i.name !== "Car Media" &&
                   i?.fields?.map((field: any) => {
+      
                     const _fieldName = field.fieldName.replace(/\s/g, "_");
 
                     const defaults: any = {};
@@ -709,26 +797,57 @@ const InspectionForm = () => {
                         )}
                         {field.fieldType == "Drop Down" && (
                           <>
-                            <Controller
-                              name={_fieldName}
-                              control={control}
-                              rules={{
-                                required: {
-                                  value: !!field.required,
-                                  message: "Required",
-                                },
-                              }}
-                              render={(value) => (
-                                <AppSelectV2
-                                  field={value.field}
-                                  options={field.options?.map((v: any) => ({
-                                    label: v,
-                                    value: v,
-                                  }))}
-                                />
+                            <div className="relative">
+                              <Controller
+                                name={_fieldName}
+                                control={control}
+                                rules={{
+                                  required: {
+                                    value: !!field.required,
+                                    message: "Required",
+                                  },
+                                }}
+                                render={(value) => (
+                                  <AppSelectV2
+                                    field={value.field}
+                                    options={field.options?.map((v: any) => ({
+                                      label: v,
+                                      value: v,
+                                    }))}
+                                  />
+                                )}
+                              />
+                              {i.name === 'Car Body' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedField(_fieldName);
+                                    setIsFieldDetailsModalOpen(true);
+                                  }}
+                                  className="bg-blue-900 text-white p-1 mt-2  rounded-sm hover:bg-blue-800 transition-colors"
+                                  title="Add"
+                                >
+                                  <Plus size={16} />
+                                </button>
                               )}
-                            />
+                            </div>
                             {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            {i.name === 'Car Body' && fieldExtraData[_fieldName] && (
+                              <div className="mt-1 p-2 bg-blue-50 rounded-md text-xs">
+                                {fieldExtraData[_fieldName].comment && (
+                                  <p className="text-gray-700">Comment: {fieldExtraData[_fieldName].comment}</p>
+                                )}
+                                {fieldExtraData[_fieldName].image && (
+                                  <div className="mt-1">
+                                    <img 
+                                      src={fieldExtraData[_fieldName].image || ''} 
+                                      alt="Field detail" 
+                                      className="h-12 w-auto object-cover rounded" 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </>
                         )}
 
@@ -894,6 +1013,19 @@ const InspectionForm = () => {
       </form>
        </div>
        </div>
+       
+       {/* Field Details Modal */}
+       <FieldDetailsModal
+         isOpen={isFieldDetailsModalOpen}
+         onClose={() => setIsFieldDetailsModalOpen(false)}
+         fieldName={selectedField.replace(/_/g, ' ')}
+         onSave={(details) => {
+           setFieldExtraData(prev => ({
+             ...prev,
+             [selectedField]: details
+           }));
+         }}
+       />
     </div>
   );
 };

@@ -115,11 +115,12 @@ const CustomerCheckIn = () => {
                     return processedApt;
                 });
                 
-                setAvailableAppointments(processedAppointments);
+                let _processedAppointments = processedAppointments?.filter((p)=> p.status != 'Cancelled');
+                setAvailableAppointments(_processedAppointments);
                 
                 // If there's only one appointment, select it automatically
-                if (processedAppointments.length === 1) {
-                    setAppointment(processedAppointments[0]);
+                if (_processedAppointments.length === 1) {
+                    setAppointment(_processedAppointments[0]);
                 }
                 
                 // Mark current step as completed
@@ -128,7 +129,7 @@ const CustomerCheckIn = () => {
                 }
                 
                 // If multiple appointments, show modal, otherwise proceed to next step
-                if (processedAppointments.length === 1) {
+                if (_processedAppointments.length === 1) {
                     setCurrentStep(1);
                 } else {
                     setShowAppointmentModal(true);

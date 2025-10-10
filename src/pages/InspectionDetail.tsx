@@ -120,14 +120,26 @@ const ViewInspectionPage = () => {
 
 
 
+// Define interface for extra data items
+interface ExtraDataItem {
+  comment: string;
+  image: string | null;
+}
+
+// Define interface for inspection data
+interface InspectionData {
+  extraData?: Record<string, ExtraDataItem>;
+  overview?: any;
+  [key: string]: any; // For other fields
+}
    
-  let inspection = null;
-  if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-    //return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-    inspection = null;
-  }else if(data && data?.inspection?.inspectionJson){
-    inspection = data?.inspection?.inspectionJson;
-  }
+let inspection: InspectionData | null = null;
+if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
+  //return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
+  inspection = null;
+}else if(data && data?.inspection?.inspectionJson){
+  inspection = data?.inspection?.inspectionJson;
+}
 
 
   return (
@@ -212,17 +224,17 @@ const ViewInspectionPage = () => {
                 <h1>Information</h1>
               </div>
 
-              {inspection && Object.keys(inspection).length ?
+              {inspection && Object.keys(inspection).length > 0 ?
               Object.keys(inspection).map((i, index) => {
+                // Re-check the inspection data in case it was updated
+                if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
+                  return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
+                }else if(data && data?.inspection?.inspectionJson){
+                  inspection = data?.inspection?.inspectionJson;
+                }
 
-              if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-                return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-              }else if(data && data?.inspection?.inspectionJson){
-                inspection = data?.inspection?.inspectionJson;
-              }
-
-                if(i == 'overview'){
-                  return <></>;
+                if(!inspection || i === 'overview' || i === 'extraData'){
+                  return null;
                 }
 
                 return (
@@ -230,7 +242,17 @@ const ViewInspectionPage = () => {
                       <div className={'w-full'}>
                         <div className={"m-2  border-b border-b-[#F7F7F7] flex items-center justify-between"} key={i + index}>
                           <p className={"font-bold text-[#000] mt-1 mb-1"}>{i.replace(/_/g, " ")}</p>
-                          <p className={"mt-1 mb-1"}>{typeof inspection[i] == 'object' && inspection[i]?.length ? inspection[i][0].value : typeof inspection[i] == 'object' && !inspection[i]?.length ?  inspection[i]?.value : inspection[i] == "" ? "N/A" : inspection[i]}</p>
+                          <p className={"mt-1 mb-1"}>
+                            {inspection && (
+                              typeof inspection[i] === 'object' && inspection[i]?.length ? 
+                                inspection[i][0].value : 
+                              typeof inspection[i] === 'object' && !inspection[i]?.length ? 
+                                inspection[i]?.value : 
+                              inspection[i] === "" ? 
+                                "N/A" : 
+                                inspection[i]
+                            )}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -241,6 +263,64 @@ const ViewInspectionPage = () => {
             </div>
 
             <div >
+              {/* Extra Data Section */}
+              {inspection?.extraData && Object.keys(inspection.extraData).length > 0 && (
+                <>
+                  <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000]"}>
+                    Additional Field Details
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {Object.keys(inspection.extraData).map((key) => {
+                      const extraItem = inspection.extraData?.[key] as ExtraDataItem;
+                      if (!extraItem) return null;
+                      
+                      return (
+                        <div key={key} className="border rounded-md p-3 bg-white shadow-sm">
+                          <h3 className="font-bold text-gray-800 mb-2 border-b pb-2">
+                            {key.replace(/_/g, " ")}
+                          </h3>
+                          
+                          {extraItem.comment && (
+                            <div className="mb-2">
+                              <p className="text-sm font-medium text-gray-600">Comment:</p>
+                              <p className="text-gray-800">{extraItem.comment}</p>
+                            </div>
+                          )}
+                          
+                          {extraItem.image && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-600 mb-1">Image:</p>
+                              <div className="relative">
+                                <img 
+                                  src={extraItem.image} 
+                                  alt={`${key} detail`} 
+                                  className="w-full h-auto max-h-48 object-contain rounded-md border" 
+                                  onClick={() => {
+                                    // Open image in new tab for better viewing
+                                    if (extraItem.image) {
+                                      window.open(extraItem.image, '_blank');
+                                    }
+                                  }}
+                                />
+                                <div className="absolute bottom-0 right-0 bg-blue-900 text-white text-xs px-2 py-1 rounded-tl-md cursor-pointer"
+                                  onClick={() => {
+                                    if (extraItem.image) {
+                                      window.open(extraItem.image, '_blank');
+                                    }
+                                  }}>
+                                  View Full
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              
+              {/* Images Section */}
               <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] "}>Images</div>
               <div className="flex flex-wrap">
                 {data && data.images && data?.images?.map((img: any, index: number) => {
