@@ -580,13 +580,21 @@ const CarsDetails = () => {
          {user && user?.role != 'sale' ?  <>
           {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
           <div className={'w-75 flex items-end justify-end'}>
-           <div onClick={()=>{
-             if(confirm("Are you sure you want to push this car for listing")) {
-               markCarAsListed(carDetails?.id);
-             }
-           }} className={'flex border bg-[#5cb85c] border-success p-2 rounded-md text-center text-white items-center cursor-pointer justify-center'}>
+           <div 
+             onClick={()=>{
+               if(!carDetails?.sellingPrice) {
+                 toast.error("Cannot push to listing: Selling price is not set");
+                 return;
+               }
+               if(confirm("Are you sure you want to push this car for listing")) {
+                 markCarAsListed(carDetails?.id);
+               }
+             }} 
+             className={`flex border ${!carDetails?.sellingPrice ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5cb85c] cursor-pointer'} border-success p-2 rounded-md text-center text-white items-center justify-center`}
+             title={!carDetails?.sellingPrice ? "Selling price must be set before pushing to listing" : "Push this car to listing"}
+           >
              <ArrowUp/>&nbsp;
-             <div >Push to Listing</div>
+             <div>Push to Listing</div>
            </div>
 
 
@@ -600,13 +608,21 @@ const CarsDetails = () => {
            </div>
 
 
-           <div onClick={()=>{
-             if(confirm("Are you sure you want to push this car for auction")) {
-               markCarAsAuctionListed(carDetails?.id);
-             }
-           }} className={`border bg-[#e9d502] cursor-pointer  p-2 flex items-center justify-center rounded-md text-center text-white ml-1 mr-1`}>
+           <div 
+             onClick={()=>{
+               if(!carDetails?.sellingPrice) {
+                 toast.error("Cannot push to auction: Selling price is not set");
+                 return;
+               }
+               if(confirm("Are you sure you want to push this car for auction")) {
+                 markCarAsAuctionListed(carDetails?.id);
+               }
+             }} 
+             className={`border ${!carDetails?.sellingPrice ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#e9d502] cursor-pointer'} p-2 flex items-center justify-center rounded-md text-center text-white ml-1 mr-1`}
+             title={!carDetails?.sellingPrice ? "Selling price must be set before pushing to auction" : "Push this car to auction"}
+           >
              <Clock10/>&nbsp;
-             <div >
+             <div>
                Push to Auction</div>
            </div>
            </div>
