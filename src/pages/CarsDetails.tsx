@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy, Eye } from 'lucide-react';
+import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
 
@@ -319,12 +319,17 @@ const CarsDetails = () => {
       setUpdatingPrice(true);
       
       await axiosInstance.put("/1.0/car/update/" + carDetails.id, {
-        sellingPrice: editedPrice
+        sellingPrice: editedPrice.toString()
       });
       
       toast.success("Price updated successfully");
+      
+      // Update local state with the new price
       setCarDetails({...carDetails, sellingPrice: editedPrice});
       setShowPriceModal(false);
+      
+      // Refresh car details to ensure we have the latest data
+      fetchCarDetails();
       
     } catch (error: any) {
       toast.error(error?.message || "Failed to update price");
@@ -495,7 +500,7 @@ const CarsDetails = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Reveal Price</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Selling Price</h3>
               
               <div className="flex items-center mb-4">
                 {coverImage ? (
@@ -740,8 +745,20 @@ const CarsDetails = () => {
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Selling Price</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {carDetails.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set'}
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex items-center">
+                  <span>{carDetails.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set'}</span>
+                  <button
+                    onClick={() => {
+                      setEditedPrice(Number(carDetails.sellingPrice) || 0);
+                      setShowPriceModal(true);
+                    }}
+                    className="ml-2 inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span className="ml-1">Edit</span>
+                  </button>
                 </dd>
               </div>
               {carDetails.notes && (
@@ -1105,18 +1122,7 @@ const CarsDetails = () => {
         {/* Auction History in right corner */}
         
         <div className="md:w-1/4 lg:w-1/3">
-         {/* Reveal Price button for QA users */}
-         {user && user?.role === 'qa' && (
-           <div className="mb-4">
-             <button
-               onClick={() => setShowPriceModal(true)}
-               className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-             >
-               <Eye className="mr-2 h-4 w-4" />
-               Reveal Price
-             </button>
-           </div>
-         )}
+         {/* Reveal Price button is now accessible via the edit button next to the selling price */}
           <AuctionHistory auctions={auctionHistory} />
         </div>
       </div>
