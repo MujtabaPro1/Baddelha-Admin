@@ -1222,7 +1222,7 @@ const CarsDetails = () => {
         
         <div className="md:w-1/4 lg:w-1/3">
          {/* Reveal Price button is now accessible via the edit button next to the selling price */}
-         {(user?.role == 'admin' || user?.role == 'qa') && carDetails?.carStatus == 'inspected' ? <button
+         {(user?.role == 'admin' || user?.role == 'qa') ? <button
          onClick={() => {
              //setShowRevealPriceModal(true);
              setShowRevealPriceModal(true);
