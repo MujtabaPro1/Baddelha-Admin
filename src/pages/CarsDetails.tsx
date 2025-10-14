@@ -34,6 +34,8 @@ const CarsDetails = () => {
   const [editedPrice, setEditedPrice] = useState<number | null>(null);
   const [updatingPrice, setUpdatingPrice] = useState<boolean>(false);
   const [coverImage,setCoverImage] = useState(null);
+  const [showRevealPriceModal, setShowRevealPriceModal] = useState<boolean>(false);
+  const [revealPrice, setRevealPrice] = useState<number | null>(null);
 
 
 
@@ -568,6 +570,85 @@ const CarsDetails = () => {
           </div>
         </div>
       )}
+      
+
+      {showRevealPriceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Reveal Price</h3>
+              
+              <div className="flex items-center mb-4">
+                {coverImage ? (
+                  <img 
+                    src={coverImage} 
+                    alt="Car thumbnail" 
+                    className="w-20 h-20 object-cover rounded-md mr-4" 
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )}
+                
+                <div>
+                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
+                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
+                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">SAR</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="sellingPrice"
+                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
+                    value={revealPrice || carDetails?.sellingPrice}
+                    onChange={(e) => setRevealPrice(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setShowRevealPriceModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
+                  onClick={() => {
+                    if(confirm("Are you sure you want to reveal the price")) {
+                      setShowRevealPriceModal(false);
+                      toast("Price revealed successfully",{autoClose: 5000,position: "top-right",type: "success"});
+      
+                    }
+                  }}
+                  disabled={false}
+                >
+                  {updatingPrice ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Reveal...
+                    </>
+                  ) : (
+                    <>Reveal</>  
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       
       {/* Main content layout with auction history in right corner */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -1141,6 +1222,15 @@ const CarsDetails = () => {
         
         <div className="md:w-1/4 lg:w-1/3">
          {/* Reveal Price button is now accessible via the edit button next to the selling price */}
+         {(user?.role == 'admin' || user?.role == 'qa') && carDetails?.carStatus == 'inspected' ? <button
+         onClick={() => {
+             //setShowRevealPriceModal(true);
+             setShowRevealPriceModal(true);
+         }}
+         className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-4"
+         >
+           Reveal Price
+         </button> : <></>}
           <AuctionHistory auctions={auctionHistory} />
         </div>
       </div>
