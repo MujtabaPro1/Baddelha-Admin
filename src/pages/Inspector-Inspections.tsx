@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
-
-
+import WalkInAppointmentModal from '../components/WalkInAppointmentModal';
+import { toast } from 'react-hot-toast';
 
 
 interface Inspector {
@@ -31,6 +31,7 @@ const MyInspections = () => {
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
   const navigate = useNavigate();
  
 
@@ -74,6 +75,14 @@ const MyInspections = () => {
         description={user?.role === 'inspector' ? 
           "Manage your assigned inspection requests" : 
           "Manage all inspection requests on the platform"
+        }
+        actions={
+          <button 
+            className="btn btn-primary flex items-center"
+            onClick={() => setShowWalkInModal(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-1" /> Walk In Appointment
+          </button>
         }
       />
       
@@ -215,6 +224,16 @@ const MyInspections = () => {
           </div>
         )}
       </div>
+
+      {/* Walk In Appointment Modal */}
+      <WalkInAppointmentModal
+        isOpen={showWalkInModal}
+        onClose={() => setShowWalkInModal(false)}
+        onSuccess={() => {
+          fetchInspections();
+          toast.success('Walk-in appointment created successfully');
+        }}
+      />
     </div>
   );
 };

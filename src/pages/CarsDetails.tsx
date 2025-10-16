@@ -36,6 +36,9 @@ const CarsDetails = () => {
   const [coverImage,setCoverImage] = useState(null);
   const [showRevealPriceModal, setShowRevealPriceModal] = useState<boolean>(false);
   const [revealPrice, setRevealPrice] = useState<number | null>(null);
+  const [editedSellerAskingPrice, setEditedSellerAskingPrice] = useState<number | null>(null);
+  const [updatingSellerAskingPrice, setUpdatingSellerAskingPrice] = useState<boolean>(false);
+  const [showSellerAskingPriceModal, setShowSellerAskingPriceModal] = useState<boolean>(false);
 
 
 
@@ -43,6 +46,9 @@ const CarsDetails = () => {
   useEffect(() => {
     if (carDetails?.sellingPrice) {
       setEditedPrice(Number(carDetails.sellingPrice));
+    }
+    if (carDetails?.sellerAskingPrice) {
+      setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice));
     }
   }, [carDetails]);
 
@@ -341,6 +347,33 @@ const CarsDetails = () => {
     }
   };
 
+  const updateSellerAskingPrice = async () => {
+    if (!carDetails?.id || !editedSellerAskingPrice) return;
+    
+    try {
+      setUpdatingSellerAskingPrice(true);
+      
+      await axiosInstance.patch("/1.0/car/seller-price/" + carDetails.id, {
+        price: editedSellerAskingPrice.toString()
+      });
+      
+      toast.success("Seller asking price updated successfully");
+      
+      // Update local state with the new price
+      setCarDetails({...carDetails, sellerAskingPrice: editedSellerAskingPrice});
+      setShowSellerAskingPriceModal(false);
+      
+      // Refresh car details to ensure we have the latest data
+      fetchCarDetails();
+      
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update seller asking price");
+      console.error("Error updating seller asking price:", error);
+    } finally {
+      setUpdatingSellerAskingPrice(false);
+    }
+  };
+
   const markCarStatus = async (carId: string,status:string) => {
     try {
 
@@ -557,6 +590,77 @@ const CarsDetails = () => {
                   disabled={updatingPrice}
                 >
                   {updatingPrice ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>Save</>  
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSellerAskingPriceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Seller Asking Price</h3>
+              
+              <div className="flex items-center mb-4">
+                {coverImage ? (
+                  <img 
+                    src={coverImage} 
+                    alt="Car thumbnail" 
+                    className="w-20 h-20 object-cover rounded-md mr-4" 
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )}
+                
+                <div>
+                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
+                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
+                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">SAR</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="sellerAskingPrice"
+                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
+                    value={editedSellerAskingPrice || ''}
+                    onChange={(e) => setEditedSellerAskingPrice(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setShowSellerAskingPriceModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
+                  onClick={updateSellerAskingPrice}
+                  disabled={updatingSellerAskingPrice}
+                >
+                  {updatingSellerAskingPrice ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
                       Updating...
@@ -850,6 +954,24 @@ const CarsDetails = () => {
                     onClick={() => {
                       setEditedPrice(Number(carDetails.sellingPrice) || 0);
                       setShowPriceModal(true);
+                    }}
+                    className="ml-2 inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span className="ml-1">Edit</span>
+                  </button> : <></>}
+                </dd>
+              </div>
+              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Seller Asking Price</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex items-center">
+                  <span>{carDetails.sellerAskingPrice ? `SAR ${Number(carDetails.sellerAskingPrice).toLocaleString()}` : 'Not set'}</span>
+                  {user?.role == 'admin' || user?.role == 'qa' ? <button
+                    onClick={() => {
+                      setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice) || 0);
+                      setShowSellerAskingPriceModal(true);
                     }}
                     className="ml-2 inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
                   >

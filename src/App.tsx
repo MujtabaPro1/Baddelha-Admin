@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { Toaster } from 'react-hot-toast';
 
 // Pages
 import Login from './pages/Login';
@@ -105,6 +106,7 @@ function App() {
     <AuthProvider>
       <LanguageProvider>
         <Router>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
 
