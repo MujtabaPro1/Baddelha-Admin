@@ -32,7 +32,7 @@ const Appointments = () => {
         // In a real scenario, we would make an actual API call like this:
         try {
 
-          const response = await axiosInstance.get('/1.0/book-appointment');
+          const response = await axiosInstance.get('/1.0/book-appointment?status=' + selectedStatus + '&type=' + selectedPurpose);
           const data = response.data.map((a: any)=>{
             return {
               ...a,
@@ -56,7 +56,7 @@ const Appointments = () => {
 
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [selectedStatus]);
 
 
 

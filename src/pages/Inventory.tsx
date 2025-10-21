@@ -26,7 +26,7 @@ const Inventory = () => {
 
   useEffect(()=>{
     fetchCars();
-  },[]);
+  },[search]);
 
 
   async function fetchCars() {

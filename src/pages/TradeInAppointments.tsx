@@ -122,7 +122,7 @@ const TradeInAppointments = () => {
 
   useEffect(() => {
     fetchTradeInAppointments();
-  }, [currentPage]);
+  }, [currentPage,searchQuery]);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM d, yyyy');

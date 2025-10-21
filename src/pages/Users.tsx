@@ -15,11 +15,11 @@ const Users = () => {
 
   useEffect(()=>{
       getUsers();
-  },[]);
+  },[searchQuery]);
 
   const getUsers = () => {
     setLoading(true);
-    axiosInstance.get('/1.0/user/find-all').then((res)=>{
+    axiosInstance.get('/1.0/user/find-all?search=' + searchQuery).then((res)=>{
       setLoading(false);
       setUsers(res.data.data);
     }).catch((err)=>{
@@ -77,16 +77,7 @@ const Users = () => {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter className="h-5 w-5 text-gray-400" />
             </div>
-            <select
-              value={selectedRole}
-              onChange={handleRoleFilter}
-              className="form-input pl-10 appearance-none"
-            >
-              <option value="">All roles</option>
-              <option value="admin">Admin</option>
-              <option value="customer">Customer</option>
-              <option value="dealer">Dealer</option>
-            </select>
+
           </div>
           <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
             <RefreshCw className="h-5 w-5 text-gray-600" />
