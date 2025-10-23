@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
+import RevealPriceHistory from '../components/RevealPriceHistory';
 
 const numberWithCommas = (x: number) => {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -1354,6 +1355,7 @@ const CarsDetails = () => {
            Reveal Price
          </button> : <></>}
           <AuctionHistory auctions={auctionHistory} />
+          <RevealPriceHistory history={[]} />
         </div>
       </div>
     </div>

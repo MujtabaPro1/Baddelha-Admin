@@ -50,6 +50,8 @@ const Layout = () => {
     return [
       { name: 'Dashboard', href: '/', icon: LayoutDashboard },
       { name: 'Users', href: '/users', icon: Users },
+      { name: 'Dealers', href: '/dealers', icon: Users },
+      { name: 'Sellers', href: '/sellers', icon: Users },
       { name: 'Cars', href: '/cars', icon: Car },
       { name: 'Inventory Cars', href: '/inventory-cars', icon: CarIcon },
       { name: 'Appointments', href: '/appointments', icon: Calendar },

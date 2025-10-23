@@ -40,6 +40,8 @@ import ContentModeration from './pages/ContentModeration';
 import Leads from './pages/Leads';
 import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
+import Dealers from './pages/Dealers';
+import Sellers from './pages/Sellers';
 
 
 // Protected route component
@@ -141,6 +143,16 @@ function App() {
             <Route path="users" element={
               <AdminRoute>
                 <Users />
+              </AdminRoute>
+            } />
+            <Route path="dealers" element={
+              <AdminRoute>
+                <Dealers />
+              </AdminRoute>
+            } />
+               <Route path="sellers" element={
+              <AdminRoute>
+                <Sellers />
               </AdminRoute>
             } />
             <Route path="appointments" element={

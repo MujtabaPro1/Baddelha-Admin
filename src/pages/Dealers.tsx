@@ -7,7 +7,7 @@ import axiosInstance from '../service/api';
 
 
 
-const Users = () => {
+const Dealers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ const Users = () => {
     setLoading(true);
     axiosInstance.get('/1.0/user/find-all?search=' + searchQuery).then((res)=>{
       setLoading(false);
-      let _users = res.data.data?.filter((user: User) => user.role.toLowerCase() != 'dealer' && user.role.toLowerCase() != 'seller');
+      let _users = res.data.data?.filter((user: User) => user.role.toLowerCase() == 'dealer');
       setUsers(_users);
     }).catch((err)=>{
       setLoading(false);
@@ -50,13 +50,8 @@ const Users = () => {
   return (
     <div>
       <PageHeader 
-        title="Users" 
-        description="Manage all users on the Baddelha platform"
-        actions={
-          <button className="btn btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-1" /> Add User
-          </button>
-        }
+        title="Dealers" 
+        description="Manage all dealers on the Baddelha platform"
       />
       
       {/* Filters and search */}
@@ -136,4 +131,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default Dealers;
