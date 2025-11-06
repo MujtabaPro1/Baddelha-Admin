@@ -44,7 +44,9 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     email: '',
     branchId: '',
     make: '',
+    makeName: '',
     model: '',
+    modelName: '',
     year: '',
     bodyType: '',
     bodyTypeName: '',
@@ -199,11 +201,29 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       // Handle special cases for dropdowns that need additional data
       if (name === 'make') {
         // Reset model when make changes
-        setFormData(prev => ({ ...prev, model: '' }));
+        const selectedMake = makes.find(item => item.id == value);
+        if (selectedMake) {
+          setFormData(prev => ({ 
+            ...prev, 
+            make: selectedMake.id,
+            makeName: selectedMake.name,
+            model: '',
+            modelName: ''
+          }));
+        }
+      } else if (name === 'model') {
+        // Set modelName when model is selected
+        const selectedModel = models.find(item => item.id == value);
+        if (selectedModel) {
+          setFormData(prev => ({ 
+            ...prev, 
+            model: selectedModel.id,
+            modelName: selectedModel.name 
+          }));
+        }
       } else if (name === 'bodyType') {
         // Set bodyTypeName when bodyType is selected
         const selectedBodyType = bodyTypes.find(item => item.id == value);
-        console.log(selectedBodyType,value);
         if (selectedBodyType) {
           setFormData(prev => ({ ...prev, 
             bodyType: selectedBodyType.id,
@@ -212,7 +232,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       } else if (name === 'engineSize') {
         // Set engineSizeName when engineSize is selected
         const selectedEngineSize = engineSizes.find(item => item.id == value);
-        console.log(selectedEngineSize);
         if (selectedEngineSize) {
           setFormData(prev => ({ ...prev, 
             engineSize: selectedEngineSize.id,
@@ -221,7 +240,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       } else if (name === 'mileage') {
         // Set mileageName when mileage is selected
         const selectedMileage = mileageOptions.find(item => item.id == value);
-        console.log(selectedMileage);
         if (selectedMileage) {
           setFormData(prev => ({ ...prev, 
             mileage: selectedMileage.id,
@@ -239,60 +257,53 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
 
     try {
       const today = new Date();
-      const formattedDate = today.toISOString().split('T')[0];
-      // Create a proper ISO 8601 datetime string
-      const appointmentTime = today.toISOString();
+   
+      const appointmentDateTime = new Date(`${today.getMonth()} ${today.getDate()}, ${today.getFullYear()}`).toISOString();
 
-      // Prepare car details
-      const step1Data = { 
-        make: formData.make, 
-        model: formData.model, 
-        year: formData.year 
-      };
-      
-      const step2Data = {
-        bodyType: formData.bodyType,
-        engineSize: formData.engineSize,
-        mileage: formData.mileage,
+
+      // We'll use names directly in carDetail instead of IDs
+
+      const carDetail = JSON.stringify({
+        make: formData.makeName,
+        model: formData.modelName,
+        year: formData.year,
+        bodyType: formData.bodyTypeName,
+        engineSize: formData.engineSizeName,
+        mileage: formData.mileageName,
         option: formData.option,
         paint: formData.paint,
         specs: formData.specs,
-        bodyTypeName: formData.bodyTypeName,
-        engineSizeName: formData.engineSizeName,
-        mileageName: formData.mileageName
-      };
-
-      const carDetail = JSON.stringify({
-        ...step1Data,
-        ...step2Data,
-        engineSize: step2Data?.engineSizeName,
-        mileage: step2Data?.mileageName,
         carPrice: formData.carPrice ? formData.carPrice : 0,
       });
       
       // Prepare the request body
       const bookingData = {
         branchId: Number(formData.branchId),
-        appointmentDate: formattedDate,
-        appointmentTime: appointmentTime,
+        appointmentDate: appointmentDateTime,
+        appointmentTime: appointmentDateTime,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        phone: formData.phone,
+        phone: '+'+formData.phone,
         email: formData.email,
         carDetail,
-        status: 'Confirmed',
+        status: 'Scheduled',
         type: 'sell'
       };
 
       // Make API call to create walk-in appointment
-      await axiosInstance.post('/1.0/book-appointment', bookingData);
+      await axiosInstance.post('/1.0/book-appointment/walk-in', bookingData).then((res)=>{
+        console.log(res);
+        toast.success('Sell request created successfully');
+        onSuccess();
+        onClose();
+      }).catch((err)=>{
+        console.log(err);
+        toast.error('Failed to create sell request');
+      });
       
-      toast.success('Sell request created successfully');
-      onSuccess();
-      onClose();
+  
     } catch (error) {
       console.error('Error creating sell request:', error);
-      toast.error('Failed to create sell request');
     } finally {
       setLoading(false);
     }
