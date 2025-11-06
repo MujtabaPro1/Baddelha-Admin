@@ -249,6 +249,32 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      branchId: '',
+      make: '',
+      makeName: '',
+      model: '',
+      modelName: '',
+      year: '',
+      bodyType: '',
+      bodyTypeName: '',
+      engineSize: '',
+      engineSizeName: '',
+      mileage: '',
+      mileageName: '',
+      option: '',
+      paint: '',
+      specs: '',
+      carPrice: 0,
+      
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -296,6 +322,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         toast.success('Sell request created successfully');
         onSuccess();
         onClose();
+        resetForm();
       }).catch((err)=>{
         console.log(err);
         toast.error('Failed to create sell request');
