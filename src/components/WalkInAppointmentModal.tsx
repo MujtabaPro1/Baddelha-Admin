@@ -309,7 +309,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         appointmentTime: appointmentDateTime,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        phone: '+'+formData.phone,
+        phone: '+966'+formData.phone.replace(/^\+?(966)?/, ''),  // Remove any existing + or 966 prefix
         email: formData.email,
         carDetail,
         status: 'Scheduled',
@@ -383,15 +383,20 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number*</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
-                placeholder="Phone Number"
-              />
+              <div className="flex">
+                <div className="bg-gray-100 flex items-center px-3 rounded-l border border-r-0">
+                  <span className="text-gray-500">+966</span>
+                </div>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  className="form-input w-full rounded-l-none"
+                  placeholder="Phone Number without country code"
+                />
+              </div>
             </div>
             
             <div>
