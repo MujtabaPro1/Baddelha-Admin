@@ -8,6 +8,7 @@ import { findAllTradeInAppointments } from '../service/tradeInAppointment';
 import { TradeInAppointment } from '../types/tradeInAppointment';
 import axiosInstance from '../service/api';
 import CancelAppointmentModal from '../components/CancelAppointmentModal';
+import StatusUpdateConfirmationModal from '../components/StatusUpdateConfirmationModal';
 import { toast } from 'react-toastify';
 
 const numberWithComma = (num: number) => {
@@ -27,6 +28,9 @@ const TradeInAppointments = () => {
   const [updatingAppointment, setUpdatingAppointment] = useState<string | null>(null);
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
+  const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState<boolean>(false);
+  const [appointmentToUpdate, setAppointmentToUpdate] = useState<string | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
 
   // Fetch dealership details by ID
   const fetchDealershipDetails = async (dealershipId: string) => {
@@ -153,15 +157,22 @@ const TradeInAppointments = () => {
     // In a real implementation, we would pass this to the API
   };
 
+  const handleUpdateStatusClick = (appointmentId: string, status: string) => {
+    // If status is Cancelled, open the cancel modal instead of the status update modal
+    if (status === 'Cancelled') {
+      setAppointmentToCancel(appointmentId);
+      setCancelModalOpen(true);
+      return;
+    }
+
+    // For other statuses, open the status update confirmation modal
+    setAppointmentToUpdate(appointmentId);
+    setNewStatus(status);
+    setStatusUpdateModalOpen(true);
+  };
+
   const handleUpdateStatus = async (appointmentId: string, newStatus: string) => {
     try {
-      // If status is Cancelled, open the cancel modal instead of directly updating
-      if (newStatus === 'Cancelled') {
-        setAppointmentToCancel(appointmentId);
-        setCancelModalOpen(true);
-        return;
-      }
-
       setUpdatingAppointment(appointmentId);
       
       // Use axios instance directly to call the API
@@ -199,6 +210,8 @@ const TradeInAppointments = () => {
       toast.error(errorMessage);
     } finally {
       setUpdatingAppointment(null);
+      setStatusUpdateModalOpen(false);
+      setAppointmentToUpdate(null);
     }
   };
 
@@ -330,7 +343,7 @@ const TradeInAppointments = () => {
  {appointment.status.toLowerCase() !== 'cancelled' && appointment.status.toLowerCase() !== 'completed' ? <>
   <div className="mt-4 flex flex-wrap gap-2">
                     <button
-                      onClick={() => handleUpdateStatus(appointment.id, 'Confirmed')}
+                      onClick={() => handleUpdateStatusClick(appointment.id, 'Confirmed')}
                       disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'confirmed'}
                       className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'confirmed' 
                         ? 'bg-green-100 text-green-700 cursor-not-allowed' 
@@ -339,7 +352,7 @@ const TradeInAppointments = () => {
                       {updatingAppointment === appointment.id ? 'Updating...' : 'Confirm'}
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(appointment.id, 'Completed')}
+                      onClick={() => handleUpdateStatusClick(appointment.id, 'Completed')}
                       disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'completed'}
                       className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'completed' 
                         ? 'bg-blue-100 text-blue-700 cursor-not-allowed' 
@@ -348,7 +361,7 @@ const TradeInAppointments = () => {
                       {updatingAppointment === appointment.id ? 'Updating...' : 'Complete'}
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(appointment.id, 'Cancelled')}
+                      onClick={() => handleUpdateStatusClick(appointment.id, 'Cancelled')}
                       disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'cancelled'}
                       className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'cancelled' 
                         ? 'bg-red-100 text-red-700 cursor-not-allowed' 
@@ -497,6 +510,19 @@ const TradeInAppointments = () => {
         }
 
         }}
+      />
+
+      {/* Status Update Confirmation Modal */}
+      <StatusUpdateConfirmationModal
+        appointmentId={appointmentToUpdate || ''}
+        isOpen={statusUpdateModalOpen}
+        onClose={() => {
+          setStatusUpdateModalOpen(false);
+          setAppointmentToUpdate(null);
+        }}
+        onConfirm={handleUpdateStatus}
+        status={newStatus}
+        isSubmitting={updatingAppointment === appointmentToUpdate}
       />
     </div>
   );
