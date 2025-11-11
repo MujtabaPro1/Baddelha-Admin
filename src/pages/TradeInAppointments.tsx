@@ -7,6 +7,8 @@ import { Search, Calendar, Filter, MapPin, RefreshCw } from 'lucide-react';
 import { findAllTradeInAppointments } from '../service/tradeInAppointment';
 import { TradeInAppointment } from '../types/tradeInAppointment';
 import axiosInstance from '../service/api';
+import CancelAppointmentModal from '../components/CancelAppointmentModal';
+import { toast } from 'react-toastify';
 
 const numberWithComma = (num: number) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -22,6 +24,9 @@ const TradeInAppointments = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [pageLimit, setPageLimit] = useState<number>(10);
+  const [updatingAppointment, setUpdatingAppointment] = useState<string | null>(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
 
   // Fetch dealership details by ID
   const fetchDealershipDetails = async (dealershipId: string) => {
@@ -148,6 +153,55 @@ const TradeInAppointments = () => {
     // In a real implementation, we would pass this to the API
   };
 
+  const handleUpdateStatus = async (appointmentId: string, newStatus: string) => {
+    try {
+      // If status is Cancelled, open the cancel modal instead of directly updating
+      if (newStatus === 'Cancelled') {
+        setAppointmentToCancel(appointmentId);
+        setCancelModalOpen(true);
+        return;
+      }
+
+      setUpdatingAppointment(appointmentId);
+      
+      // Use axios instance directly to call the API
+      const response = await axiosInstance.patch(
+        `/1.0/trade/appointment/update/${appointmentId}`,
+        { status: newStatus }
+      );
+      
+      if (response.status === 200) {
+        toast.success(`Appointment ${newStatus.toLowerCase()} successfully`);
+        
+        // Update the local state to reflect the change
+        setAppointments(prevAppointments => 
+          prevAppointments.map(app => 
+            app.id === appointmentId ? { ...app, status: newStatus.toLowerCase() as any } : app
+          )
+        );
+        
+        // Refresh the appointments list to get the latest data
+        fetchTradeInAppointments();
+      } else {
+        throw new Error(`API returned status code ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error('Error updating appointment status:', error);
+      let errorMessage = 'Failed to update appointment status';
+      
+      // Extract error message from API response if available
+      if (error.response?.data?.message) {
+        errorMessage = typeof error.response.data.message === 'string' 
+          ? error.response.data.message 
+          : error.response.data.message[0] || errorMessage;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingAppointment(null);
+    }
+  };
+
   const filteredAppointments = selectedStatus 
     ? appointments.filter(app => app.status === selectedStatus)
     : appointments;
@@ -186,6 +240,7 @@ const TradeInAppointments = () => {
             >
               <option value="">All statuses</option>
               <option value="scheduled">Scheduled</option>
+              <option value="confirmed">Confirmed</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -220,8 +275,7 @@ const TradeInAppointments = () => {
           <>
             {filteredAppointments.length > 0 ? (
               filteredAppointments.map((appointment) => (
-                <Link 
-                  to={`/tradein-appointments/${appointment.id}`}
+                <div 
                   key={appointment.uid || appointment.id} 
                   className="card p-6 block hover:shadow-md animated-transition"
                 >
@@ -233,7 +287,7 @@ const TradeInAppointments = () => {
                             {appointment.car?.make} {appointment.car?.model} {appointment.car?.year}
                           </h3>
                           <span className="ml-3">
-                            <StatusBadge status={appointment.status.toLowerCase() as 'scheduled' | 'completed' | 'cancelled'} />
+                            <StatusBadge status={appointment.status.toLowerCase() as 'scheduled' | 'confirmed' | 'completed' | 'cancelled'} />
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-gray-600">
@@ -270,8 +324,47 @@ const TradeInAppointments = () => {
                           {formatAppointmentTime(appointment.appointmentDate, appointment.appointmentTime)}
                         </span>
                       </div>
+
+   {/* Status Update Buttons */}
+ 
+ {appointment.status.toLowerCase() !== 'cancelled' && appointment.status.toLowerCase() !== 'completed' ? <>
+  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleUpdateStatus(appointment.id, 'Confirmed')}
+                      disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'confirmed'}
+                      className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'confirmed' 
+                        ? 'bg-green-100 text-green-700 cursor-not-allowed' 
+                        : 'bg-green-500 text-white hover:bg-green-600'}`}
+                    >
+                      {updatingAppointment === appointment.id ? 'Updating...' : 'Confirm'}
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(appointment.id, 'Completed')}
+                      disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'completed'}
+                      className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'completed' 
+                        ? 'bg-blue-100 text-blue-700 cursor-not-allowed' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                    >
+                      {updatingAppointment === appointment.id ? 'Updating...' : 'Complete'}
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(appointment.id, 'Cancelled')}
+                      disabled={updatingAppointment === appointment.id || appointment.status.toLowerCase() === 'cancelled'}
+                      className={`px-3 py-1 text-xs rounded-md ${appointment.status.toLowerCase() === 'cancelled' 
+                        ? 'bg-red-100 text-red-700 cursor-not-allowed' 
+                        : 'bg-red-500 text-white hover:bg-red-600'}`}
+                    >
+                      {updatingAppointment === appointment.id ? 'Updating...' : 'Cancel'}
+                    </button>
+                  </div>
+                   
+
+ </> : null}
+
                     </div>
                   </div>
+                  
+               
 
                   {/* Dealership Information */}
                   {appointment?.car?.dealership && (
@@ -336,7 +429,7 @@ const TradeInAppointments = () => {
                     </div>
                   )}
 
-                </Link>
+                </div>
               ))
             ) : (
               <div className="py-12 text-center bg-white rounded-lg shadow-sm">
@@ -379,6 +472,32 @@ const TradeInAppointments = () => {
           </>
         )}
       </div>
+      
+      {/* Cancel Appointment Modal */}
+      <CancelAppointmentModal
+        appointmentId={appointmentToCancel || ''}
+        isOpen={cancelModalOpen}
+        onClose={() => {
+          setCancelModalOpen(false);
+          setAppointmentToCancel(null);
+        }}
+        onStatusUpdate={async(appointmentId, newStatus, reason)=>{
+          try{
+          const response = await axiosInstance.patch(
+            `/1.0/trade/appointment/update/${appointmentId}`,
+            { status: newStatus, cancelledReason: reason }
+          );
+          if(response.data){
+            toast.success('Appointment cancelled successfully');
+            fetchTradeInAppointments();
+          }
+        }catch(ex){
+          toast.error('Failed to cancel appointment');
+          console.error(ex);
+        }
+
+        }}
+      />
     </div>
   );
 };

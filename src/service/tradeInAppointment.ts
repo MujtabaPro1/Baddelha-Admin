@@ -34,14 +34,4 @@ export const findTradeInAppointment = async (appointmentId: string) => {
   }
 };
 
-export const updateTradeInAppointmentStatus = async (appointmentId: string, status: string) => {
-  try {
-    const res = await axiosInstance.put(
-      `/1.0/trade/appointment/${appointmentId}/status`,
-      { status }
-    );
-    return res.data;
-  } catch (ex: any) {
-    return axiosErrorHandler(ex);
-  }
-};
+
