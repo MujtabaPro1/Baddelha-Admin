@@ -3,13 +3,19 @@ import axiosInstance from './api';
 export interface PageContent {
   id?: string;
   title: string;
-  titleAr?: string;
+  title_ar?: string;
   slug: string;
-  content: string;
-  contentAr?: string;
-  metaDescription: string;
-  metaDescriptionAr?: string;
+  content_en: string;
+  content_ar?: string;
+  meta_description: string;
+  meta_description_ar?: string;
   lastUpdated?: string;
+  // Legacy fields for backward compatibility during transition
+  content?: string;
+  contentAr?: string;
+  titleAr?: string;
+  metaDescription?: string;
+  metaDescriptionAr?: string;
 }
 
 // Fetch all page content items

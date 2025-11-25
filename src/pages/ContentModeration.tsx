@@ -4,7 +4,26 @@ import 'react-quill/dist/quill.snow.css';
 import { toast } from 'react-toastify';
 import { useLanguage } from '../contexts/LanguageContext';
 import '../styles/rtl.css';
-import { PageContent, fetchPageContents, fetchPageContentBySlug, savePageContent } from '../service/pageContentService';
+import { fetchPageContents, fetchPageContentBySlug, savePageContent } from '../service/pageContentService';
+
+// Updated interface to match API expectations
+export interface PageContent {
+  id?: string;
+  title: string;
+  title_ar?: string;
+  slug: string;
+  content_en: string;
+  content_ar?: string;
+  meta_description: string;
+  meta_description_ar?: string;
+  lastUpdated?: string;
+  // Legacy fields for backward compatibility during transition
+  content?: string;
+  contentAr?: string;
+  titleAr?: string;
+  metaDescription?: string;
+  metaDescriptionAr?: string;
+}
 import { PlusCircle, Loader2 } from 'lucide-react';
 
 const ContentModeration: React.FC = () => {
@@ -29,7 +48,16 @@ const ContentModeration: React.FC = () => {
         setIsLoading(true);
         setError(null);
         const data = await fetchPageContents();
-        setContentItems(data);
+        // Map API response to our interface if needed
+        const mappedData = data.map(item => ({
+          ...item,
+          // Ensure required fields exist
+          content_en: item.content_en || item.content || '',
+          content_ar: item.content_ar || item.contentAr || '',
+          meta_description: item.meta_description || item.metaDescription || '',
+          meta_description_ar: item.meta_description_ar || item.metaDescriptionAr || ''
+        }));
+        setContentItems(mappedData);
       } catch (err) {
         console.error('Failed to fetch page contents:', err);
         setError(t('error.loading'));
@@ -56,11 +84,20 @@ const ContentModeration: React.FC = () => {
       // Fetch the full content from the API
       const fullContent = await fetchPageContentBySlug(contentKey);
       
-      // Update the selected item with the full content
-      setSelectedItem(fullContent);
+      // Update the selected item with the full content and ensure required fields exist
+      const mappedContent = {
+        ...fullContent,
+        content_en: fullContent.content_en || fullContent.content || '',
+        content_ar: fullContent.content_ar || fullContent.contentAr || '',
+        meta_description: fullContent.meta_description || fullContent.metaDescription || '',
+        meta_description_ar: fullContent.meta_description_ar || fullContent.metaDescriptionAr || ''
+      };
+      setSelectedItem(mappedContent);
       
       // Set the editor content based on the language
-      setEditorContent(language === 'en' ? fullContent.content : (fullContent.contentAr || ''));
+      setEditorContent(language === 'en' ? 
+        fullContent.content_en : 
+        (fullContent.content_ar ?? ''));
       
       // Exit editing mode
       setIsEditing(false);
@@ -70,8 +107,15 @@ const ContentModeration: React.FC = () => {
       toast.error('Failed to load content details');
       
       // Still set the selected item with the basic info we have
-      setSelectedItem(item);
-      setEditorContent(language === 'en' ? item.content : (item.contentAr || ''));
+      const mappedItem = {
+        ...item,
+        content_en: item.content_en || item.content || '',
+        content_ar: item.content_ar || item.contentAr || '',
+        meta_description: item.meta_description || item.metaDescription || '',
+        meta_description_ar: item.meta_description_ar || item.metaDescriptionAr || ''
+      };
+      setSelectedItem(mappedItem);
+      setEditorContent(language === 'en' ? mappedItem.content_en : mappedItem.content_ar);
     } finally {
       setIsLoadingContent(false);
     }
@@ -93,13 +137,13 @@ const ContentModeration: React.FC = () => {
         const newItem: PageContent = {
           title: newContentTitle,
           slug: newContentSlug,
-          content: editorContent,
-          metaDescription: newContentMetaDescription,
+          content_en: language === 'en' ? editorContent : '',
+          content_ar: language === 'ar' ? editorContent : '',
+          meta_description: newContentMetaDescription,
           // Add Arabic versions if in Arabic mode
           ...(language === 'ar' && {
-            titleAr: newContentTitle,
-            contentAr: editorContent,
-            metaDescriptionAr: newContentMetaDescription
+            title_ar: newContentTitle,
+            meta_description_ar: newContentMetaDescription
           })
         };
         
@@ -114,8 +158,8 @@ const ContentModeration: React.FC = () => {
           ...selectedItem!,
           // Update only the content for the current language
           ...(language === 'en' 
-            ? { content: editorContent } 
-            : { contentAr: editorContent })
+            ? { content_en: editorContent } 
+            : { content_ar: editorContent })
         };
         
         savedItem = await savePageContent(updatedItem);
@@ -128,9 +172,17 @@ const ContentModeration: React.FC = () => {
         );
       }
       
-      setSelectedItem(savedItem);
+      // Ensure savedItem has all required fields
+      const mappedSavedItem: PageContent = {
+        ...savedItem,
+        content_en: savedItem.content_en || savedItem.content || '',
+        content_ar: savedItem.content_ar || savedItem.contentAr || '',
+        meta_description: savedItem.meta_description || savedItem.metaDescription || '',
+        meta_description_ar: savedItem.meta_description_ar || savedItem.metaDescriptionAr || ''
+      };
+      setSelectedItem(mappedSavedItem);
       setIsEditing(false);
-      const itemTitle = language === 'en' ? savedItem.title : (savedItem.titleAr || savedItem.title);
+      const itemTitle = language === 'en' ? savedItem.title : (savedItem.title_ar ?? savedItem.titleAr ?? savedItem.title);
       toast.success(`${itemTitle} ${t('success.saved')}`);
     } catch (error) {
       toast.error(t('error.save'));
@@ -148,7 +200,7 @@ const ContentModeration: React.FC = () => {
       setNewContentMetaDescription('');
       setEditorContent('');
     } else if (selectedItem) {
-      setEditorContent(language === 'en' ? selectedItem.content : (selectedItem.contentAr || ''));
+      setEditorContent(language === 'en' ? selectedItem.content_en : selectedItem.content_ar);
     }
     setIsEditing(false);
   };
@@ -159,7 +211,9 @@ const ContentModeration: React.FC = () => {
     
     // Update editor content if an item is selected
     if (selectedItem) {
-      setEditorContent(newLanguage === 'en' ? selectedItem.content : (selectedItem.contentAr || ''));
+      setEditorContent(newLanguage === 'en' ? 
+        selectedItem.content_en : 
+        selectedItem.content_ar);
     }
   };
   
@@ -250,7 +304,7 @@ const ContentModeration: React.FC = () => {
                         : 'hover:bg-gray-100'
                     }`}
                   >
-                    {language === 'en' ? item.title : (item.titleAr || item.title)}
+                    {language === 'en' ? item.title : (item.title_ar ?? item.titleAr ?? item.title)}
                   </button>
                 </li>
               ))}
@@ -335,7 +389,7 @@ const ContentModeration: React.FC = () => {
           ) : selectedItem ? (
             <>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">{language === 'en' ? selectedItem.title : (selectedItem.titleAr || selectedItem.title)}</h2>
+                <h2 className="text-xl font-semibold">{language === 'en' ? selectedItem.title : (selectedItem.title_ar ?? selectedItem.titleAr ?? selectedItem.title)}</h2>
                 <div className={`${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
                   {isEditing ? (
                     <>
@@ -395,7 +449,7 @@ const ContentModeration: React.FC = () => {
               ) : (
                 <div 
                   className="prose max-w-none border rounded-md p-4 h-96 overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: language === 'en' ? selectedItem.content : (selectedItem.contentAr || '') }}
+                  dangerouslySetInnerHTML={{ __html: language === 'en' ? selectedItem.content_en : (selectedItem.content_ar ?? '') }}
                 />
               )}
             </>
