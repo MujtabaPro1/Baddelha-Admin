@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://stg-service.bddelha.com/api/';
+const BASE_URL = 'https://service.baddelha.com.sa/api/';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
