@@ -137,8 +137,8 @@ const ContentModeration: React.FC = () => {
         const newItem: PageContent = {
           title: newContentTitle,
           slug: newContentSlug,
-          content_en: language === 'en' ? editorContent : '',
-          content_ar: language === 'ar' ? editorContent : '',
+          content_en: language === 'en' ? editorContent : 'N/A',
+          content_ar: language === 'ar' ? editorContent : 'N/A',
           meta_description: newContentMetaDescription,
           // Add Arabic versions if in Arabic mode
           ...(language === 'ar' && {
