@@ -87,7 +87,7 @@ const Layout = () => {
     <div className="h-screen flex overflow-hidden bg-gray-100">
       {/* Mobile sidebar */}
       <div 
-        className={`fixed inset-0 z-40 flex md:hidden ${sidebarOpen ? 'visible' : 'invisible'}`}
+        className={`fixed inset-0 z-40 flex lg:hidden ${sidebarOpen ? 'visible' : 'invisible'}`}
         aria-hidden="true"
       >
         <div 
@@ -155,7 +155,7 @@ const Layout = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-shrink-0">
+      <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-0 flex-1 bg-blue-900">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
@@ -207,7 +207,7 @@ const Layout = () => {
         <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
           <button
             type="button"
-            className="px-4 border-r border-gray-200 text-gray-500 md:hidden"
+            className="px-4 border-r border-gray-200 text-gray-500 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>

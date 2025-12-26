@@ -380,7 +380,7 @@ const ContentModeration: React.FC = () => {
                       value={editorContent}
                       onChange={setEditorContent}
                       modules={modules}
-                      className="h-96"
+                      className="min-h-96"
                     />
                   </div>
                 </div>
@@ -443,7 +443,7 @@ const ContentModeration: React.FC = () => {
                     value={editorContent}
                     onChange={setEditorContent}
                     modules={modules}
-                    className="h-96"
+                    className="min-h-96"
                   />
                 </div>
               ) : (

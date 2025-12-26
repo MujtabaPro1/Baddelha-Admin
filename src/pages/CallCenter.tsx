@@ -30,6 +30,17 @@ const CallCenter = () => {
   const [activeCall, setActiveCall] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<{ [key: string]: string }>({});
   const [showCallModal, setShowCallModal] = useState<string | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState<string | null>(null);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [branchTimings, setBranchTimings] = useState<any[]>([]);
+  const [rescheduleData, setRescheduleData] = useState({
+    branchId: '',
+    selectedDayIndex: 0,
+    date: '',
+    timeSlot: '',
+    note: ''
+  });
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +56,70 @@ const CallCenter = () => {
 
   useEffect(()=>{
     fetchAppointments();
+    fetchBranches();
   },[])
+
+  const fetchBranches = async () => {
+    try {
+      const response = await axiosInstance.get('/1.0/branch');
+      const branches = response.data.filter((branch: any) => branch.is_active);
+      setBranches(branches);
+    } catch (err) {
+      console.error('Error fetching branches:', err);
+    }
+  };
+
+  const fetchBranchTimings = async (branchId?: string) => {
+    if (!branchId) return;
+    try {
+      const response = await axiosInstance.get(`/1.0/branch-timing`);
+      setBranchTimings(response.data || []);
+    } catch (err) {
+      console.error('Error fetching branch timings:', err);
+      setBranchTimings([]);
+    }
+  };
+
+  const getTimeSlotsForBranch = () => {
+    return branchTimings;
+  };
+
+  const handleReschedule = (appointmentId: string) => {
+    setShowRescheduleModal(appointmentId);
+    setRescheduleData({
+      branchId: '',
+      selectedDayIndex: 0,
+      date: '',
+      timeSlot: '',
+      note: ''
+    });
+  };
+
+  const submitReschedule = async () => {
+    if (!showRescheduleModal || !rescheduleData.branchId || !rescheduleData.date || !rescheduleData.timeSlot) {
+      alert('Please fill all required fields');
+      return;
+    }
+
+    setRescheduleLoading(true);
+    try {
+      await axiosInstance.post(`/1.0/book-appointment/${showRescheduleModal}/reschedule`, {
+        branchId: rescheduleData.branchId,
+        appointmentDate: rescheduleData.date,
+        appointmentTime: rescheduleData.timeSlot,
+        note: rescheduleData.note
+      });
+      alert('Appointment rescheduled successfully');
+      setShowRescheduleModal(null);
+      setShowCallModal(null);
+      fetchAppointments();
+    } catch (err) {
+      console.error('Error rescheduling appointment:', err);
+      alert('Failed to reschedule appointment');
+    } finally {
+      setRescheduleLoading(false);
+    }
+  }
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -449,7 +523,7 @@ const CallCenter = () => {
               />
             </div>
             
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => endCall(showCallModal, 'confirmed')}
                 className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -458,10 +532,17 @@ const CallCenter = () => {
                 Confirmed
               </button>
               <button
-                onClick={() => endCall(showCallModal, 'cancelled')}
+                onClick={() => handleReschedule(showCallModal)}
                 className="flex items-center justify-center px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
               >
                 <Clock className="h-4 w-4 mr-1" />
+                Reschedule
+              </button>
+              <button
+                onClick={() => endCall(showCallModal, 'cancelled')}
+                className="flex items-center justify-center px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+              >
+                <XCircle className="h-4 w-4 mr-1" />
                 Cancel
               </button>
               <button
@@ -470,6 +551,133 @@ const CallCenter = () => {
               >
                 <XCircle className="h-4 w-4 mr-1" />
                 No Answer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-yellow-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
+              <p className="text-gray-600">
+                {appointments.find((a: any) => a.id === showRescheduleModal)?.userDetails?.name}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Branch Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Branch *
+                </label>
+                <select
+                  value={rescheduleData.branchId}
+                  onChange={(e) => {
+                    const branchId = e.target.value;
+                    setRescheduleData(prev => ({ ...prev, branchId, selectedDayIndex: 0, date: '', timeSlot: '' }));
+                    if (branchId) fetchBranchTimings(branchId);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select a branch</option>
+                  {branches.map((branch: any) => (
+                    <option key={branch.id || branch.uid} value={branch.id || branch.uid}>
+                      {branch.enName || branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Day & Time Selection */}
+              {rescheduleData.branchId && getTimeSlotsForBranch().length > 0 && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Day & Time *
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {getTimeSlotsForBranch().map((dayData: any, index: number) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setRescheduleData(prev => ({ ...prev, selectedDayIndex: index, date: dayData.date, timeSlot: '' }))}
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            rescheduleData.selectedDayIndex === index && rescheduleData.date === dayData.date
+                              ? 'bg-yellow-500 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <div className="text-center">
+                            <div>{dayData.day}</div>
+                            <div className="text-xs">{dayData.date}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Available Time Slots */}
+                  {rescheduleData.date && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Available Time Slots
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {getTimeSlotsForBranch()[rescheduleData.selectedDayIndex]?.slots?.map((slot: any, index: number) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => setRescheduleData(prev => ({ ...prev, timeSlot: slot.label }))}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                              rescheduleData.timeSlot === slot.label
+                                ? 'bg-yellow-500 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {slot.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Note Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Note
+                </label>
+                <textarea
+                  value={rescheduleData.note}
+                  onChange={(e) => setRescheduleData(prev => ({ ...prev, note: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Add a note for rescheduling..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowRescheduleModal(null)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReschedule}
+                disabled={rescheduleLoading || !rescheduleData.branchId || !rescheduleData.date || !rescheduleData.timeSlot}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {rescheduleLoading ? 'Rescheduling...' : 'Confirm Reschedule'}
               </button>
             </div>
           </div>
