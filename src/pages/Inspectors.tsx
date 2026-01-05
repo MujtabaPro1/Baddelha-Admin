@@ -87,7 +87,6 @@ const Inspectors = () => {
               <th>Phone</th>
               <th>Performance</th>
               <th>Status</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -99,14 +98,6 @@ const Inspectors = () => {
                 <td>{user.performance}</td>
                 <td>
                   <StatusBadge status={'active'} />
-                </td>
-                <td>
-                  <button className="text-sm text-blue-600 hover:text-blue-900 mr-3">
-                    Edit
-                  </button>
-                  <button className="text-sm text-red-600 hover:text-red-900">
-                    Delete
-                  </button>
                 </td>
               </tr>
             )) : <></>}

@@ -164,7 +164,7 @@ const MyInspections = () => {
                 <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                      Scheduled: {formatDate(inspection.createdAt)}
+                      Created Date: {formatDate(inspection.createdAt)}
                   </span>
                 </div>
                 {inspection?.inspectionStatus == 'Submit' ? <button 

@@ -45,14 +45,14 @@ const LanguageSelectionModal: React.FC<LanguageSelectionModalProps> = ({
             {language === 'en' && <span className="text-blue-900">●</span>}
           </button>
           
-          <button
+          {/* <button
             onClick={() => onSelectLanguage('ar')}
             disabled={isLoading}
             className="w-full py-3 px-4 bg-white border border-gray-300 rounded-md flex items-center justify-between hover:bg-gray-50"
           >
             <span>العربية</span>
             {language === 'ar' && <span className="text-blue-900">●</span>}
-          </button>
+          </button> */}
         </div>
         
         {isLoading && (

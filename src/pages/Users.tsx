@@ -52,11 +52,7 @@ const Users = () => {
       <PageHeader 
         title="Users" 
         description="Manage all users on the Baddelha platform"
-        actions={
-          <button className="btn btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-1" /> Add User
-          </button>
-        }
+        actions={null}
       />
       
       {/* Filters and search */}
