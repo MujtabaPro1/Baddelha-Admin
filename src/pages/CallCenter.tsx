@@ -174,10 +174,6 @@ const CallCenter = () => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  const formatTime = (timeString: string) => {
-    return format(new Date(timeString), 'h:mm a');
-  };
-
   const handleCall = (appointmentId: string, phone: string) => {
     setActiveCall(appointmentId);
     // In a real app, this would integrate with a phone system
@@ -428,7 +424,7 @@ const CallCenter = () => {
                         </div>
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{formatDate(appointment.appointmentDate)} at {formatTime(appointment.appointmentTime)}</span>
+                          <span>{formatDate(appointment.appointmentDate)} at {appointment.appointmentTime}</span>
                         </div>
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-2 text-gray-400" />
