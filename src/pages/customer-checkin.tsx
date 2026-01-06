@@ -37,14 +37,6 @@ const CustomerCheckIn = () => {
         'Start Inspection'
     ];
     
-
-    
-    // Format time as MM:SS
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
     
     // Countdown timer effect
     useEffect(() => {
@@ -461,7 +453,7 @@ const CustomerCheckIn = () => {
                                                 <Calendar size={18} className="text-blue-900 mr-2" />
                                                 <span className="font-medium">
                                                     {new Date(apt.appointmentDate).toLocaleDateString()} at {' '}
-                                                    {new Date(apt.appointmentTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {apt.appointmentTime}
                                                 </span>
                                             </div>
                                             <div className="flex items-center">
