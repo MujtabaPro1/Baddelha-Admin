@@ -64,12 +64,8 @@ const Appointments = () => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
-  const formatTime = (timeString: string) => {
-    return format(new Date(timeString), 'h:mm a');
-  };
-
   const formatAppointmentTime = (date: string, time: string) => {
-    return `${formatDate(date)} at ${formatTime(time)}`;
+    return `${formatDate(date)} at ${time}`;
   };
 
   return (
