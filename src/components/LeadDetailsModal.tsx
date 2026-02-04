@@ -6,9 +6,10 @@ interface LeadDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateClick: (lead: Lead) => void;
+  statusUpdate: boolean;
 }
 
-const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClose, onUpdateClick }) => {
+const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClose, onUpdateClick , statusUpdate}) => {
   if (!isOpen || !lead) return null;
 
   const formatDate = (dateString: string) => {
@@ -89,12 +90,12 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
           >
             Close
           </button>
-          <button
+          {statusUpdate && <button
             onClick={() => onUpdateClick(lead)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-900 border border-transparent rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900"
           >
             Update Status
-          </button>
+          </button>}
         </div>
       </div>
     </div>

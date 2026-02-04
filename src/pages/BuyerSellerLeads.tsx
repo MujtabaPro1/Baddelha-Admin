@@ -181,6 +181,7 @@ const BuyerSellerLeads = () => {
       <LeadDetailsModal
         lead={selectedLead}
         isOpen={isDetailsModalOpen}
+        statusUpdate={false}
         onClose={closeDetailsModal}
         onUpdateClick={(lead) => {
           closeDetailsModal();
