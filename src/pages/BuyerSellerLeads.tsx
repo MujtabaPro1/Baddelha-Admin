@@ -125,7 +125,7 @@ const BuyerSellerLeads = () => {
               <tr key={lead.id} className="hover:bg-gray-50 animated-transition">
                 <td className="font-medium text-gray-900">{lead.fullName}</td>
                 <td>{lead.email}</td>
-                <td className="cursor-pointer text-blue-600 hover:text-blue-900" onClick={() => {
+                <td className="cursor-pointer !text-blue-600 hover:text-blue-900" onClick={() => {
                   window.open(`tel:${lead.phoneNumber || lead.phone}`);
                 }}>{lead.phoneNumber || lead.phone}</td>
                 <td>{lead.companyName || '-'}</td>
