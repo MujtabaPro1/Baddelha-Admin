@@ -47,7 +47,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
           
           <div>
             <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-            <p className="text-base">{lead.phone}</p>
+            <p className="text-base">{lead.phoneNumber || lead.phone || '-'}</p>
           </div>
           
           <div>
@@ -57,7 +57,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
           
           <div>
             <h3 className="text-sm font-medium text-gray-500">Subject</h3>
-            <p className="text-base">{lead.subject}</p>
+            <p className="text-base">{lead.subject || '-'}</p>
           </div>
           
           <div>

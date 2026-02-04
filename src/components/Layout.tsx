@@ -65,6 +65,7 @@ const Layout = () => {
       { name: 'Notifications', href: '/notifications', icon: Bell },
       { name: 'Content Moderation', href: '/content-moderation', icon: Shield },
       { name: 'Leads', href: '/leads', icon: MessageSquare },
+      { name: 'Buyer Seller Leads', href: '/buyer-seller-leads', icon: MessageSquare },
       { name: 'Contacts', href: '/contacts', icon: Mail },
       { name: 'Trade In Dealerships', href: '/tradein-dealerships', icon: CarIcon },
       { name: 'Invoicing', href: '/invoicing', icon: FileText },

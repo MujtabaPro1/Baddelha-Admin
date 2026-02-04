@@ -46,7 +46,7 @@ const LeadStatusModal: React.FC<LeadStatusModalProps> = ({ lead, isOpen, onClose
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Lead from: {lead.fullName}
             </label>
-            <p className="text-sm text-gray-500">{lead.email} • {lead.phone}</p>
+            <p className="text-sm text-gray-500">{lead.email} • {lead.phoneNumber || lead.phone || '-'}</p>
           </div>
           
           <div className="mb-4">

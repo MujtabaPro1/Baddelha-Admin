@@ -23,6 +23,75 @@ export const fetchLeads = async (): Promise<Lead[]> => {
   }
 };
 
+type BuyerSellerLeadApiItem = {
+  uid?: string;
+  id: string | number;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  companyName?: string;
+  location?: string;
+  message: string;
+  isSeller?: boolean;
+  isBuyer?: boolean;
+  status?: Lead['status'];
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type BuyerSellerLeadsApiResponse = {
+  leads: BuyerSellerLeadApiItem[];
+  total: number;
+};
+
+export type BuyerSellerLeadsResult = {
+  leads: Lead[];
+  total: number;
+};
+
+// Fetch buyer-seller leads (paginated)
+export const fetchBuyerSellerLeads = async (
+  page: number,
+  limit: number,
+  useMockData: boolean
+): Promise<BuyerSellerLeadsResult> => {
+  if (useMockData) {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ leads: [], total: 0 }), 800);
+    });
+  }
+
+  try {
+    const response = await axiosInstance.get<BuyerSellerLeadsApiResponse>('1.0/buyer-seller-leads', {
+      params: { page, limit },
+    });
+
+    const apiData = response.data;
+    const mappedLeads: Lead[] = (apiData.leads || []).map((l) => ({
+      id: l.id,
+      uid: l.uid,
+      fullName: l.fullName,
+      email: l.email,
+      phoneNumber: l.phoneNumber,
+      phone: l.phoneNumber,
+      companyName: l.companyName,
+      location: l.location,
+      message: l.message,
+      isSeller: l.isSeller,
+      isBuyer: l.isBuyer,
+      status: l.status || 'new',
+      createdAt: l.createdAt,
+      updatedAt: l.updatedAt,
+    }));
+
+    return { leads: mappedLeads, total: apiData.total ?? mappedLeads.length };
+  } catch (error) {
+    console.error('Error fetching buyer-seller leads:', error);
+    throw error;
+  }
+};
+
+
 // Fetch a single lead by ID
 export const fetchLeadById = async (id: string): Promise<Lead> => {
   if (USE_MOCK_DATA) {
@@ -45,7 +114,7 @@ export const fetchLeadById = async (id: string): Promise<Lead> => {
 };
 
 // Update lead status
-export const updateLeadStatus = async (id: string, status: Lead['status'], notes?: string): Promise<Lead> => {
+export const updateLeadStatus = async (id: string | number, status: Lead['status'], notes?: string): Promise<Lead> => {
   if (USE_MOCK_DATA) {
     const leadIndex = mockLeads.findIndex(lead => lead.id === id);
     if (leadIndex === -1) throw new Error(`Lead with ID ${id} not found`);

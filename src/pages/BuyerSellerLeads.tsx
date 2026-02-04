@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import { Search, Filter, RefreshCw } from 'lucide-react';
 import { Lead } from '../types/lead';
-import { fetchLeads } from '../service/leadService';
+import { fetchBuyerSellerLeads } from '../service/leadService';
 import LeadStatusModal from '../components/LeadStatusModal';
 import LeadDetailsModal from '../components/LeadDetailsModal';
 import { toast } from 'react-toastify';
 
-const Leads = () => {
+const BuyerSellerLeads = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [total, setTotal] = useState(0);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -23,12 +24,9 @@ const Leads = () => {
   const getLeads = async () => {
     setLoading(true);
     try {
-      const data = await fetchLeads();
-      const normalized = (data || []).map((lead) => ({
-        ...lead,
-        status: lead.status || 'new',
-      }));
-      setLeads(normalized);
+      const { leads: fetchedLeads, total: fetchedTotal } = await fetchBuyerSellerLeads(1, 10, false);
+      setLeads(fetchedLeads);
+      setTotal(fetchedTotal);
     } catch (error) {
       console.error('Failed to fetch leads:', error);
       toast.error('Failed to load leads');
@@ -87,7 +85,8 @@ const Leads = () => {
     const matchesSearch = 
       lead.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (lead.subject || '').toLowerCase().includes(searchQuery.toLowerCase());
+      (lead.companyName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (lead.location || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = selectedStatus ? lead.status === selectedStatus : true;
     
@@ -97,9 +96,13 @@ const Leads = () => {
   return (
     <div>
       <PageHeader 
-        title="Leads" 
-        description="Manage leads from the contact form on the website"
+        title="Buyer Seller Leads" 
+        description="Manage buyer seller leads from the contact form on the website"
       />
+
+      <div className="mb-4 text-sm text-gray-600">
+        Total: {total}
+      </div>
       
 
       <div className="table-container">
@@ -109,7 +112,9 @@ const Leads = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Subject</th>
+              <th>Company</th>
+              <th>Location</th>
+              <th>Type</th>
               <th>Date</th>
               <th>Status</th>
               <th>Actions</th>
@@ -120,8 +125,14 @@ const Leads = () => {
               <tr key={lead.id} className="hover:bg-gray-50 animated-transition">
                 <td className="font-medium text-gray-900">{lead.fullName}</td>
                 <td>{lead.email}</td>
-                <td>{lead.phoneNumber || lead.phone || '-'}</td>
-                <td>{lead.subject || '-'}</td>
+                <td>{lead.phoneNumber || lead.phone}</td>
+                <td>{lead.companyName || '-'}</td>
+                <td>{lead.location || '-'}</td>
+                <td>
+                  <span className="capitalize">
+                    {lead.isBuyer ? 'buyer' : lead.isSeller ? 'seller' : '-'}
+                  </span>
+                </td>
                 <td>{formatDate(lead.createdAt)}</td>
                 <td>
                   <span className={`badge ${getStatusBadgeClass(lead.status)} capitalize`}>
@@ -152,7 +163,7 @@ const Leads = () => {
         {filteredLeads.length === 0 && (
           <div className="py-12 text-center">
             <p className="text-gray-500">
-              {loading ? 'Loading leads...' : 'No leads found matching your criteria.'}
+              {loading ? 'Loading buyer seller leads...' : 'No buyer seller leads found matching your criteria.'}
             </p>
           </div>
         )}
@@ -180,4 +191,4 @@ const Leads = () => {
   );
 };
 
-export default Leads;
+export default BuyerSellerLeads;

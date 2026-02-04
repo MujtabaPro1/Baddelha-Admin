@@ -1,11 +1,18 @@
 export interface Lead {
-  id: string;
+  id: string | number;
+  uid?: string;
   fullName: string;
   email: string;
-  phone: string;
-  subject: string;
+  phone?: string;
+  phoneNumber?: string;
+  subject?: string;
   message: string;
+  companyName?: string;
+  location?: string;
+  isSeller?: boolean;
+  isBuyer?: boolean;
   createdAt: string;
-  status: 'new' | 'resolved';
+  updatedAt?: string;
+  status: 'new' | 'in-progress' | 'resolved' | 'rejected';
   notes?: string;
 }

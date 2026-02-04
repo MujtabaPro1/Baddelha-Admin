@@ -38,6 +38,7 @@ import Branches from './pages/Branches';
 import Notifications from './pages/Notifications';
 import ContentModeration from './pages/ContentModeration';
 import Leads from './pages/Leads';
+import BuyerSellerLeads from './pages/BuyerSellerLeads';
 import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
 import Dealers from './pages/Dealers';
@@ -220,6 +221,12 @@ function App() {
             <Route path="leads" element={
                                 <AdminRoute>
                                   <Leads />
+                                </AdminRoute>
+                              } />
+
+                              <Route path="buyer-seller-leads" element={
+                                <AdminRoute>
+                                  <BuyerSellerLeads />
                                 </AdminRoute>
                               } />
 

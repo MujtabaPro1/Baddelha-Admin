@@ -101,18 +101,26 @@ const CallCenter = () => {
       return;
     }
 
+    const appointmentDate = (() => {
+      const d = new Date(rescheduleData.date);
+      return Number.isNaN(d.getTime())
+        ? rescheduleData.date
+        : format(d, "yyyy-MM-dd'T'HH:mm:ssXXX");
+    })();
+
     setRescheduleLoading(true);
     try {
-      await axiosInstance.post(`/1.0/book-appointment/${showRescheduleModal}/reschedule`, {
-        branchId: rescheduleData.branchId,
-        appointmentDate: rescheduleData.date,
+      await axiosInstance.patch(`/1.0/book-appointment/reschedule/${showRescheduleModal}`, {
+        branchId: Number(rescheduleData.branchId),
+        appointmentDate,
         appointmentTime: rescheduleData.timeSlot,
-        note: rescheduleData.note
+        remarks: rescheduleData.note,
       });
       alert('Appointment rescheduled successfully');
       setShowRescheduleModal(null);
       setShowCallModal(null);
       fetchAppointments();
+      setActiveCall(null);
     } catch (err) {
       console.error('Error rescheduling appointment:', err);
       alert('Failed to reschedule appointment');
@@ -606,7 +614,7 @@ const CallCenter = () => {
                           onClick={() => setRescheduleData(prev => ({ ...prev, selectedDayIndex: index, date: dayData.date, timeSlot: '' }))}
                           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                             rescheduleData.selectedDayIndex === index && rescheduleData.date === dayData.date
-                              ? 'bg-yellow-500 text-white'
+                              ? 'bg-blue-500 text-white'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
@@ -633,7 +641,7 @@ const CallCenter = () => {
                             onClick={() => setRescheduleData(prev => ({ ...prev, timeSlot: slot.label }))}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                               rescheduleData.timeSlot === slot.label
-                                ? 'bg-yellow-500 text-white'
+                                ? 'bg-blue-500 text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
