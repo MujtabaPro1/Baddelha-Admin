@@ -26,6 +26,8 @@ interface Inspector {
 const MyInspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
+  const [appointments, setAppointments]: any = useState([]);
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
@@ -37,6 +39,7 @@ const MyInspections = () => {
 
   useEffect(() => {
     fetchInspections();
+    fetchAppointments();
   }, []);
 
   const fetchInspections = async () => {
@@ -44,14 +47,33 @@ const MyInspections = () => {
     setError(null);
     try {
       const response = await axiosInstance.get('/1.0/inspection/find-all');
+      const data = response?.data?.data?.map((r: any) => {
+        r['car'] = r['Car'];
+        return r;
+      });
 
-    
-      setInspections(response?.data?.data);
+      setInspections(data || []);
     } catch (err) {
       console.error('Error fetching inspections:', err);
       setError('Failed to load inspections. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const response = await axiosInstance.get('/1.0/book-appointment');
+      const data = response?.data.map((a: any) => {
+        return {
+          ...a,
+          priority: 'high',
+          car: JSON.parse(a.carDetail),
+        };
+      });
+      setAppointments(data || []);
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
     }
   };
 
@@ -85,6 +107,34 @@ const MyInspections = () => {
           </button>
         }
       />
+      
+      {/* Tabs */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('appointments')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'appointments'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Appointments ({appointments.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('inspections')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'inspections'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Inspections ({inspections.length})
+            </button>
+          </nav>
+        </div>
+      </div>
       
    
       
@@ -129,9 +179,16 @@ const MyInspections = () => {
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {inspections.map((inspection: any,index:number) => (
+        {(activeTab === 'appointments' ? appointments : inspections)
+          .filter((inspection: any) => {
+            if (activeTab === 'appointments') {
+              return inspection.status == 'Confirmed';
+            }
+            return true;
+          })
+          .map((inspection: any, index: number) => (
           <div 
-            key={inspection.uid} 
+            key={inspection.uid || inspection.id} 
             className="card p-6 block hover:shadow-md animated-transition"
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -146,17 +203,26 @@ const MyInspections = () => {
                 <div>
                   <div className="flex items-center flex-wrap gap">
                     <h3 className="text-lg font-medium text-gray-900">
-                      {inspection.Car.year} {inspection.Car.make} {inspection.Car.model}
+                      {inspection?.car?.year} {inspection?.car?.make} {inspection?.car?.model}&nbsp;
                     </h3>
 
                   </div>
-                  <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 mb-2 rounded">
+                  {activeTab === 'inspections' && (
+                    <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 mb-2 rounded">
                       Ref: {inspection.id}
-                  </div>
+                    </div>
+                  )}
                   <div className="mt-1 flex items-center text-sm text-gray-600">
-                  <StatusBadge status={inspection.inspectionStatus} />
+                    <StatusBadge status={activeTab === 'appointments' ? inspection.status : inspection?.inspectionStatus} />
                   </div>
-
+                  {activeTab === 'appointments' && (
+                    <div className="mt-1 flex items-center text-sm text-gray-600">
+                      <User className="h-4 w-4 mr-1" />
+                      <span>{inspection?.firstName + ' ' + inspection?.lastName}</span>
+                      <span className="mx-2">•</span>
+                      <span>{inspection?.phone}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -164,50 +230,71 @@ const MyInspections = () => {
                 <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                      Created Date: {formatDate(inspection.createdAt)}
+                    {activeTab === 'appointments' 
+                      ? (inspection?.appointmentDate ? `Scheduled: ${formatDate(inspection.appointmentDate)}` : `Requested: ${formatDate(inspection.appointmentDate)}`)
+                      : `Created Date: ${formatDate(inspection.createdAt)}`
+                    }
                   </span>
                 </div>
-                {inspection?.inspectionStatus == 'Submit' ? <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                            
-
-                            }}
-                            className="btn mt-3  min-w-[175px] justify-center btn-sm btn-danger flex items-center"
-                          >
-                            QA Pending
-                          </button> : inspection?.inspectionStatus == 'Completed' ? 
-                          <button 
-                          onClick={(e) => {
-                            e.preventDefault();
+                {activeTab === 'appointments' && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <MapPin className="h-4 w-4 text-gray-500 mr-1" />
+                    <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
+                  </div>
+                )}
+                {activeTab === 'appointments' ? (
+                  <>
+                    {inspection?.inspectionStatus == 'Submit' ? (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                      >
+                        QA Pending
+                      </button>
+                    ) : inspection?.inspectionStatus == 'Completed' ? (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                        }}
+                        className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-[#f7cb73] flex items-center"
+                      >
+                        Offer Pending
+                      </button>
+                    ) : inspection?.customerCheckIn != null ? (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/inspection-report/${inspection.inspectionId}`);                      
+                   
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                      >
+                        Start Inspection
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/customer-checkin/${inspection.inspectionId}`);
                           
-
-                          }}
-                          className="btn mt-3 
-                          text-white
-                          min-w-[175px] justify-center btn-sm bg-[#f7cb73] flex items-center"
-                        >
-                          Offer Pending
-                        </button>
-                          :   inspection?.BookAppointments?.[0]?.customerCheckIn != null ? <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              navigate(`/inspection-report/${inspection.id}`);
-
-                            }}
-                            className="btn mt-3  min-w-[175px] justify-center btn-sm btn-primary flex items-center"
-                          >
-                            Start Inspection
-                          </button> : 
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              navigate(`/customer-checkin/${inspection.id}`);
-                            }}
-                            className="btn mt-3 min-w-[175px] btn-sm btn-secondary flex items-center"
-                          >
-                            Customer Check In
-                          </button>}
+                        }}
+                        className="btn mt-3 min-w-[175px] btn-sm btn-secondary flex items-center"
+                      >
+                        Customer Check In
+                      </button>
+                    )}
+                  </>
+                ) :  <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/inspection-report/${inspection.id}`);
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                      >
+                        Start Inspection
+                      </button>}
               </div>
             </div>
             

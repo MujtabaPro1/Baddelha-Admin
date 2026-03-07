@@ -24,6 +24,8 @@ interface Inspector {
 const SupervisorInspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
+  const [inspectionsOnly, setInspectionsOnly]: any = useState([]);
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
@@ -37,13 +39,33 @@ const SupervisorInspections = () => {
 
   useEffect(() => {
     fetchInspections();
+    fetchInspectionsOnly();
   }, []);
 
+
+  const fetchInspectionsOnly = async () => {
+    try {
+      const response = await axiosInstance.get('/1.0/inspection/find-all');
+      const data = response?.data?.data?.map((r: any)=>{
+        r['car'] = r['Car'];
+        return r;
+      })
+
+      const filteredData = data.filter((inspection: any) => inspection.inspectionStatus == 'Pending');
+      console.log('Filtered data:', filteredData);
+
+      setInspectionsOnly(filteredData || []);
+    } catch (err) {
+      console.error('Error fetching inspections only:', err);
+    }
+  };
   const fetchInspections = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await axiosInstance.get('/1.0/book-appointment');
+
+      //
      
       const data = response?.data.map((a: any)=>{
         return {
@@ -101,6 +123,36 @@ const SupervisorInspections = () => {
       // You might want to add an error notification here
     }
   };
+
+    const handleAssignInspectorDirect = async (inspectorId: number) => {
+    try {
+
+      await axiosInstance.post('/1.0/inspection/assign-inspector-direct', {
+        inspectionId: currentInspection.id,
+        inspectorId: inspectorId
+      });
+      
+      // Update local state to reflect the assignment
+      const updatedInspections = inspections.map((inspection: any) => {
+        if (inspection.uid === currentInspection.uid) {
+          return { ...inspection, inspectorId };
+        }
+        return inspection;
+      });
+      
+      setInspections(updatedInspections);
+      setIsModalOpen(false);
+      fetchInspections();
+      fetchInspectionsOnly();
+      
+      
+      // You might want to add a success notification here
+    } catch (err) {
+      console.error('Error assigning inspector:', err);
+      // You might want to add an error notification here
+    }
+  };
+
   
   const openAssignModal = (inspection: any) => {
     setCurrentInspection(inspection);
@@ -159,6 +211,34 @@ const SupervisorInspections = () => {
         }
       />
       
+      {/* Tabs */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('appointments')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'appointments'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Appointments ({inspections.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('inspections')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'inspections'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Inspections ({inspectionsOnly.length})
+            </button>
+          </nav>
+        </div>
+      </div>
+      
       {/* Inspector Assignment Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -189,7 +269,7 @@ const SupervisorInspections = () => {
                     <div 
                       key={inspector.id}
                       className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleAssignInspector(inspector.id)}
+                      onClick={() => activeTab == 'appointments' ? handleAssignInspector(inspector.id) : handleAssignInspectorDirect(inspector.id)}
                     >
                       <div className="flex justify-between items-center">
                         <div>
@@ -267,9 +347,14 @@ const SupervisorInspections = () => {
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {inspections.filter((inspection: any) => {
-          return inspection.status == 'Confirmed';
-        }).map((inspection: any) => (
+        {(activeTab === 'appointments' ? inspections : inspectionsOnly)
+          .filter((inspection: any) => {
+            if (activeTab === 'appointments') {
+              return inspection.status == 'Confirmed';
+            }
+            return true;
+          })
+          .map((inspection: any) => (
           <div 
             key={inspection.uid} 
             className="card p-6 block hover:shadow-md animated-transition"
@@ -286,29 +371,30 @@ const SupervisorInspections = () => {
                 <div>
                   <div className="flex items-center flex-wrap gap">
                     <h3 className="text-lg font-medium text-gray-900">
-                      {inspection.car.year} {inspection.car.make} {inspection.car.model}
+                      {inspection?.car?.year} {inspection?.car?.make} {inspection?.car?.model}&nbsp;
                     </h3>
-                    <StatusBadge status={inspection.status} />
+                    <StatusBadge status={activeTab === 'appointments' ? inspection.status : inspection?.inspectionStatus} />
                   </div>
-                  <div className="mt-1 flex items-center text-sm text-gray-600">
+                  {activeTab === 'appointments' ? <div className="mt-1 flex items-center text-sm text-gray-600">
                     <User className="h-4 w-4 mr-1" />
-                    <span>{inspection.firstName + ' ' + inspection.lastName}</span>
+                    <span>{inspection?.firstName + ' ' + inspection?.lastName}</span>
                     <span className="mx-2">•</span>
-                    <span>{inspection.phone}</span>
-                  </div>
+                    <span>{inspection?.phone}</span>
+                  </div>: <></>}
                 </div>
               </div>
               
               <div className="flex flex-col items-start md:items-end">
-                <div className="flex items-center text-sm text-gray-700 mb-1">
+                {activeTab === 'appointments' ? <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                    {inspection.appointmentDate ? 
+                    {inspection?.appointmentDate ? 
                       `Scheduled: ${formatDate(inspection.appointmentDate)}` :
                       `Requested: ${formatDate(inspection.appointmentDate)}`
                     }
                   </span>
-                </div>
+                </div>: <></>}
+
                 <div className="flex items-center text-sm text-gray-700">
                   <MapPin className="h-4 w-4 text-gray-500 mr-1" />
                   <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
@@ -332,7 +418,7 @@ const SupervisorInspections = () => {
                {inspection?.car?.make} {inspection?.car?.model} {inspection?.car?.year}
               </div> : <div className="text-gray-500 text-sm font-medium">No car details</div>}
               
-             {inspection?.inspectorUserId == null && <button 
+             {activeTab === 'appointments' && (inspection?.inspectorUserId == null) || (activeTab === 'inspections' && inspection?.inspectorId == null) ? <button 
                 onClick={(e) => {
                   e.preventDefault();
                   openAssignModal(inspection);
@@ -340,7 +426,7 @@ const SupervisorInspections = () => {
                 className="btn btn-sm btn-outline-primary flex items-center"
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Assign to Inspector
-              </button>}
+              </button>: <></>}
             </div>
           </div>
         ))}

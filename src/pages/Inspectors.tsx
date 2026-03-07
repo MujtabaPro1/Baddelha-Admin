@@ -83,8 +83,6 @@ const Inspectors = () => {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
               <th>Performance</th>
               <th>Status</th>
             </tr>
@@ -93,8 +91,6 @@ const Inspectors = () => {
             {users?.length > 0 ?  users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50 animated-transition">
                 <td className="font-medium text-gray-900">{user.name}</td>
-                <td>{user.email || 'seedinspector@gmail.com'}</td>
-                <td>{user.phone || '966588248733'}</td>
                 <td>{user.performance}</td>
                 <td>
                   <StatusBadge status={'active'} />

@@ -103,11 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: data.id.toString(),
           name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
           email: data.email,
-          role: data.role.name.toLowerCase() === 'supervisor' ? 'supervisor' : data.role.name.includes('Support Agent') ? 'call-center' : data.role.name.toLowerCase().includes('inspector') ?  'inspector' : data.role.name.toLowerCase().includes('qa') ? 'qa' : data.role.name.toLowerCase().includes('sale') ? 'sale' : 'admin'
+          role: data.role.name.toLowerCase() === 'supervisor' || data.role.name.toLowerCase() === 'branch supervisor' ? 'supervisor' : data.role.name.includes('Support Agent') ? 'call-center' : data.role.name.toLowerCase().includes('inspector') ?  'inspector' : data.role.name.toLowerCase().includes('qa') ? 'qa' : data.role.name.toLowerCase().includes('sale') ? 'sale' : 'admin'
         };
         
 
-        if(data.role.name.toLowerCase() === 'supervisor' || data.role.name.toLowerCase() === 'inspector'){
+        if(data.role.name.toLowerCase() === 'supervisor' || data.role.name.toLowerCase() === 'branch supervisor' || data.role.name.toLowerCase() === 'inspector'){
           userData.branchId = data.branchId;
         }
 

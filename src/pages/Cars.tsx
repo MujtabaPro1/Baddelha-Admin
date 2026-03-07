@@ -8,6 +8,7 @@ import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
 
 
+
 const Cars = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCondition, setSelectedCondition] = useState<string>('');
@@ -110,6 +111,16 @@ const Cars = () => {
       <PageHeader 
         title="Cars & Auctions" 
         description="Manage all cars and auctions in the Baddelha inventory"
+        actions={
+          <>
+
+ <button 
+ onClick={() => navigate('/cars/create')} className="btn btn-primary flex items-center">
+              <Plus className="h-4 w-4 mr-1" /> Create Car
+            </button>
+
+          </>
+        }
       />
       
       {/* Filters and search */}

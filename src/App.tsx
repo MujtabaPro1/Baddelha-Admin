@@ -43,6 +43,8 @@ import Contacts from './pages/Contacts';
 import ContactDetail from './pages/ContactDetail';
 import Dealers from './pages/Dealers';
 import Sellers from './pages/Sellers';
+import CreateCar from './pages/CreateCar';
+// Add route: <Route path="/cars/create" element={<CreateCar />} />
 
 
 // Protected route component
@@ -67,11 +69,12 @@ const AdminRoute = ({ children}: { children: React.ReactNode }) => {
     return <>{children}</>;
   }
   
+  console.log(user);
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if(user.role == 'supervisor'){
+  if(user.role == 'supervisor' || user.role == 'branch-supervisor'){
     return <Navigate to="/supervisor-inspections" replace />;
   }
   
@@ -217,6 +220,13 @@ function App() {
                                   <ContentModeration />
                                 </AdminRoute>
                               } />
+
+
+            <Route path="cars/create" element={
+                 <AdminRoute>
+                                  <CreateCar />
+                                </AdminRoute>
+            } />
 
             <Route path="leads" element={
                                 <AdminRoute>
