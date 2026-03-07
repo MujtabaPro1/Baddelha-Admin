@@ -460,7 +460,7 @@ const CreateCar = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Car Price (AED) *</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Car Price (SAR) *</label>
         <input
           type="number"
           value={formData.carPrice}
