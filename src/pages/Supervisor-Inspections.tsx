@@ -67,6 +67,7 @@ const SupervisorInspections = () => {
 
       //
      
+      
       const data = response?.data.map((a: any)=>{
         return {
           ...a,
@@ -74,8 +75,10 @@ const SupervisorInspections = () => {
           car: JSON.parse(a.carDetail),
         }
       });
+
+      const filteredData = data?.filter((inspection: any) => inspection.status == 'Confirmed');
     
-      setInspections(data);
+      setInspections(filteredData);
     } catch (err) {
       console.error('Error fetching inspections:', err);
       setError('Failed to load inspections. Please try again.');
@@ -187,12 +190,6 @@ const SupervisorInspections = () => {
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
-    if (priority === 'high') {
-      return <AlertTriangle className="h-4 w-4 mr-1" />;
-    }
-    return null;
-  };
 
   return (
     <div>
@@ -431,7 +428,13 @@ const SupervisorInspections = () => {
           </div>
         ))}
 
-        {inspections.length === 0 && (
+        {activeTab == 'appointments' && inspections.length === 0 && (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No inspection requests found matching your criteria.</p>
+          </div>
+        )}
+        {activeTab == 'inspections' && inspectionsOnly.length === 0 && (
           <div className="py-12 text-center bg-white rounded-lg shadow-sm">
             <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">No inspection requests found matching your criteria.</p>
