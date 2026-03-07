@@ -424,6 +424,16 @@ const SupervisorInspections = () => {
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Assign to Inspector
               </button>: <></>}
+
+              {activeTab === 'inspections' && inspection?.inspectorId ? <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
+                className="btn btn-sm btn-primary flex items-center"
+              >
+                In Progress
+              </button>: <></>}
+
             </div>
           </div>
         ))}
