@@ -2,7 +2,7 @@ import React from 'react';
 
 type StatusType = 
   | 'active' | 'inactive'
-  | 'available' | 'sold' | 'pending'
+  | 'available' | 'sold' | 'pending' | 'pending_approval'
   | 'scheduled' | 'completed' | 'cancelled'
   | 'approved' | 'confirmed' | 'rejected';
 
@@ -28,6 +28,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'scheduled':
         return 'bg-yellow-100 text-yellow-800';
       case 'sold':
+      case 'pending_approval':
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -36,7 +37,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <span className={`badge ${getStatusStyles()} capitalize`}>
-      {status}
+      {status === 'pending_approval' ? 'Pending Approval' : status}
     </span>
   );
 };

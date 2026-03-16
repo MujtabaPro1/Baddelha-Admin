@@ -23,8 +23,8 @@ const Leads = () => {
   const getLeads = async () => {
     setLoading(true);
     try {
-      const data = await fetchLeads();
-      const normalized = (data || []).map((lead) => ({
+      const data: any = await fetchLeads();
+      const normalized = (data?.data || []).map((lead: any) => ({
         ...lead,
         status: lead.status || 'new',
       }));

@@ -60,3 +60,12 @@ export const updateRolePermission = async (
     return axiosErrorHandler(ex);
   }
 };
+
+export const createAppModule = async (body: { name: string; description: string; path: string }) => {
+  try {
+    const res = await axiosInstance.post("/1.0/app-modules/create", body);
+    return res.data;
+  } catch (ex: any) {
+    return axiosErrorHandler(ex);
+  }
+};
