@@ -34,6 +34,9 @@ const ViewInspectionPage = () => {
     if (params?.id) {
       findInspection(params.id).then(async (res) => {
         setData(res);
+      }).catch((err) => {
+        console.error(err);
+        toast.error("Failed to load inspection details");
       });
     }
   }, [params?.id]);

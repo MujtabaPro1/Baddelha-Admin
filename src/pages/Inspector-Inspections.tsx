@@ -244,7 +244,7 @@ const MyInspections = () => {
                 )}
                 {activeTab === 'appointments' ? (
                   <>
-                    {inspection?.inspectionStatus == 'Submit' ? (
+                    {inspection?.Inspection?.inspectionStatus == 'Submit' ? (
                       <button 
                         onClick={(e) => {
                           e.preventDefault();
@@ -253,7 +253,7 @@ const MyInspections = () => {
                       >
                         QA Pending
                       </button>
-                    ) : inspection?.inspectionStatus == 'Completed' ? (
+                    ) : inspection?.Inspection?.inspectionStatus == 'Completed' ? (
                       <button 
                         onClick={(e) => {
                           e.preventDefault();
@@ -286,7 +286,8 @@ const MyInspections = () => {
                       </button>
                     )}
                   </>
-                ) :  <button 
+                ) : inspection.inspectionStatus == 'Pending' ? 
+                  <button 
                         onClick={(e) => {
                           e.preventDefault();
                           navigate(`/inspection-report/${inspection.id}`);
@@ -294,7 +295,18 @@ const MyInspections = () => {
                         className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
                       >
                         Start Inspection
-                      </button>}
+                      </button>:
+                      
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+  
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                      >
+                         {inspection?.insspectionStatus}
+                      </button>
+                      }
               </div>
             </div>
             
