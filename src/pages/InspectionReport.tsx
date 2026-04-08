@@ -55,6 +55,7 @@ const InspectionForm = () => {
   const [selectedField, setSelectedField] = useState<string>('');
   const [fieldExtraData, setFieldExtraData,fieldExtraDataRef] = useStateRef<Record<string, { comment: string; image: string | null }>>({});
 
+
   // List of all car parts from CarBodySvg
   const carParts = [
     'c_n_wing_rear_left',
@@ -172,12 +173,32 @@ const InspectionForm = () => {
 
       
       let formValues = {};
-      inspection?.data?.map((item:any)=>{
-        if(item.name !== 'Car Media' && item.name !== 'Document Images') {
-          let val = item['fields'].reduce((acc: any, field: any) => ({
-            ...acc,
-            [field.fieldName.replace(/\s/g, "_")]: field.value,
-          }), {});
+       console.log("inspection", inspection);
+      inspection?.map((item:any)=>{
+        console.log("item.name", item.name);
+        if(item.name !== 'Car Media' && item.name !== 'Document Images' && item.name != 'Car Body Condition') {
+          console.log("item", item);
+          let val = item['fields'].reduce((acc: any, field: any) => {
+            let fieldValue = field.value;
+            // Pre-select first option for Drop Down fields if no value exists
+            console.log(field.fieldType);
+            const isDropDown = field.fieldType === 'Drop Down';
+            const hasNoValue = fieldValue === null || fieldValue === undefined || fieldValue == '';
+            const hasOptions = field.options?.length > 0;
+            
+            if (isDropDown) {
+              console.log(`Drop Down Field: ${field.fieldName}, value: "${fieldValue}", options:`, field.options);
+            }
+            
+            if (isDropDown && hasNoValue && hasOptions) {
+              fieldValue = field.options[0];
+              console.log(`Setting default for ${field.fieldName} to: ${fieldValue}`);
+            }
+            return {
+              ...acc,
+              [field.fieldName.replace(/\s/g, "_")]: fieldValue,
+            };
+          }, {});
           formValues = {
             ...formValues,
             ...val,
@@ -188,6 +209,7 @@ const InspectionForm = () => {
 
      
       console.log("inspection---",inspection);
+      console.log("formValues with defaults---", formValues);
       setDefaultValues(formValues);
       setInitialData(inspection);
     } catch (ex: any) {
