@@ -969,7 +969,7 @@ const CarsDetails = () => {
                 <dt className="text-sm font-medium text-gray-500">Seller Asking Price</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex items-center">
                   <span>{carDetails.sellerAskingPrice ? `SAR ${Number(carDetails.sellerAskingPrice).toLocaleString()}` : 'Not set'}</span>
-                  {user?.role == 'admin' || user?.role == 'qa' ? <button
+                  {/* {user?.role == 'admin' || user?.role == 'qa' ? <button
                     onClick={() => {
                       setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice) || 0);
                       setShowSellerAskingPriceModal(true);
@@ -980,7 +980,7 @@ const CarsDetails = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                     <span className="ml-1">Edit</span>
-                  </button> : <></>}
+                  </button> : <></>} */}
                 </dd>
               </div>
               {carDetails.notes && (
