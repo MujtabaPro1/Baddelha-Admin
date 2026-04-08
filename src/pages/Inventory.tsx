@@ -140,7 +140,7 @@ const Inventory = () => {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Cars grid - Left side */}
         <div className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
         {loading ? (
           <div className="col-span-3 py-12 text-center">
             <p className="text-blue-900 font-medium">Loading cars...</p>

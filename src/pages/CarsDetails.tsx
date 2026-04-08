@@ -766,7 +766,7 @@ const CarsDetails = () => {
         
          
          {user && user?.role != 'sale' ?  <>
-          {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted'    ?
+          {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted' || carDetails?.carStatus == 'push_to_inventory' ?
           <div className={'w-75 flex items-end justify-end'}>
            <div 
              onClick={()=>{
@@ -786,14 +786,14 @@ const CarsDetails = () => {
            </div>
 
 
-           <div onClick={()=>{
+          {carDetails?.carStatus != 'push_to_inventory' && <div onClick={()=>{
              if(confirm("Are you sure you want to push this car for inventory")) {
                markCarAsInventory(carDetails?.id);
              }
            }} className={'ml-1 mr-1 flex border bg-red-500 border-red-500 p-2 rounded-md text-center text-white items-center cursor-pointer justify-center'}>
              <ArrowUp/>&nbsp;
              <div >Push to Inventory</div>
-           </div>
+           </div>}
 
 
            <div 
