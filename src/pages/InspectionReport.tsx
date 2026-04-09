@@ -186,8 +186,11 @@ const InspectionForm = () => {
             const hasNoValue = fieldValue === null || fieldValue === undefined || fieldValue == '';
             const hasOptions = field.options?.length > 0;
             
-            if (isDropDown) {
-              console.log(`Drop Down Field: ${field.fieldName}, value: "${fieldValue}", options:`, field.options);
+            console.log('fieldName',field.fieldName);
+            
+            if(field.fieldName === 'Airbag Deployed' || field.fieldName === 'Chassis') {
+              console.log('Skipping',field.fieldName);
+              return acc;
             }
             
             if (isDropDown && hasNoValue && hasOptions) {
