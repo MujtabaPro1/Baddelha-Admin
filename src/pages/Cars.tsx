@@ -22,6 +22,8 @@ const Cars = () => {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  const params = new URLSearchParams(window.location.search);
+  const carType = params.get('carType');
   
 
 
@@ -58,8 +60,13 @@ const Cars = () => {
   async function fetchCars() {
     setLoading(true);
     try {
+
+      let search = "";
+      if(carType === 'sold') {
+        search = "?carStatus=sold";
+      }
       //let search = "";
-      const resp = await axiosInstance.get("/1.0/car/find-all", {
+      const resp = await axiosInstance.get("/1.0/car/find-all" + search, {
         params: {
           search,
           page,
@@ -109,17 +116,17 @@ const Cars = () => {
   return (
     <div>
       <PageHeader 
-        title="Cars & Auctions" 
+        title={carType === 'sold' ? 'Sold Cars' : 'Cars & Auctions'} 
         description="Manage all cars and auctions in the Baddelha inventory"
         actions={
           <>
 
- <button 
+ {carType !== 'sold' && <button 
  onClick={() => navigate('/cars/create')} className="btn btn-primary flex items-center">
               <Plus className="h-4 w-4 mr-1" /> Create Car
             </button>
 
-          </>
+          }</>
         }
       />
       
@@ -149,8 +156,8 @@ const Cars = () => {
       
       <div className="flex flex-col md:flex-row gap-6">
         {/* Cars grid - Left side */}
-        <div className="md:w-2/3">
-          <h2 className="text-xl font-semibold mb-4">Available Cars</h2>
+        <div className={carType === 'sold' ? 'md:w-full' : 'md:w-2/3'}>
+          <h2 className="text-xl font-semibold mb-4">{carType === 'sold' ? '' : 'Available Cars'}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {loading ? (
           <div className="col-span-3 py-12 text-center">
@@ -225,7 +232,7 @@ const Cars = () => {
         </div>
         
         {/* Auction Cars - Right side */}
-        <div className="md:w-1/3 mt-6 md:mt-0">
+        {carType !== 'sold' && <div className="md:w-1/3 mt-6 md:mt-0">
           <h2 className="text-xl font-semibold mb-4">Active Auctions</h2>
           <div className="space-y-4">
             {auctionCars && auctionCars.length > 0 ? (
@@ -294,7 +301,7 @@ const Cars = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

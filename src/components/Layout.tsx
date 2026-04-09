@@ -54,6 +54,7 @@ const Layout = () => {
       { name: 'Sellers', href: '/sellers', icon: Users },
       { name: 'Cars', href: '/cars', icon: Car },
       { name: 'Inventory Cars', href: '/inventory-cars', icon: CarIcon },
+      { name: 'Sold Cars', href: '/cars?carType=sold', icon: CarIcon },
       { name: 'Appointments', href: '/appointments', icon: Calendar },
       { name: 'Trade-In Appointments', href: '/tradein-appointments', icon: Calendar },
       // { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
