@@ -1,29 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { 
-  Phone, PhoneCall, Calendar, Clock, MapPin, User, Mail, 
-  Car as CarIcon, Search, Filter, RefreshCw, CheckCircle, 
-  XCircle, AlertCircle, MessageSquare, History, Star,
-  LogOut
+  Phone, PhoneCall, Calendar, Clock, MapPin,
+  Car as CarIcon, Search, RefreshCw, CheckCircle, 
+  XCircle, AlertCircle, LogOut
 } from 'lucide-react';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../service/api';
 
 
-// Mock call history
-const mockCallHistory = [
-  { id: '1', appointmentId: '1', callTime: '2025-04-27T14:30:00Z', duration: '5:23', outcome: 'confirmed', notes: 'Customer confirmed appointment time' },
-  { id: '2', appointmentId: '2', callTime: '2025-04-27T10:15:00Z', duration: '3:45', outcome: 'rescheduled', notes: 'Moved to next week due to customer availability' },
-  { id: '3', appointmentId: '3', callTime: '2025-04-26T16:20:00Z', duration: '2:10', outcome: 'no_answer', notes: 'Left voicemail' },
-];
 
 const CallCenter = () => {
   const [appointments,setAppointments]: any = useState([]);
   const [loading,setLoading] = useState(false);
   const [error,setError] = useState<string | null>(null);
-  const [callHistory] = useState(mockCallHistory);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -136,6 +127,7 @@ const CallCenter = () => {
       // Make the actual API call
       try {
         const response = await axiosInstance.get('/1.0/book-appointment');
+        
         const data = response.data.map((a: any) => {
           return {
             ...a,
@@ -208,6 +200,43 @@ const CallCenter = () => {
     }
   };
 
+
+  const reConfirmAppointment = (appointmentId: string) => {
+
+    // Save call record logic here
+
+    ///api/1.0/book-appointment/:id/update-status/Confirmed
+    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/Confirmed`).then((res)=>{
+      console.log(res);
+      alert('Appointment status updated successfully');
+      fetchAppointments();
+    }).catch((err)=>{
+      console.log(err);
+      alert('Failed to update appointment status');
+    });
+  }
+  
+
+
+
+    const cancelAppointment = (appointmentId: string) => {
+
+    // Save call record logic here
+
+    ///api/1.0/book-appointment/:id/update-status/Confirmed
+    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/Cancelled`).then((res)=>{
+      console.log(res);
+      alert('Appointment status updated successfully');
+      fetchAppointments();
+    }).catch((err)=>{
+      console.log(err);
+      alert('Failed to update appointment status');
+    });
+  }
+  
+
+
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'scheduled':
@@ -259,27 +288,33 @@ const CallCenter = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Phone className="h-8 w-8 text-blue-600 mr-3" />
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Phone className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Call Center Portal</h1>
-                <p className="text-sm text-gray-600">Manage customer appointments and calls</p>
+                <h1 className="text-xl font-bold text-slate-800">Call Center</h1>
+                <p className="text-xs text-slate-500">Manage appointments & calls</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500">Online</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-slate-50 rounded-full px-4 py-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white font-semibold text-sm">{user?.name?.charAt(0)}</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-slate-700">{user?.name}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <p className="text-xs text-emerald-600 font-medium">Online</p>
+                  </div>
+                </div>
               </div>
-              <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">{user?.name.charAt(0)}</span>
-              </div>
-
               <button
                 onClick={()=>{
                   if(confirm("Are you sure you want to logout?")){
@@ -287,202 +322,243 @@ const CallCenter = () => {
                     navigate('/login');
                   }
                 }}
-                className="flex items-center text-dark"
+                className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
               >
-                <LogOut className="mr-3 h-5 w-5" />
+                <LogOut className="h-5 w-5" />
               </button>
-
-
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Today's Appointments</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {appointments.filter((a: any) => a.appointmentDate === '2025-04-28').length}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Today</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">
+                  {appointments.filter((a: any) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    return a.appointmentDate?.split('T')[0] === today;
+                  }).length}
                 </p>
+                <p className="text-xs text-slate-500 mt-1">Appointments</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <PhoneCall className="h-8 w-8 text-green-600" />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Scheduled</p>
+                <p className="text-3xl font-bold text-amber-600 mt-1">{appointments.filter((a: any) => a.status === 'Scheduled').length}</p>
+                <p className="text-xs text-slate-500 mt-1">Pending calls</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Calls Made Today</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Confirmed</p>
-                <p className="text-2xl font-bold text-gray-900">{appointments.filter((a: any) => a.status === 'Confirmed').length}</p>
+              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <AlertCircle className="h-8 w-8 text-yellow-600" />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirmed</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">{appointments.filter((a: any) => a.status === 'Confirmed').length}</p>
+                <p className="text-xs text-slate-500 mt-1">Ready to go</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pending Follow-up</p>
-                <p className="text-2xl font-bold text-gray-900">{appointments.filter((a: any) => a.status == 'Scheduled').length}</p>
+              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Cancelled</p>
+                <p className="text-3xl font-bold text-red-500 mt-1">{appointments.filter((a: any) => a.status === 'Cancelled').length}</p>
+                <p className="text-xs text-slate-500 mt-1">Need follow-up</p>
+              </div>
+              <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                <XCircle className="h-6 w-6 text-red-500" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
               </div>
               <input
                 type="text"
-                placeholder="Search appointments..."
+                placeholder="Search by name, phone, or car..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
             </div>
             
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all min-w-[160px]"
             >
               <option value="">All Statuses</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
             
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
             />
             
-            <button className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <button 
+              onClick={fetchAppointments}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium text-sm"
+            >
+              <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
           </div>
         </div>
 
         {/* Appointments List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredAppointments.map((appointment) => {
             const priority = getPriorityLevel(appointment);
             const isActive = activeCall === appointment.id;
+            const statusLower = appointment.status?.toLowerCase();
             
             return (
               <div
                 key={appointment.id}
-                className={`bg-white rounded-lg shadow border-l-4 ${getPriorityColor(priority)} ${
-                  isActive ? 'ring-2 ring-blue-500' : ''
-                } transition-all duration-200`}
+                className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all duration-200 hover:shadow-md ${
+                  isActive ? 'ring-2 ring-blue-500 shadow-lg' : 'border-slate-100'
+                }`}
               >
-                <div className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div className={`h-1 ${
+                  statusLower === 'confirmed' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                  statusLower === 'cancelled' ? 'bg-gradient-to-r from-red-400 to-rose-500' :
+                  priority === 'high' ? 'bg-gradient-to-r from-orange-400 to-red-500' :
+                  'bg-gradient-to-r from-blue-400 to-indigo-500'
+                }`}></div>
+                
+                <div className="p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                    {/* Customer Info */}
                     <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 mr-3">
-                          {appointment.firstName + ' ' + appointment.lastName}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <h3 className="text-lg font-bold text-slate-800">
+                          {appointment.firstName} {appointment.lastName}
                         </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          statusLower === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                          statusLower === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
                           {getStatusIcon(appointment.status)}
-                          <span className="ml-1 capitalize">{appointment.status}</span>
+                          <span className="capitalize">{appointment.status}</span>
                         </span>
-                        {priority === 'high' && (
-                          <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            <AlertCircle className="h-3 w-3 mr-1" />
+                        {priority === 'high' && statusLower === 'scheduled' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 animate-pulse">
+                            <AlertCircle className="h-3 w-3" />
                             Urgent
                           </span>
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="font-medium">{appointment.phone}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Phone className="h-4 w-4 text-slate-500" />
+                          </div>
+                          <span className="text-slate-700 font-medium">{appointment.phone}</span>
                         </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{formatDate(appointment.appointmentDate)} at {appointment.appointmentTime}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Calendar className="h-4 w-4 text-slate-500" />
+                          </div>
+                          <div>
+                            <span className="text-slate-700">{formatDate(appointment.appointmentDate)}</span>
+                            <span className="text-slate-400 mx-1">•</span>
+                            <span className="text-blue-600 font-medium">{appointment.appointmentTime}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                          <span className="truncate">{appointment.branch}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <MapPin className="h-4 w-4 text-slate-500" />
+                          </div>
+                          <span className="text-slate-700 truncate">{appointment.branch || 'N/A'}</span>
                         </div>
-                        <div className="flex items-center">
-                          <CarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          <span>{appointment.car.year} {appointment.car.make} {appointment.car.model}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <CarIcon className="h-4 w-4 text-slate-500" />
+                          </div>
+                          <span className="text-slate-700">{appointment.car?.year} {appointment.car?.make} {appointment.car?.model}</span>
                         </div>
                       </div>
-                      
-                      {appointment.notes && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm text-gray-700">{appointment.notes}</p>
-                        </div>
-                      )}
                     </div>
                     
-                    <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col sm:flex-row gap-2">
-                      {appointment.status.toLowerCase() == 'scheduled' && <button
-                        onClick={() => handleCall(appointment.id, appointment.userDetails.phone)}
-                        disabled={isActive}
-                        className={`flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors ${
-                          isActive
-                            ? 'bg-green-600 text-white'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        {isActive ? (
-                          <>
-                            <PhoneCall className="h-4 w-4 mr-2 animate-pulse" />
-                            Calling...
-                          </>
-                        ) : (
-                          <>
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call
-                          </>
-                        )}
-                      </button>}
-                      
-                      <button className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        SMS
-                      </button>
-                      
-                      <button className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
-                        <History className="h-4 w-4 mr-2" />
-                        History
-                      </button>
+                    {/* Actions */}
+                    <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[140px]">
+                      {statusLower === 'scheduled' && (
+                        <button
+                          onClick={() => handleCall(appointment.id, appointment.userDetails.phone)}
+                          disabled={isActive}
+                          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all w-full ${
+                            isActive
+                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                              : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5'
+                          }`}
+                        >
+                          {isActive ? (
+                            <>
+                              <PhoneCall className="h-4 w-4 animate-pulse" />
+                              Calling...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Confirm
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {statusLower === 'cancelled' && (
+                        <button
+                          onClick={() => {
+                            if(confirm('Are you sure you want to reconfirm this appointment?')){
+                              reConfirmAppointment(appointment.id)
+                            }
+                          }}
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-all w-full"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Reactivate
+                        </button>
+                      )}
+
+                      {statusLower === 'confirmed' && (
+                        <div className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-emerald-50 text-emerald-700 w-full">
+                          <CheckCircle className="h-4 w-4" />
+                          Ready
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -492,70 +568,74 @@ const CallCenter = () => {
         </div>
 
         {filteredAppointments.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <Phone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
-            <p className="text-gray-600">Try adjusting your search criteria or date range.</p>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Calendar className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">No appointments found</h3>
+            <p className="text-slate-500 text-sm">Try adjusting your search or filters</p>
           </div>
         )}
       </div>
 
       {/* Call Modal */}
       {showCallModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PhoneCall className="h-8 w-8 text-green-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-6 text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <PhoneCall className="h-8 w-8 text-white animate-pulse" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Call in Progress</h3>
-              <p className="text-gray-600">
-                {appointments.find(a => a.id === showCallModal)?.userDetails.name}
+              <h3 className="text-xl font-bold text-white">Confirm Appointment</h3>
+              <p className="text-emerald-100 mt-1">
+                {appointments.find((a: any) => a.id === showCallModal)?.userDetails?.name}
               </p>
             </div>
             
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Call Notes
-              </label>
-              <textarea
-                value={callNotes[showCallModal] || ''}
-                onChange={(e) => setCallNotes(prev => ({ ...prev, [showCallModal]: e.target.value }))}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter call notes..."
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => endCall(showCallModal, 'confirmed')}
-                className="flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Confirmed
-              </button>
-              <button
-                onClick={() => handleReschedule(showCallModal)}
-                className="flex items-center justify-center px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
-              >
-                <Clock className="h-4 w-4 mr-1" />
-                Reschedule
-              </button>
-              <button
-                onClick={() => endCall(showCallModal, 'cancelled')}
-                className="flex items-center justify-center px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
-              >
-                <XCircle className="h-4 w-4 mr-1" />
-                Cancel
-              </button>
-              <button
-                onClick={() => endCall(showCallModal, 'no_answer')}
-                className="flex items-center justify-center px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                <XCircle className="h-4 w-4 mr-1" />
-                No Answer
-              </button>
+            <div className="p-6">
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Call Notes
+                </label>
+                <textarea
+                  value={callNotes[showCallModal] || ''}
+                  onChange={(e) => setCallNotes(prev => ({ ...prev, [showCallModal]: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                  placeholder="Add notes about this call..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => endCall(showCallModal, 'confirmed')}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition-colors"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Confirmed
+                </button>
+                <button
+                  onClick={() => handleReschedule(showCallModal)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Reschedule
+                </button>
+                <button
+                  onClick={() => endCall(showCallModal, 'cancelled')}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-300 transition-colors"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancel
+                </button>
+                <button
+                  onClick={() => endCall(showCallModal, 'no_answer')}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  No Answer
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -563,22 +643,22 @@ const CallCenter = () => {
 
       {/* Reschedule Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-yellow-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-center sticky top-0">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Calendar className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold text-white">Reschedule Appointment</h3>
+              <p className="text-amber-100 mt-1">
                 {appointments.find((a: any) => a.id === showRescheduleModal)?.userDetails?.name}
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="p-6 space-y-5">
               {/* Branch Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Select Branch *
                 </label>
                 <select
@@ -588,7 +668,7 @@ const CallCenter = () => {
                     setRescheduleData(prev => ({ ...prev, branchId, selectedDayIndex: 0, date: '', timeSlot: '' }));
                     if (branchId) fetchBranchTimings(branchId);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                 >
                   <option value="">Select a branch</option>
                   {branches.map((branch: any) => (
@@ -603,8 +683,8 @@ const CallCenter = () => {
               {rescheduleData.branchId && getTimeSlotsForBranch().length > 0 && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Day & Time *
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Select Day *
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {getTimeSlotsForBranch().map((dayData: any, index: number) => (
@@ -612,15 +692,15 @@ const CallCenter = () => {
                           key={index}
                           type="button"
                           onClick={() => setRescheduleData(prev => ({ ...prev, selectedDayIndex: index, date: dayData.date, timeSlot: '' }))}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                             rescheduleData.selectedDayIndex === index && rescheduleData.date === dayData.date
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
                           <div className="text-center">
-                            <div>{dayData.day}</div>
-                            <div className="text-xs">{dayData.date}</div>
+                            <div className="font-semibold">{dayData.day}</div>
+                            <div className="text-xs opacity-80">{dayData.date}</div>
                           </div>
                         </button>
                       ))}
@@ -630,8 +710,8 @@ const CallCenter = () => {
                   {/* Available Time Slots */}
                   {rescheduleData.date && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Available Time Slots
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">
+                        Select Time *
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {getTimeSlotsForBranch()[rescheduleData.selectedDayIndex]?.slots?.map((slot: any, index: number) => (
@@ -639,10 +719,10 @@ const CallCenter = () => {
                             key={index}
                             type="button"
                             onClick={() => setRescheduleData(prev => ({ ...prev, timeSlot: slot.label }))}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                               rescheduleData.timeSlot === slot.label
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             }`}
                           >
                             {slot.label}
@@ -656,33 +736,33 @@ const CallCenter = () => {
 
               {/* Note Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Note
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Note (Optional)
                 </label>
                 <textarea
                   value={rescheduleData.note}
                   onChange={(e) => setRescheduleData(prev => ({ ...prev, note: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none"
                   placeholder="Add a note for rescheduling..."
                 />
               </div>
-            </div>
 
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => setShowRescheduleModal(null)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitReschedule}
-                disabled={rescheduleLoading || !rescheduleData.branchId || !rescheduleData.date || !rescheduleData.timeSlot}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {rescheduleLoading ? 'Rescheduling...' : 'Confirm Reschedule'}
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowRescheduleModal(null)}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReschedule}
+                  disabled={rescheduleLoading || !rescheduleData.branchId || !rescheduleData.date || !rescheduleData.timeSlot}
+                  className="flex-1 px-4 py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+                >
+                  {rescheduleLoading ? 'Rescheduling...' : 'Confirm'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
