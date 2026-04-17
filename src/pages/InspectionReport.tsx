@@ -171,7 +171,7 @@ const InspectionForm = () => {
         return;
       }
 
-      
+
       let formValues = {};
        console.log("inspection", inspection);
       inspection?.map((item:any)=>{
@@ -985,6 +985,42 @@ const InspectionForm = () => {
 
                               {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
                             </>
+                        )}
+
+                        {field.fieldType == "Boolean" && (
+                          <>
+                            <Controller
+                              name={_fieldName}
+                              control={control}
+                              rules={{
+                                required: {
+                                  value: !!field.required,
+                                  message: "Required",
+                                },
+                              }}
+                              render={({ field: controllerField }) => (
+                                <div className="flex items-center gap-3 mt-4">
+                                  <button
+                                    type="button"
+                                    onClick={() => controllerField.onChange(!controllerField.value)}
+                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                                      controllerField.value ? 'bg-red-500' : 'bg-gray-300'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                                        controllerField.value ? 'translate-x-8' : 'translate-x-1'
+                                      }`}
+                                    />
+                                  </button>
+                                  <span className={`text-sm font-medium ${controllerField.value ? 'text-red-600' : 'text-gray-500'}`}>
+                                    {controllerField.value ? 'ON' : 'OFF'}
+                                  </span>
+                                </div>
+                              )}
+                            />
+                            {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                          </>
                         )}
 
                       </div>
