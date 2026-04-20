@@ -56,6 +56,111 @@ const InspectionForm = () => {
   const [fieldExtraData, setFieldExtraData,fieldExtraDataRef] = useStateRef<Record<string, { comment: string; image: string | null }>>({});
 
 
+
+  const lights = [
+  {
+    name: "Check Engine",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6-6-2.7-6-6z" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 8v4M20 28v4M8 20h4M28 20h4" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M11.5 11.5l2.8 2.8M25.7 25.7l2.8 2.8M11.5 28.5l2.8-2.8M25.7 14.3l2.8-2.8" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="20" cy="20" r="3" fill="#888780"/>
+    </svg>`
+  },
+  {
+    name: "ABS",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="13" stroke="#888780" stroke-width="1.5"/>
+      <text x="20" y="25" text-anchor="middle" font-size="11" font-weight="600" font-family="sans-serif" fill="#888780">ABS</text>
+    </svg>`
+  },
+  {
+    name: "Airbag",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="24" r="9" stroke="#888780" stroke-width="1.5"/>
+      <circle cx="20" cy="11" r="3" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 14v4" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M14 21c0 0 2-3 6-3s6 3 6 3" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Seatbelt",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="10" r="4" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 14v8" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 18h12" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+      <path d="M20 22l-5 9h10l-5-9z" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 22l6 5" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Oil Lamp",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 30h14v-3H13v3z" stroke="#888780" stroke-width="1.5" fill="#888780"/>
+      <path d="M16 27V20h8v7" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 20v-5" stroke="#888780" stroke-width="1.5"/>
+      <path d="M20 15c0 0-3-2-3-5h6c0 3-3 5-3 5z" stroke="#888780" stroke-width="1.5" fill="#888780"/>
+      <path d="M27 23h2a2 2 0 0 1 0 4h-2" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Battery",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="15" width="24" height="14" rx="2" stroke="#888780" stroke-width="1.5"/>
+      <path d="M15 15v-3M25 15v-3" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 22h4l-2 4h4l-2-4h4" stroke="#888780" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`
+  },
+  {
+    name: "Brake Light",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="8" stroke="#888780" stroke-width="1.5"/>
+      <circle cx="20" cy="20" r="4" fill="#888780"/>
+      <path d="M20 9v3M20 28v3M9 20h3M28 20h3" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <text x="20" y="38" text-anchor="middle" font-size="8" fill="#888780" font-family="sans-serif">BRAKE</text>
+    </svg>`
+  },
+  {
+    name: "Coolant Temp",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 10v14" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="20" cy="27" r="4" stroke="#888780" stroke-width="1.5" fill="#888780"/>
+      <path d="M15 10h10M14 14h2M24 14h2M13 18h2M25 18h2" stroke="#888780" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M10 32 Q15 28 20 32 Q25 36 30 32" stroke="#888780" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Steering",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="12" stroke="#888780" stroke-width="1.5"/>
+      <circle cx="20" cy="20" r="3" fill="#888780"/>
+      <path d="M20 8v9M20 23v9" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 20h9M23 20h9" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M11.5 11.5l6.5 6.5M22 22l6.5 6.5M11.5 28.5l6.5-6.5M22 18l6.5-6.5" stroke="#888780" stroke-width="1" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Tire Pressure",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="20" cy="22" rx="11" ry="9" stroke="#888780" stroke-width="1.5"/>
+      <ellipse cx="20" cy="22" rx="6" ry="5" stroke="#888780" stroke-width="1.2"/>
+      <path d="M18 10 L20 7 L22 10" fill="#888780" stroke="#888780" stroke-width="1" stroke-linejoin="round"/>
+      <path d="M20 10v4" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "Traction Control",
+    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 30 Q14 22 20 20 Q26 18 28 10" stroke="#888780" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <path d="M25 10l3 0 0 3" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10 28h6M24 28h6" stroke="#888780" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="13" cy="30" r="3" stroke="#888780" stroke-width="1.5"/>
+      <circle cx="27" cy="30" r="3" stroke="#888780" stroke-width="1.5"/>
+    </svg>`
+  }
+];
+ 
+
   // List of all car parts from CarBodySvg
   const carParts = [
     'c_n_wing_rear_left',
@@ -508,6 +613,28 @@ const InspectionForm = () => {
       );
     }
     
+
+    const renderIcon = (fieldName: string) => {
+      // Map field names to icon names (handle variations)
+      const nameMap: Record<string, string> = {
+        'Battery Lamp': 'Battery',
+        'Coolant Temperature': 'Coolant Temp',
+        'Steering Light': 'Steering',
+        'Tire Pressure Light': 'Tire Pressure',
+        'Traction Control Light': 'Traction Control'
+      };
+      const iconName = nameMap[fieldName] || fieldName;
+      const icon = lights.find((light) => light.name === iconName);
+      // Return placeholder if no icon found
+      if (!icon?.svg) {
+        return `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="15" stroke="#888780" stroke-width="1.5" fill="none"/>
+          <text x="20" y="25" text-anchor="middle" font-size="8" fill="#888780" font-family="sans-serif">?</text>
+        </svg>`;
+      }
+      return icon.svg;
+    };
+
 
   return (
 
@@ -988,7 +1115,13 @@ const InspectionForm = () => {
                         )}
 
                         {field.fieldType == "Boolean" && (
-                          <>
+                          <div className="flex items-center gap-4 mt-2">
+                            {/* Icon */}
+                            <div 
+                              className="w-10 h-10 flex-shrink-0"
+                              dangerouslySetInnerHTML={{ __html: renderIcon(field.fieldName) }} 
+                            />
+                            {/* Toggle Switch */}
                             <Controller
                               name={_fieldName}
                               control={control}
@@ -999,7 +1132,7 @@ const InspectionForm = () => {
                                 },
                               }}
                               render={({ field: controllerField }) => (
-                                <div className="flex items-center gap-3 mt-4">
+                                <div className="flex items-center gap-3">
                                   <button
                                     type="button"
                                     onClick={() => controllerField.onChange(!controllerField.value)}
@@ -1020,7 +1153,7 @@ const InspectionForm = () => {
                               )}
                             />
                             {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
-                          </>
+                          </div>
                         )}
 
                       </div>
