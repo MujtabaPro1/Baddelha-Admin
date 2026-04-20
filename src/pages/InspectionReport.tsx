@@ -60,12 +60,7 @@ const InspectionForm = () => {
   const lights = [
   {
     name: "Check Engine",
-    svg: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6-6-2.7-6-6z" stroke="#888780" stroke-width="1.5"/>
-      <path d="M20 8v4M20 28v4M8 20h4M28 20h4" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M11.5 11.5l2.8 2.8M25.7 25.7l2.8 2.8M11.5 28.5l2.8-2.8M25.7 14.3l2.8-2.8" stroke="#888780" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="20" cy="20" r="3" fill="#888780"/>
-    </svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 16H12.01M12 11V13M14 8V5M11 5H17M6 12H3M3 9V15M21 11V19M6 8V16H8L10 19H18V10L16 8H6Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>`
   },
   {
     name: "ABS",
