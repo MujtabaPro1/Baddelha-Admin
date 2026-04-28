@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { saveInspection, getInspectionSchema } from "../service/inspection";
 import { createMedia } from "../service/media";
 import { dataURLToBlob } from "../types/dataUrlToBlob";
-import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus } from "lucide-react";
+import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus, Camera, X } from "lucide-react";
 import axiosInstance from "../service/api";
 import { useNavigate, useParams } from "react-router-dom";
 import { axiosErrorHandler } from "../types/utils";
@@ -54,6 +54,7 @@ const InspectionForm = () => {
   const [isFieldDetailsModalOpen, setIsFieldDetailsModalOpen] = useState<boolean>(false);
   const [selectedField, setSelectedField] = useState<string>('');
   const [fieldExtraData, setFieldExtraData,fieldExtraDataRef] = useStateRef<Record<string, { comment: string; image: string | null }>>({});
+  const [failImages, setFailImages, failImagesRef] = useStateRef<Record<string, string[]>>({});
 
 
 
@@ -452,6 +453,31 @@ const InspectionForm = () => {
     });
 
 
+    // Upload fail evidence images
+    for (const fieldName in failImagesRef.current) {
+      const images = failImagesRef.current[fieldName] || [];
+      for (let idx = 0; idx < images.length; idx++) {
+        const dataUrl = images[idx];
+        if (!dataUrl || !dataUrl.startsWith('data:')) continue;
+        const blob = dataURLToBlob(dataUrl);
+        const file = new File([blob], `${fieldName}_fail_${idx + 1}.jpg`, { type: blob.type });
+        setSubmitState(`Uploading Fail Image ${idx + 1} for ${fieldName}`);
+        try {
+          const mediaResp = await createMedia(file, {
+            imageableId: params.id,
+            imageableType: "Inspection",
+            fileCaption: `${fieldName}_fail_${idx + 1}`,
+          });
+          if (mediaResp.error) {
+            toast.error(`Fail image upload error for ${fieldName}`);
+          }
+        } catch (err) {
+          console.error(`Error uploading fail image for ${fieldName}:`, err);
+          toast.error(`Failed to upload fail image for ${fieldName}`);
+        }
+      }
+    }
+
     setSubmitState("Saving Inspection");
     console.log("Final extra data being submitted:", updatedExtraData);
     const response = await saveInspection(inspectionId, body);
@@ -531,6 +557,28 @@ const InspectionForm = () => {
     }
   }
 
+  const handleFailImageChange = (fieldName: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFailImages(prev => ({
+          ...prev,
+          [fieldName]: [...(prev[fieldName] || []), reader.result as string],
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+    event.target.value = '';
+  };
+
+  const handleFailImageRemove = (fieldName: string, index: number) => {
+    setFailImages(prev => ({
+      ...prev,
+      [fieldName]: (prev[fieldName] || []).filter((_, i) => i !== index),
+    }));
+  };
+
 
 
     if(error){
@@ -609,6 +657,15 @@ const InspectionForm = () => {
       return icon.svg;
     };
 
+  const isFailSelected = (fieldName: string, isMulti: boolean): boolean => {
+    const val = watch(fieldName as any);
+    console.log(val);
+    const failValues = ['Damaged', 'Leak', 'Scratches', 'Dents', 'Repainted'];
+    if (isMulti) {
+      return Array.isArray(val) && val.some((v: any) => failValues.includes(v));
+    }
+    return failValues.includes(val);
+  };
 
   return (
 
@@ -1022,6 +1079,33 @@ const InspectionForm = () => {
                               )}
                             </div>
                             {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            {isFailSelected(_fieldName, false) && (
+                              <div className="mt-2 flex flex-wrap gap-2 items-end">
+                                {(failImages[_fieldName] || []).map((src, idx) => (
+                                  <div key={idx} className="relative inline-block">
+                                    <img src={src} alt={`Fail evidence ${idx + 1}`} className="h-20 w-20 object-cover rounded-lg border border-gray-200 shadow-sm" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleFailImageRemove(_fieldName, idx)}
+                                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow transition-colors"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                ))}
+                                <label htmlFor={`fail_img_${_fieldName}`} className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-900 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-900">
+                                  <Camera size={20} />
+                                  <span className="text-[10px] font-medium">Photo</span>
+                                  <input
+                                    id={`fail_img_${_fieldName}`}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFailImageChange(_fieldName, e)}
+                                  />
+                                </label>
+                              </div>
+                            )}
                             {i.name === 'Car Body' && fieldExtraData[_fieldName] && (
                               <div className="mt-1 p-2 bg-blue-50 rounded-md text-xs">
                                 {fieldExtraData[_fieldName].comment && (
@@ -1064,6 +1148,33 @@ const InspectionForm = () => {
                               )}
                             />
                             {errors[_fieldName] && <span className="text-red">{`${errors[_fieldName]?.message}`}</span>}
+                            {isFailSelected(_fieldName, true) && (
+                              <div className="mt-2 flex flex-wrap gap-2 items-end">
+                                {(failImages[_fieldName] || []).map((src, idx) => (
+                                  <div key={idx} className="relative inline-block">
+                                    <img src={src} alt={`Fail evidence ${idx + 1}`} className="h-20 w-20 object-cover rounded-lg border border-gray-200 shadow-sm" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleFailImageRemove(_fieldName, idx)}
+                                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow transition-colors"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                ))}
+                                <label htmlFor={`fail_img_multi_${_fieldName}`} className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-900 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-900">
+                                  <Camera size={20} />
+                                  <span className="text-[10px] font-medium">Photo</span>
+                                  <input
+                                    id={`fail_img_multi_${_fieldName}`}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFailImageChange(_fieldName, e)}
+                                  />
+                                </label>
+                              </div>
+                            )}
                           </>
                         )}
 
