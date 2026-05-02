@@ -107,7 +107,7 @@ const DealerDetailsModal: React.FC<DealerDetailsModalProps> = ({ dealerId, onClo
     try {
       await axiosInstance.put(`/1.0/dealer/admin/update-status`, {
         userId: dealerId,
-        status: 'reject'
+        status: 'rejected'
       });
       toast.success('Dealer deactivated successfully');
       onUpdate();
@@ -381,6 +381,16 @@ const DealerDetailsModal: React.FC<DealerDetailsModalProps> = ({ dealerId, onClo
                   >
                     <Ban className="h-4 w-4 mr-2" />
                     {actionLoading ? 'Processing...' : 'Deactivate Account'}
+                  </button>
+                )}
+                  {dealer.status?.toLowerCase() === 'reject' || dealer.status?.toLowerCase() === 'rejected' && (
+                  <button
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {actionLoading ? 'Processing...' : 'Activate Account'}
                   </button>
                 )}
               </>
