@@ -105,7 +105,10 @@ const DealerDetailsModal: React.FC<DealerDetailsModalProps> = ({ dealerId, onClo
     
     setActionLoading(true);
     try {
-      await axiosInstance.patch(`/1.0/user/${dealerId}/deactivate`);
+      await axiosInstance.put(`/1.0/dealer/admin/update-status`, {
+        userId: dealerId,
+        status: 'reject'
+      });
       toast.success('Dealer deactivated successfully');
       onUpdate();
       onClose();
