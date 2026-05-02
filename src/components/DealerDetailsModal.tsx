@@ -52,6 +52,8 @@ const DealerDetailsModal: React.FC<DealerDetailsModalProps> = ({ dealerId, onClo
     setLoading(true);
     try {
       const response = await axiosInstance.get(`/1.0/dealer/admin/detail/${dealerId}`);
+    
+      console.log(response?.data?.dealer);
       setDealer(response.data.dealer);
       setMedia(response.data.media || []);
     } catch (error) {
@@ -383,16 +385,16 @@ const DealerDetailsModal: React.FC<DealerDetailsModalProps> = ({ dealerId, onClo
                     {actionLoading ? 'Processing...' : 'Deactivate Account'}
                   </button>
                 )}
-                  {dealer.status?.toLowerCase() === 'reject' || dealer.status?.toLowerCase() === 'rejected' && (
+                  {dealer.status?.toLowerCase() == 'reject' || dealer.status?.toLowerCase() === 'rejected' ? (
                   <button
                     onClick={handleApprove}
                     disabled={actionLoading}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    <Ban className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-4 w-4 mr-2" />
                     {actionLoading ? 'Processing...' : 'Activate Account'}
                   </button>
-                )}
+                ): <></>}
               </>
             )}
           </div>
