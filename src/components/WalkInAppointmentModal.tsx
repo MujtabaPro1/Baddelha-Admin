@@ -22,6 +22,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
 }) => {
   const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Car options state variables
   const [makes, setMakes] = useState<CarOption[]>([]);
@@ -275,11 +276,60 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     });
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    
+    // Validate phone number
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\d{9}$/.test(formData.phone.replace(/^\+?(966)?/, ''))) {
+      newErrors.phone = 'Please enter a valid 9-digit phone number';
+    }
+    
+    // Validate branch
+    if (!formData.branchId) {
+      newErrors.branchId = 'Please select a branch';
+    }
+    
+    // Validate car make
+    if (!formData.make) {
+      newErrors.make = 'Please select a car make';
+    }
+    
+    // Validate car model
+    if (!formData.model) {
+      newErrors.model = 'Please select a car model';
+    }
+    
+    // Validate year
+    if (!formData.year) {
+      newErrors.year = 'Please select a year';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+    
     setLoading(true);
-
-    console.log(formData);
 
     try {
       const today = new Date();
@@ -317,20 +367,18 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       };
 
       // Make API call to create walk-in appointment
-      await axiosInstance.post('/1.0/book-appointment/walk-in', bookingData).then((res)=>{
-        console.log(res);
-        toast.success('Sell request created successfully');
-        onSuccess();
-        onClose();
-        resetForm();
-      }).catch((err)=>{
-        console.log(err);
-        toast.error('Failed to create sell request');
-      });
+      const response = await axiosInstance.post('/1.0/book-appointment/walk-in', bookingData);
+      console.log(response);
+      toast.success('Sell request created successfully');
+      resetForm();
+      setErrors({});
+      onSuccess(); // This will refresh the inspector inspections list
+      onClose();
       
   
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating sell request:', error);
+      toast.error(error?.response?.data?.message || 'Failed to create sell request');
     } finally {
       setLoading(false);
     }
@@ -361,11 +409,14 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                 type="text"
                 name="firstName"
                 value={formData.firstName}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.firstName) setErrors(prev => ({ ...prev, firstName: '' }));
+                }}
+                className={`form-input w-full ${errors.firstName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 placeholder="First Name"
               />
+              {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
             </div>
             
             <div>
@@ -374,29 +425,36 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                 type="text"
                 name="lastName"
                 value={formData.lastName}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.lastName) setErrors(prev => ({ ...prev, lastName: '' }));
+                }}
+                className={`form-input w-full ${errors.lastName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 placeholder="Last Name"
               />
+              {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number*</label>
               <div className="flex">
-                <div className="bg-gray-100 flex items-center px-3 rounded-l border border-r-0">
+                <div className={`bg-gray-100 flex items-center px-3 rounded-l border border-r-0 ${errors.phone ? 'border-red-500' : ''}`}>
                   <span className="text-gray-500">+966</span>
                 </div>
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  className="form-input w-full rounded-l-none"
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                  }}
+                  className={`form-input w-full rounded-l-none ${errors.phone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                   placeholder="Phone Number without country code"
+                  maxLength={9}
                 />
               </div>
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </div>
             
             <div>
@@ -416,9 +474,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               <select
                 name="branchId"
                 value={formData.branchId}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.branchId) setErrors(prev => ({ ...prev, branchId: '' }));
+                }}
+                className={`form-input w-full ${errors.branchId ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 disabled={branchLocked}
               >
                 <option value="">Select Branch</option>
@@ -428,6 +488,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.branchId && <p className="text-red-500 text-sm mt-1">{errors.branchId}</p>}
               {loadingUserBranch && <span className="text-sm text-gray-500">Loading branch information...</span>}
               {branchLocked && <span className="text-sm text-blue-500">Branch auto-assigned based on your profile</span>}
             </div>
@@ -441,9 +502,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               <select
                 name="make"
                 value={formData.make}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.make) setErrors(prev => ({ ...prev, make: '' }));
+                }}
+                className={`form-input w-full ${errors.make ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
               >
                 <option value="">Select Make</option>
                 {makes.map((make) => (
@@ -452,6 +515,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.make && <p className="text-red-500 text-sm mt-1">{errors.make}</p>}
             </div>
             
             <div>
@@ -459,9 +523,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               <select
                 name="model"
                 value={formData.model}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.model) setErrors(prev => ({ ...prev, model: '' }));
+                }}
+                className={`form-input w-full ${errors.model ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
                 disabled={!formData.make || loadingModels}
               >
                 <option value="">Select Model</option>
@@ -471,6 +537,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
               {loadingModels && <span className="text-sm text-gray-500">Loading models...</span>}
             </div>
             
@@ -479,9 +546,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               <select
                 name="year"
                 value={formData.year}
-                onChange={handleChange}
-                required
-                className="form-input w-full"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.year) setErrors(prev => ({ ...prev, year: '' }));
+                }}
+                className={`form-input w-full ${errors.year ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
               >
                 <option value="">Select Year</option>
                 {years.map((year) => (
@@ -490,6 +559,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                   </option>
                 ))}
               </select>
+              {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year}</p>}
             </div>
             
             <div>

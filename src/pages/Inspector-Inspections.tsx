@@ -327,7 +327,9 @@ const MyInspections = () => {
       {/* Walk In Appointment Modal */}
       <WalkInAppointmentModal
         isOpen={showWalkInModal}
-        onClose={() => setShowWalkInModal(false)}
+        onClose={() => {
+                 fetchInspections();
+          setShowWalkInModal(false)}}
         onSuccess={() => {
           fetchInspections();
           toast.success('Walk-in appointment created successfully');
