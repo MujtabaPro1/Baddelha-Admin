@@ -393,7 +393,7 @@ const CallCenter = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
+        <div className="hidden bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
           <div className="flex flex-col lg:flex-row gap-3">
             {/* <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -426,13 +426,13 @@ const CallCenter = () => {
               className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
             /> */}
             
-            <button 
+            {/* <button 
               onClick={fetchAppointments}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium text-sm"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
-            </button>
+            </button> */}
           </div>
         </div>
 
