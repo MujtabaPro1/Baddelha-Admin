@@ -395,7 +395,7 @@ const CallCenter = () => {
         {/* Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
           <div className="flex flex-col lg:flex-row gap-3">
-            <div className="relative flex-1">
+            {/* <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-400" />
               </div>
@@ -406,8 +406,8 @@ const CallCenter = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
-            </div>
-            
+            </div> */}
+{/*             
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -418,13 +418,13 @@ const CallCenter = () => {
               <option value="Confirmed">Confirmed</option>
               <option value="Cancelled">Cancelled</option>
             </select>
-            
-            <input
+             */}
+            {/* <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            />
+            /> */}
             
             <button 
               onClick={fetchAppointments}
