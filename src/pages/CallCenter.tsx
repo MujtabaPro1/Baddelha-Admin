@@ -8,6 +8,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../service/api';
+import WalkInAppointmentModal from '../components/WalkInAppointmentModal';
+import toast from 'react-hot-toast';
 
 
 
@@ -33,6 +35,7 @@ const CallCenter = () => {
   });
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const { user, logout } = useAuth();
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
   const navigate = useNavigate();
 
   const filteredAppointments = appointments.filter((appointment) => {
@@ -332,6 +335,12 @@ const CallCenter = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <button
+          onClick={() => setShowWalkInModal(true)}
+          className="bg-emerald-500 mb-4 mt-4 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+        >
+          Create Appointment
+        </button>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
@@ -767,7 +776,23 @@ const CallCenter = () => {
           </div>
         </div>
       )}
+
+
+  {/* Walk In Appointment Modal */}
+      <WalkInAppointmentModal
+        isOpen={showWalkInModal}
+        type={'call-center'}
+        onClose={() => {
+          fetchAppointments();
+          setShowWalkInModal(false)}}
+        onSuccess={() => {
+          fetchAppointments();
+        }}
+      />
+
     </div>
+
+
   );
 };
 
