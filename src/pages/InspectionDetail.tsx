@@ -48,36 +48,44 @@ const ViewInspectionPage = () => {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const { language } = useLanguage();
   
-  const downloadReport = async (inspectionId: string, reportLanguage: string = 'en') => {
+  const handleGenerateReport = async (reportLanguage: string) => {
+    if (!params?.id) return;
+
     try {
       setReportLoader(true);
-      const response = await axiosInstance.get("/1.0/report/inspection/" + inspectionId, {
-        responseType: "blob",
-        params: {
-          language: reportLanguage
-        }
-      });
+      console.log("Generating report for inspection ID:", params.id, "with language:", reportLanguage);
+      const response = await axiosInstance.get(
+        `/1.0/reports/inspection/v1/html/${params.id}`,
+        { params: { lang: reportLanguage } }
+      );
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `inspection-report-${inspectionId}-${reportLanguage}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      const htmlContent: string = response.data;
+
+      // Derive the server origin so relative font/CSS URLs resolve from the blob context
+
+      const serverOrigin = new URL(axiosInstance.defaults.baseURL || 'http://localhost:3000/').origin;
+      const baseTag = `<base href="${serverOrigin}/">`;
+
+      // Wait for fonts (especially Arabic) to fully load, then add a small buffer before print
+      const printScript = `<script>document.fonts.ready.then(function(){setTimeout(function(){window.print();},800);});<\/script>`;
+
+      let modifiedHtml = htmlContent.includes('<head>')
+        ? htmlContent.replace('<head>', '<head>' + baseTag)
+        : htmlContent;
+      modifiedHtml = modifiedHtml.includes('</body>')
+        ? modifiedHtml.replace('</body>', printScript + '</body>')
+        : modifiedHtml + printScript;
+
+      const blob = new Blob([modifiedHtml], { type: 'text/html' });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
-      console.error("Error downloading report:", error);
+      console.error("Error generating report:", error);
     } finally {
       setReportLoader(false);
       setShowLanguageModal(false);
-    }
-  };
-
-  const handleGenerateReport = (language: string) => {
-    if (params?.id) {
-      downloadReport(params.id, language);
     }
   };
 
