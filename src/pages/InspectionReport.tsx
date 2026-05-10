@@ -502,25 +502,48 @@ const InspectionForm = () => {
     for (let field in mediaFiles) {
       let file = mediaFiles[field];
 
-      if (!file.selectedImage) {
+      if (!file?.selectedImage) {
         continue;
       }
 
-      const blob = dataURLToBlob(file.selectedImage);
-      // Create a File object from the Blob
-      file = new File([blob], `${field}.jpg`, { type: blob.type });
+      try {
+        const blob = dataURLToBlob(file.selectedImage);
+        
+        if (!blob || blob.size === 0) {
+          toast.error(`Failed to process image for ${field}: Invalid image data`);
+          continue;
+        }
+        
+        // Create a File object from the Blob with fallback for older browsers/devices
+        let uploadFile: File | Blob;
+        try {
+          uploadFile = new File([blob], `${field}.jpg`, { type: blob.type || 'image/jpeg' });
+        } catch (fileError) {
+          // Fallback for Samsung/iPad devices that may not support File constructor
+          console.warn('File constructor not supported, using Blob fallback');
+          uploadFile = blob;
+          // Add name property for FormData compatibility
+          (uploadFile as any).name = `${field}.jpg`;
+        }
 
-      setSubmitState("Uploading Image " + field);
+        setSubmitState("Uploading Image " + field);
 
-      const data = {
-        imageableId: params.id,
-        imageableType: "Inspection",
-        fileCaption: field,
-      };
+        const data = {
+          imageableId: params.id,
+          imageableType: "Inspection",
+          fileCaption: field,
+        };
 
-      let mediaResp = await createMedia(file, data);
-      if (mediaResp.error) {
-        toast.error("Image upload error");
+        let mediaResp = await createMedia(uploadFile as File, data);
+        if (mediaResp.error) {
+          const errorMessage = mediaResp.message || mediaResp.error || 'Unknown error';
+          toast.error(`Image upload failed for ${field}: ${errorMessage}`);
+          console.error(`Upload error for ${field}:`, mediaResp);
+        }
+      } catch (err: any) {
+        const errorMessage = err?.message || 'Failed to process image';
+        toast.error(`Image upload error for ${field}: ${errorMessage}`);
+        console.error(`Upload exception for ${field}:`, err);
       }
     }
     
