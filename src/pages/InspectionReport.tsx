@@ -179,6 +179,7 @@ const InspectionForm = () => {
 
   const watchFieldsWarranty = watch(["Warranty_Plan"])
   const watchFieldsService = watch(["Service_Plan"])
+  const allValues = watch()
 
 
 
@@ -551,16 +552,33 @@ const InspectionForm = () => {
  
   };
 
-  const handleImageChange = (field: string, event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0]; // Get the selected file
-    if (selectedFile) {
-      const reader = new FileReader(); // Create a FileReader object
-      reader.onload = () => {
-        setMediaFiles((old: any) => {
-          return { ...old, [field]: { selectedImage: reader.result } };
-        }); // Set the selected image to the reader result
+  const compressImage = (dataUrl: string, maxWidth = 1920, quality = 0.75): Promise<string> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
-      reader.readAsDataURL(selectedFile); // Read the selected file as a Data URL
+      img.src = dataUrl;
+    });
+
+  const handleImageChange = (field: string, event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setMediaFiles((old: any) => ({ ...old, [field]: { selectedImage: compressed } }));
+      };
+      reader.readAsDataURL(selectedFile);
     }
   };
 
@@ -584,10 +602,11 @@ const InspectionForm = () => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
+        const compressed = await compressImage(reader.result as string);
         setFailImages(prev => ({
           ...prev,
-          [fieldName]: [...(prev[fieldName] || []), reader.result as string],
+          [fieldName]: [...(prev[fieldName] || []), compressed],
         }));
       };
       reader.readAsDataURL(file);
@@ -689,6 +708,27 @@ const InspectionForm = () => {
     }
     return failValues.includes(val);
   };
+
+  const isCurrentStepValid = (() => {
+    if (!initialData || !initialData[currentStep]) return true;
+    const step = initialData[currentStep];
+    if (['Car Media', 'Document Images', 'Car Body Condition'].includes(step.name)) return true;
+    for (const field of step.fields || []) {
+      console.log(field);
+      if (!field.required) continue;
+      if (field.fieldName === 'Airbag Deployed' || field.fieldName === 'Chassis') {
+        if(!allValues[field.fieldName]) {
+          return false;
+        }
+      }
+      const fieldName = field.fieldName.replace(/\s/g, '_');
+      if (fieldName === 'Warranty_Valid_Till' && allValues['Warranty_Plan']?.label !== 'Yes') continue;
+      if (fieldName === 'Service_Plan_Valid_Till' && allValues['Service_Plan']?.label !== 'Yes') continue;
+      const value = allValues[fieldName];
+      if (value === null || value === undefined || value === '') return false;
+    }
+    return true;
+  })();
 
   return (
 
@@ -1348,28 +1388,27 @@ const InspectionForm = () => {
           <div>
             {/* Next button */}
             {currentStep < steps.length - 1 ? (
-              <button 
-                type="button" 
+              <button
+                type="button"
+                disabled={!isCurrentStepValid}
                 onClick={() => {
-                  // Mark current step as completed
                   if (!completedSteps.includes(currentStep)) {
                     setCompletedSteps(prev => [...prev, currentStep]);
                   }
-                  // Move to next step
                   setCurrentStep(prev => prev + 1);
                 }}
-                className="inline-flex items-center justify-center rounded-md bg-blue-900 px-4 py-2 text-center font-medium text-white hover:bg-blue-800"
+                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${isCurrentStepValid ? 'bg-blue-900 hover:bg-blue-800' : 'bg-blue-900 opacity-50 cursor-not-allowed'}`}
               >
                 Next
                 <ChevronRight size={16} className="ml-1" />
               </button>
             ) : (
               /* Submit button (only on last step) */
-              <button 
-                disabled={loading} 
-                type="submit" 
+              <button
+                disabled={loading || !isCurrentStepValid}
+                type="submit"
                 onClick={() => setIsSubmitting(true)}
-                className="inline-flex items-center justify-center rounded-md bg-blue-900 px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
+                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${loading || !isCurrentStepValid ? 'bg-blue-900 opacity-50 cursor-not-allowed' : 'bg-blue-900 hover:bg-opacity-90'}`}
               >
                 {loading ? "Saving..." : "Submit"}
               </button>
