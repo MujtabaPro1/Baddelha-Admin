@@ -716,7 +716,11 @@ const InspectionForm = () => {
     for (const field of step.fields || []) {
       console.log(field);
       if (!field.required) continue;
-      if (field.fieldName === 'Airbag Deployed') continue;
+      if (field.fieldName === 'Airbag Deployed') {
+        if(!allValues['Airbag_Deployed']) {
+          return false;
+        }
+      };
       if (field.fieldName === 'Chassis') {
         if(!allValues[field.fieldName]) {
           return false;
