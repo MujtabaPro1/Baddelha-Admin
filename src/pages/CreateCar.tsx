@@ -474,7 +474,7 @@ const CreateCar = () => {
       {renderOptionButtons('Paint', 'paint', ['Original', 'Partial', 'Total'])}
       {renderOptionButtons('GCC Specs?', 'gccSpecs', ['GCC Specs', 'Non GCC'])}
       {renderOptionButtons('Ownership Status', 'ownershipStatus', ['First owner', 'Second owner'])}
-      {renderOptionButtons('Fuel Type', 'fuelType', ['Petrol', 'Diesel', 'Hybrid', 'Electric'])}
+      {renderOptionButtons('Fuel Type', 'fuelType', ['Gasoline', 'Diesel', 'Hybrid', 'Electric'])}
       {renderOptionButtons('Transmission Type', 'transmissionType', ['Automatic', 'Manual'])}
       {renderOptionButtons('Accident History', 'accidentHistory', ['No', 'Yes', 'Minor'])}
       {renderOptionButtons('Vehicle Condition', 'vehicleCondition', ['Excellent', 'Good', 'Fair', 'Needs Work'])}

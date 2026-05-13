@@ -150,7 +150,7 @@ const CallCenter = () => {
               phone: '+966 ' + a.phone,
               role: 'customer',
               status: 'active',
-              createdAt: new Date().toISOString()
+              createdAt: a.createdAt || new Date().toISOString()
             },
             carDetails: {
               ...a.car,
@@ -174,7 +174,24 @@ const CallCenter = () => {
 
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
+    if (!dateString) return '';
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    if (timeString.includes('T')) {
+      try {
+        return format(new Date(timeString), 'h:mm a');
+      } catch {
+        return timeString;
+      }
+    }
+    return timeString;
   };
 
   const handleCall = (appointmentId: string, phone: string) => {
@@ -502,9 +519,9 @@ const CallCenter = () => {
                             <Calendar className="h-4 w-4 text-slate-500" />
                           </div>
                           <div>
-                            <span className="text-slate-700">{formatDate(appointment.appointmentDate)}</span>
+                            <span className="text-slate-700">Appointment: {formatDate(appointment.appointmentDate)}</span>
                             <span className="text-slate-400 mx-1">•</span>
-                            <span className="text-blue-600 font-medium">{appointment.appointmentTime}</span>
+                            <span className="text-blue-600 font-medium">{formatTime(appointment.appointmentTime)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
@@ -519,6 +536,11 @@ const CallCenter = () => {
                           </div>
                           <span className="text-slate-700">{appointment.car?.year} {appointment.car?.make} {appointment.car?.model}</span>
                         </div>
+                        {appointment.createdAt && (
+                          <div className="flex items-center gap-2 text-sm">
+                            Created: <span className="text-slate-500 text-xs"> {formatDate(appointment.createdAt)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     

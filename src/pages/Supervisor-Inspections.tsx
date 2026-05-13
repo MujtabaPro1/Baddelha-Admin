@@ -390,6 +390,11 @@ const SupervisorInspections = () => {
                       `Requested: ${formatDate(inspection.appointmentDate)}`
                     }
                   </span>
+                  <span className="ml-2 text-gray-500 border-l border-gray-300 pl-2">
+                    {inspection?.createdAt && (
+                      `Created: ${formatDate(inspection.createdAt)}`
+                    )}
+                  </span>
                 </div>: <></>}
 
                 <div className="flex items-center text-sm text-gray-700">

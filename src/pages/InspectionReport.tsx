@@ -24,6 +24,7 @@ const InspectionForm = () => {
   // Initialize the form state and action
 
   let mode = 'create';
+  const [language, setLanguage] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
   const [submitState, setSubmitState] = useState("");
   const [httpError, setHttpError] = useState(null);
@@ -714,7 +715,6 @@ const InspectionForm = () => {
     const step = initialData[currentStep];
     if (['Car Media', 'Document Images', 'Car Body Condition'].includes(step.name)) return true;
     for (const field of step.fields || []) {
-      console.log(field);
       if (!field.required) continue;
       if (field.fieldName === 'Airbag Deployed') {
         if(!allValues['Airbag_Deployed']) {
@@ -739,18 +739,37 @@ const InspectionForm = () => {
 
   <div>
       <PageHeader 
-        title="Inspection Report" 
+        title={language === 'ar' ? 'تقرير التفتيش' : 'Inspection Report'}
         description=""
       />
       
-      {/* Countdown Timer */}
-      <div className="mb-4 flex items-center justify-end">
+      {/* Countdown Timer + Language Toggle */}
+      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3 bg-white border border-gray-200 px-4 py-2 rounded-lg shadow-sm">
+          <span className={`text-sm font-semibold ${language === 'en' ? 'text-blue-900' : 'text-gray-400'}`}>EN</span>
+          <button
+            type="button"
+            onClick={() => setLanguage(prev => prev === 'en' ? 'ar' : 'en')}
+            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+              language === 'ar' ? 'bg-blue-900' : 'bg-gray-300'
+            }`}
+            aria-label="Toggle language"
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                language === 'ar' ? 'translate-x-8' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className={`text-sm font-semibold ${language === 'ar' ? 'text-blue-900' : 'text-gray-400'}`}>AR</span>
+        </div>
+
         <div className="flex items-center bg-blue-900 bg-opacity-10 px-4 py-2 rounded-lg shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-900 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="font-medium text-gray-800">
-            Time Remaining: <span className={`${timeRemaining < 300 ? 'text-red-600 font-bold' : 'text-blue-900'}`}>{formatTime(timeRemaining)}</span>
+            {language === 'ar' ? 'الوقت المتبقي:' : 'Time Remaining:'} <span className={`${timeRemaining < 300 ? 'text-red-600 font-bold' : 'text-blue-900'}`}>{formatTime(timeRemaining)}</span>
           </span>
         </div>
       </div>
@@ -762,7 +781,7 @@ const InspectionForm = () => {
         <h3 className="font-medium text-black">{mode == "edit" ? "Update" : "Create"} an Inspection</h3>
 
         <div>
-          <p className="text-red">(Labels marked- * -are required)</p>
+          <p className="text-red">{language === 'ar' ? 'الحقول المميزة بـ * مطلوبة' : 'Labels marked- * -are required'}</p>
         </div>
       </div>
       
@@ -774,7 +793,7 @@ const InspectionForm = () => {
           {/* Progress indicator - Colorful bars */}
           <div className="mt-6 space-y-4">
             {/* All steps progress bar */}
-            <p>Showing Step {currentStep + 1} of {steps.length}</p>
+            <p>{language === 'ar' ? 'عرض الخطوة' : 'Showing Step'} {currentStep + 1} {language === 'ar' ? 'من' : 'of'} {steps.length}</p>
             <div className="relative w-full h-6 bg-gray-200 rounded-md overflow-hidden">
             
               <div 
@@ -1032,17 +1051,17 @@ const InspectionForm = () => {
                     }
 
                     return (
-                      <div className={"m-2"} key={_fieldName}>
+                      <div className={"m-2"} key={_fieldName} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                         {_fieldName == "Warranty_Valid_Till" ?
                           watchFieldsWarranty?.length > 0  && watchFieldsWarranty[0]?.label == "Yes" ?
                             <p>
-                          {field.fieldName}
+                          {language === 'ar' && field.fieldNameAr ? field.fieldNameAr : field.fieldName}
                           {!!field.required && <span className="text-red">*</span>}
                         </p> : <></> : _fieldName == "Service_Plan_Valid_Till" ?  watchFieldsService.length > 0  && watchFieldsService[0]?.label == "Yes"?   <p>
-                          {field.fieldName}
+                          {language === 'ar' && field.fieldNameAr ? field.fieldNameAr : field.fieldName}
                           {!!field.required && <span className="text-red">*</span>}
                         </p>: <></>: <p>
-                              {field.fieldName}
+                              {language === 'ar' && field.fieldNameAr ? field.fieldNameAr : field.fieldName}
                               {!!field.required && <span className="text-red">*</span>}
                             </p> }
                         {field.fieldType == "Date" && _fieldName == "Warranty_Valid_Till" && watchFieldsWarranty.length > 0  && watchFieldsWarranty[0]?.label == "Yes"  && (
@@ -1385,7 +1404,7 @@ const InspectionForm = () => {
                 className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 mr-2 text-center font-medium text-gray-700 hover:bg-gray-50"
               >
                 <ChevronLeft size={16} className="mr-1" />
-                Previous
+                {language === 'ar' ? 'السابق' : 'Previous'}
               </button>
             )}
           </div>
@@ -1404,7 +1423,7 @@ const InspectionForm = () => {
                 }}
                 className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${isCurrentStepValid ? 'bg-blue-900 hover:bg-blue-800' : 'bg-blue-900 opacity-50 cursor-not-allowed'}`}
               >
-                Next
+                {language === 'ar' ? 'التالي' : 'Next'}
                 <ChevronRight size={16} className="ml-1" />
               </button>
             ) : (
@@ -1415,7 +1434,7 @@ const InspectionForm = () => {
                 onClick={() => setIsSubmitting(true)}
                 className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${loading || !isCurrentStepValid ? 'bg-blue-900 opacity-50 cursor-not-allowed' : 'bg-blue-900 hover:bg-opacity-90'}`}
               >
-                {loading ? "Saving..." : "Submit"}
+                {loading ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'إرسال' : 'Submit')}
               </button>
             )}
           </div>

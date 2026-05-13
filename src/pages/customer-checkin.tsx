@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
@@ -28,12 +28,19 @@ const CustomerCheckIn = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const params = useParams();
-    
+
+    // Signature state
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const isDrawingRef = useRef(false);
+    const [isSigned, setIsSigned] = useState(false);
+    const [signatureData, setSignatureData] = useState<string | null>(null);
+
     // Steps in the check-in process
     const steps = [
         'Customer Identification',
         'Terms & Conditions',
         'Appointment Details',
+        'Signature',
         'Start Inspection'
     ];
     
@@ -143,6 +150,59 @@ const CustomerCheckIn = () => {
         setShowAppointmentModal(false);
         setCurrentStep(1);
     };
+
+    // Canvas signature helpers
+    const getCanvasPos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        if ('touches' in e) {
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top) * scaleY,
+            };
+        }
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY,
+        };
+    };
+
+    const handleCanvasStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        isDrawingRef.current = true;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const { x, y } = getCanvasPos(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
+
+    const handleCanvasMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        if (!isDrawingRef.current) return;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#1e3a5f';
+        const { x, y } = getCanvasPos(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        setIsSigned(true);
+    };
+
+    const handleCanvasEnd = () => {
+        isDrawingRef.current = false;
+        setSignatureData(canvasRef.current!.toDataURL());
+    };
+
+    const clearSignature = () => {
+        const canvas = canvasRef.current!;
+        canvas.getContext('2d')!.clearRect(0, 0, canvas.width, canvas.height);
+        setIsSigned(false);
+        setSignatureData(null);
+    };
     
     // Function to start the inspection process
     const startInspection = async () => {
@@ -154,21 +214,27 @@ const CustomerCheckIn = () => {
                 throw new Error('No appointment data available');
             }
             
-           
+            if (!signatureData) {
+                throw new Error('Please provide your signature before proceeding');
+            }
             
-            const response = await axiosInstance.get('/1.0/book-appointment/customer-checkin/' + appointment?.uid);
+            const response = await axiosInstance.post('/1.0/book-appointment/customer-checkin-signed', {
+                uid: appointment?.uid,
+                signature: signatureData
+            });
             
             if (response && response.data) {
                 toast.success('Inspection started successfully!');
                 // Navigate to the inspection report page
-                navigate(`/inspection-report/${params.id}`);
+                navigate(`/inspection-report/${response.data.inspectionId || params.id}`);
             } else {
                 throw new Error('Failed to create inspection');
             }
         } catch (err: any) {
             console.error('Error starting inspection:', err);
-            setError(err.message || 'Failed to start inspection');
-            toast.error(err.message || 'Failed to start inspection');
+            const errorMessage = err.response?.data?.message || err.message || 'Failed to start inspection';
+            setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -379,7 +445,70 @@ const CustomerCheckIn = () => {
                     </div>
                 );
                 
-            case 3: // Start Inspection
+            case 3: // Signature
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <h2 className="text-xl font-semibold mb-2">Customer Signature</h2>
+                        <p className="text-gray-600 mb-6">Please sign below to confirm your agreement to the terms and conditions.</p>
+
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 mb-2 touch-none">
+                            <canvas
+                                ref={canvasRef}
+                                width={800}
+                                height={260}
+                                className="w-full cursor-crosshair block"
+                                onMouseDown={handleCanvasStart}
+                                onMouseMove={handleCanvasMove}
+                                onMouseUp={handleCanvasEnd}
+                                onMouseLeave={handleCanvasEnd}
+                                onTouchStart={handleCanvasStart}
+                                onTouchMove={handleCanvasMove}
+                                onTouchEnd={handleCanvasEnd}
+                            />
+                        </div>
+
+                        <div className="flex justify-between items-center mb-6">
+                            <p className="text-xs text-gray-400">Sign inside the box above</p>
+                            <button
+                                type="button"
+                                onClick={clearSignature}
+                                className="text-sm text-red-500 hover:text-red-700 underline"
+                            >
+                                Clear
+                            </button>
+                        </div>
+
+                        {!isSigned && (
+                            <p className="text-sm text-red-500 mb-4">Signature is required to proceed.</p>
+                        )}
+
+                        <div className="flex justify-between">
+                            <button
+                                onClick={() => setCurrentStep(2)}
+                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                                <ChevronLeft size={16} className="mr-1" />
+                                Back
+                            </button>
+
+                            <button
+                                disabled={!isSigned}
+                                onClick={() => {
+                                    if (!completedSteps.includes(currentStep)) {
+                                        setCompletedSteps(prev => [...prev, currentStep]);
+                                    }
+                                    setCurrentStep(4);
+                                }}
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                            >
+                                Continue
+                                <ChevronRight size={16} className="ml-1" />
+                            </button>
+                        </div>
+                    </div>
+                );
+
+            case 4: // Start Inspection
                 return (
                     <div className="bg-white p-6 rounded-lg shadow-sm text-center">
                         <div className="mb-8">
@@ -391,7 +520,7 @@ const CustomerCheckIn = () => {
                                 Your vehicle is now ready for inspection. Click the button below to start the process.
                             </p>
                         </div>
-                        
+
                         <div className="max-w-md mx-auto bg-gray-50 p-4 rounded-md mb-8">
                             <h3 className="font-medium mb-2">What happens next?</h3>
                             <ol className="text-left list-decimal pl-5 space-y-1">
@@ -401,17 +530,17 @@ const CustomerCheckIn = () => {
                                 <li>You'll receive a copy of the inspection report</li>
                             </ol>
                         </div>
-                        
+
                         <div className="flex justify-between">
-                            <button 
-                                onClick={() => setCurrentStep(2)}
+                            <button
+                                onClick={() => setCurrentStep(3)}
                                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                                 <ChevronLeft size={16} className="mr-1" />
                                 Back
                             </button>
-                            
-                            <button 
+
+                            <button
                                 onClick={startInspection}
                                 disabled={loading}
                                 className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
@@ -419,7 +548,7 @@ const CustomerCheckIn = () => {
                                 {loading ? 'Starting...' : 'Start Inspection'}
                             </button>
                         </div>
-                        
+
                         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
                     </div>
                 );
