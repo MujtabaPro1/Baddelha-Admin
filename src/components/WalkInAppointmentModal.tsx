@@ -132,16 +132,23 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
   };
 
   const fetchTimingsForBranch = async () => {
+    if (!formData.branchId) return;
+    
     setLoadingTimings(true);
+    setSelectedTimingIndex(-1);
+    setFormData(prev => ({ ...prev, appointmentDate: '', appointmentTime: '' }));
+    
     try {
-      const response = await axiosInstance.get('/1.0/branch-timing');
-      const withDates = computeTimingsWithDates(response.data || []);
-      setBranchTimings(response.data || []);
+      const response = await axiosInstance.get(`/1.0/branch/schedule/availability/${formData.branchId}`);
+      const timingsData = response?.data || [];
+      const withDates = computeTimingsWithDates(timingsData);
+      setBranchTimings(timingsData);
       setTimingsWithDates(withDates);
-      setSelectedTimingIndex(-1);
-      setFormData(prev => ({ ...prev, appointmentDate: '', appointmentTime: '' }));
-    } catch {
+    } catch (error) {
+      console.error('Error fetching branch timings:', error);
+      setBranchTimings([]);
       setTimingsWithDates([]);
+      toast.error('Failed to load available time slots');
     } finally {
       setLoadingTimings(false);
     }
