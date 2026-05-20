@@ -314,7 +314,7 @@ const CallCenter = () => {
     // Save call record logic here
 
     ///api/1.0/book-appointment/:id/update-status/Confirmed
-    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/Confirmed`).then((res)=>{
+    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/confirm`).then((res)=>{
       console.log(res);
       alert('Appointment status updated successfully');
       fetchAppointments();
@@ -326,13 +326,12 @@ const CallCenter = () => {
   
 
 
-
     const cancelAppointment = (appointmentId: string) => {
 
     // Save call record logic here
 
     ///api/1.0/book-appointment/:id/update-status/Confirmed
-    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/Cancelled`).then((res)=>{
+    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/cancel`).then((res)=>{
       console.log(res);
       alert('Appointment status updated successfully');
       fetchAppointments();
@@ -635,13 +634,13 @@ const CallCenter = () => {
                     {/* Actions */}
                     <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[140px]">
                       {/* Edit — always visible */}
-                      <button
+                      {statusLower != 'cancelled' && <button
                         onClick={() => handleEditOpen(appointment)}
                         className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all w-full"
                       >
                         <Pencil className="h-4 w-4" />
                         Edit
-                      </button>
+                      </button>}
 
                       {/* Confirm for Scheduled */}
                       {statusLower === 'scheduled' && (
@@ -656,8 +655,7 @@ const CallCenter = () => {
                         </button>
                       )}
 
-                      {/* Cancel for Scheduled and Confirmed */}
-                      {/* {(statusLower === 'scheduled' || statusLower === 'confirmed') && (
+                      {(statusLower === 'scheduled' || statusLower === 'confirmed') && (
                         <button
                           onClick={() => {
                             if (confirm('Cancel this appointment?')) cancelAppointment(appointment.id);
@@ -667,20 +665,10 @@ const CallCenter = () => {
                           <XCircle className="h-4 w-4" />
                           Cancel
                         </button>
-                      )} */}
-
-                      {/* Reactivate for Cancelled */}
-                      {statusLower === 'cancelled' && (
-                        <button
-                          onClick={() => {
-                            if (confirm('Reactivate this appointment?')) reConfirmAppointment(appointment.id);
-                          }}
-                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-all w-full"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                          Reactivate
-                        </button>
                       )}
+
+                
+                  
                     </div>
                   </div>
                 </div>

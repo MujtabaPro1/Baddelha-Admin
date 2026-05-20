@@ -35,12 +35,53 @@ const MyInspections = () => {
   const [error, setError]: any = useState<string | null>(null);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const navigate = useNavigate();
+  const [inspectorBranchId, setInspectorBranchId] = useState<number | null>(null);
+  const [inspectorId, setInspectorId] = useState<number | null>(null);
  
 
+
+  // First: fetch inspector info on component mount
   useEffect(() => {
-    fetchInspections();
-    fetchAppointments();
+    fetchInspectorInfo();
   }, []);
+
+
+  const fetchInspectorInfo = async () => {
+    try {
+      let _user = user;
+      if (!_user) {
+        const storedUser = localStorage.getItem('baddelha_user');
+        if (storedUser) {
+          _user = JSON.parse(storedUser);
+        }
+      }
+      const userId = _user?.id;
+      if (!userId) {
+        console.log("No user ID found");
+        return;
+      };
+      
+      const response = await axiosInstance.get(`/1.0/user/find/${userId}`);
+      if (response?.data) {
+        const inspectorData = response.data.Inspector?.find((inspector: any) => inspector.userId === parseInt(userId) && inspector.branch_id);
+        console.log("Inspector data:", inspectorData);
+        if (inspectorData) {
+          setInspectorBranchId(inspectorData.branch_id);
+          setInspectorId(inspectorData.userId);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching inspector info:', err);
+    }
+  };
+
+
+  useEffect(() => {
+    if (inspectorBranchId && inspectorId) {
+      fetchInspections();
+      fetchAppointments();
+    }
+  }, [inspectorBranchId, inspectorId]);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -52,7 +93,12 @@ const MyInspections = () => {
         return r;
       });
 
-      setInspections(data || []);
+      const filteredData = data?.filter((inspection: any) => 
+        inspection.inspectorId == inspectorId &&
+        inspection.Branch?.id === inspectorBranchId
+      );
+      console.log("filteredData", filteredData);
+      setInspections(filteredData || []);
     } catch (err) {
       console.error('Error fetching inspections:', err);
       setError('Failed to load inspections. Please try again.');
@@ -71,7 +117,11 @@ const MyInspections = () => {
           car: JSON.parse(a.carDetail),
         };
       });
-      setAppointments(data || []);
+      const _appointments = data?.filter((appointment: any) => 
+        appointment.inspectorUserId === inspectorId
+      );
+      console.log("_appointments", _appointments);
+      setAppointments(_appointments || []);
     } catch (err) {
       console.error('Error fetching appointments:', err);
     }
