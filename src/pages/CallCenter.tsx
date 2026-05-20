@@ -80,7 +80,7 @@ const CallCenter = () => {
   const fetchBranchTimings = async (branchId?: string) => {
     if (!branchId) return;
     try {
-      const response = await axiosInstance.get(`/1.0/branch-timing`);
+      const response = await axiosInstance.get(`/1.0/branch/schedule/availability/${branchId}`);
       setBranchTimings(response.data || []);
     } catch (err) {
       console.error('Error fetching branch timings:', err);
@@ -112,7 +112,7 @@ const CallCenter = () => {
   const fetchBranchTimingsForEdit = async (branchId: string) => {
     if (!branchId) return;
     try {
-      const response = await axiosInstance.get('/1.0/branch-timing');
+      const response = await axiosInstance.get(`/1.0/branch/schedule/availability/${branchId}`);
       setEditBranchTimings(computeTimingsWithDates(response.data || []));
     } catch {
       setEditBranchTimings([]);
@@ -508,44 +508,7 @@ const CallCenter = () => {
         {/* Filters */}
         <div className="hidden bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
           <div className="flex flex-col lg:flex-row gap-3">
-            {/* <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search by name, phone, or car..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-11 pr-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-              />
-            </div> */}
-{/*             
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all min-w-[160px]"
-            >
-              <option value="">All Statuses</option>
-              <option value="Scheduled">Scheduled</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-             */}
-            {/* <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            /> */}
-            
-            {/* <button 
-              onClick={fetchAppointments}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium text-sm"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button> */}
+        
           </div>
         </div>
 
