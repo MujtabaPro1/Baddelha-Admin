@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
 
 interface CarOption {
   id: string;
@@ -42,6 +43,10 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
   const [branchLocked, setBranchLocked] = useState(false);
   const [inspectors, setInspectors] = useState<any[]>([]);
   const [loadingInspectors, setLoadingInspectors] = useState(false);
+  const [branchTimings, setBranchTimings] = useState<any[]>([]);
+  const [timingsWithDates, setTimingsWithDates] = useState<any[]>([]);
+  const [loadingTimings, setLoadingTimings] = useState(false);
+  const [selectedTimingIndex, setSelectedTimingIndex] = useState(-1);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -63,7 +68,9 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     paint: '',
     specs: '',
     carPrice: 0,
-    inspectorId: ''
+    inspectorId: '',
+    appointmentDate: '',
+    appointmentTime: ''
   });
 
   useEffect(() => {
@@ -94,6 +101,51 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       setFormData(prev => ({ ...prev, inspectorId: '' }));
     }
   }, [formData.branchId, type]);
+
+  useEffect(() => {
+    if (formData.branchId) {
+      fetchTimingsForBranch();
+    } else {
+      setTimingsWithDates([]);
+      setSelectedTimingIndex(-1);
+      setFormData(prev => ({ ...prev, appointmentDate: '', appointmentTime: '' }));
+    }
+  }, [formData.branchId]);
+
+  const computeTimingsWithDates = (timings: any[]) => {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return timings
+      .filter((t: any) => t.slots && t.slots.length > 0)
+      .map((t: any) => {
+        const targetIdx = daysOfWeek.indexOf(t.day);
+        const daysUntil = (targetIdx - today.getDay() + 7) % 7;
+        const d = new Date(today);
+        d.setDate(today.getDate() + daysUntil);
+        return {
+          ...t,
+          displayDate: d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+          fullDate: format(d, "yyyy-MM-dd'T'HH:mm:ssXXX")
+        };
+      });
+  };
+
+  const fetchTimingsForBranch = async () => {
+    setLoadingTimings(true);
+    try {
+      const response = await axiosInstance.get('/1.0/branch-timing');
+      const withDates = computeTimingsWithDates(response.data || []);
+      setBranchTimings(response.data || []);
+      setTimingsWithDates(withDates);
+      setSelectedTimingIndex(-1);
+      setFormData(prev => ({ ...prev, appointmentDate: '', appointmentTime: '' }));
+    } catch {
+      setTimingsWithDates([]);
+    } finally {
+      setLoadingTimings(false);
+    }
+  };
 
   const fetchBranches = async () => {
     try {
@@ -302,9 +354,13 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       paint: '',
       specs: '',
       carPrice: 0,
-      inspectorId: ''
+      inspectorId: '',
+      appointmentDate: '',
+      appointmentTime: ''
     });
     setInspectors([]);
+    setTimingsWithDates([]);
+    setSelectedTimingIndex(-1);
   };
 
   const validateForm = (): boolean => {
@@ -351,7 +407,15 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     if (type === 'call-center' && !formData.inspectorId) {
       newErrors.inspectorId = 'Please select an inspector';
     }
-    
+
+    // Validate appointment date and time when timings are available
+    if (timingsWithDates.length > 0 && !formData.appointmentDate) {
+      newErrors.appointmentDate = 'Please select an appointment date';
+    }
+    if (timingsWithDates.length > 0 && formData.appointmentDate && !formData.appointmentTime) {
+      newErrors.appointmentTime = 'Please select an appointment time';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -368,12 +432,8 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     setLoading(true);
 
     try {
-      const today = new Date();
-   
-      const appointmentDateTime = new Date(`${today.getMonth()} ${today.getDate()}, ${today.getFullYear()}`).toISOString();
-
-
-      // We'll use names directly in carDetail instead of IDs
+      const appointmentDate = formData.appointmentDate || new Date().toISOString();
+      const appointmentTime = formData.appointmentTime || '';
 
       const carDetail = JSON.stringify({
         make: formData.makeName,
@@ -387,12 +447,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         specs: formData.specs,
         carPrice: formData.carPrice ? formData.carPrice : 0,
       });
-      
-      // Prepare the request body
+
       const bookingData: any = {
         branchId: Number(formData.branchId),
-        appointmentDate: appointmentDateTime,
-        appointmentTime: appointmentDateTime,
+        appointmentDate,
+        appointmentTime,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: '+966'+formData.phone.replace(/^\+?(966)?/, ''),  // Remove any existing + or 966 prefix
@@ -563,6 +622,68 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Appointment Date & Time */}
+          {formData.branchId && (
+            <div className="pt-4 border-t space-y-4">
+              <h3 className="text-lg font-medium">Appointment Date & Time</h3>
+              {loadingTimings ? (
+                <p className="text-sm text-gray-500">Loading available slots...</p>
+              ) : timingsWithDates.length === 0 ? (
+                <p className="text-sm text-orange-500">No time slots configured for this branch.</p>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Day *</label>
+                    <div className="flex flex-wrap gap-2">
+                      {timingsWithDates.map((t: any, idx: number) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTimingIndex(idx);
+                            setFormData(prev => ({ ...prev, appointmentDate: t.fullDate, appointmentTime: '' }));
+                          }}
+                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all text-center ${
+                            selectedTimingIndex === idx
+                              ? 'bg-blue-600 text-white shadow-md'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <div className="font-semibold">{t.day}</div>
+                          <div className="text-xs opacity-80">{t.displayDate}</div>
+                        </button>
+                      ))}
+                    </div>
+                    {errors.appointmentDate && <p className="text-red-500 text-sm mt-1">{errors.appointmentDate}</p>}
+                  </div>
+
+                  {selectedTimingIndex >= 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Select Time *</label>
+                      <div className="flex flex-wrap gap-2">
+                        {timingsWithDates[selectedTimingIndex]?.slots?.map((slot: any, idx: number) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, appointmentTime: slot.label }))}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                              formData.appointmentTime === slot.label
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {slot.label}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.appointmentTime && <p className="text-red-500 text-sm mt-1">{errors.appointmentTime}</p>}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
             <h3 className="text-lg font-medium col-span-full">Car Information</h3>

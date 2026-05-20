@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { 
+import {
   Phone, PhoneCall, Calendar, Clock, MapPin,
-  Car as CarIcon, Search, RefreshCw, CheckCircle, 
-  XCircle, AlertCircle, LogOut
+  Car as CarIcon, Search, RefreshCw, CheckCircle,
+  XCircle, AlertCircle, LogOut, Pencil
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -36,6 +36,20 @@ const CallCenter = () => {
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const { user, logout } = useAuth();
   const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState<string | null>(null);
+  const [editData, setEditData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    branchId: '',
+    selectedDayIndex: -1,
+    date: '',
+    fullDate: '',
+    timeSlot: '',
+    note: ''
+  });
+  const [editBranchTimings, setEditBranchTimings] = useState<any[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
   const navigate = useNavigate();
 
   const filteredAppointments = appointments.filter((appointment) => {
@@ -76,6 +90,80 @@ const CallCenter = () => {
 
   const getTimeSlotsForBranch = () => {
     return branchTimings;
+  };
+
+  const computeTimingsWithDates = (timings: any[]) => {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return timings.map((t: any) => {
+      const targetIdx = daysOfWeek.indexOf(t.day);
+      const daysUntil = (targetIdx - today.getDay() + 7) % 7;
+      const d = new Date(today);
+      d.setDate(today.getDate() + daysUntil);
+      return {
+        ...t,
+        displayDate: d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+        fullDate: format(d, "yyyy-MM-dd'T'HH:mm:ssXXX")
+      };
+    });
+  };
+
+  const fetchBranchTimingsForEdit = async (branchId: string) => {
+    if (!branchId) return;
+    try {
+      const response = await axiosInstance.get('/1.0/branch-timing');
+      setEditBranchTimings(computeTimingsWithDates(response.data || []));
+    } catch {
+      setEditBranchTimings([]);
+    }
+  };
+
+  const handleEditOpen = (appointment: any) => {
+    const branchId = appointment.Branch?.id?.toString() || '';
+    setShowEditModal(appointment.id);
+    setEditData({
+      firstName: appointment.firstName || '',
+      lastName: appointment.lastName || '',
+      phone: (appointment.phone || '').replace(/^\+?(966)?/, ''),
+      branchId,
+      selectedDayIndex: -1,
+      date: '',
+      fullDate: '',
+      timeSlot: '',
+      note: ''
+    });
+    if (branchId) fetchBranchTimingsForEdit(branchId);
+  };
+
+  const submitEdit = async () => {
+    if (!showEditModal || !editData.branchId || !editData.fullDate || !editData.timeSlot) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    setEditLoading(true);
+    try {
+      await Promise.all([
+        axiosInstance.patch(`/1.0/book-appointment/reschedule/${showEditModal}`, {
+          branchId: Number(editData.branchId),
+          appointmentDate: editData.fullDate,
+          appointmentTime: editData.timeSlot,
+          remarks: editData.note,
+        }),
+        axiosInstance.patch(`/1.0/book-appointment/${showEditModal}`, {
+          firstName: editData.firstName,
+          lastName: editData.lastName,
+          phone: '+966' + editData.phone.replace(/^\+?(966)?/, ''),
+        }),
+      ]);
+      toast.success('Appointment updated successfully');
+      setShowEditModal(null);
+      fetchAppointments();
+    } catch {
+      toast.error('Failed to update appointment');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleReschedule = (appointmentId: string) => {
@@ -546,49 +634,52 @@ const CallCenter = () => {
                     
                     {/* Actions */}
                     <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[140px]">
+                      {/* Edit — always visible */}
+                      <button
+                        onClick={() => handleEditOpen(appointment)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all w-full"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+
+                      {/* Confirm for Scheduled */}
                       {statusLower === 'scheduled' && (
                         <button
-                          onClick={() => handleCall(appointment.id, appointment.userDetails.phone)}
-                          disabled={isActive}
-                          className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all w-full ${
-                            isActive
-                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                              : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5'
-                          }`}
+                          onClick={() => {
+                            if (confirm('Confirm this appointment?')) reConfirmAppointment(appointment.id);
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-all w-full"
                         >
-                          {isActive ? (
-                            <>
-                              <PhoneCall className="h-4 w-4 animate-pulse" />
-                              Calling...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4" />
-                              Confirm
-                            </>
-                          )}
+                          <CheckCircle className="h-4 w-4" />
+                          Confirm
                         </button>
                       )}
 
+                      {/* Cancel for Scheduled and Confirmed */}
+                      {/* {(statusLower === 'scheduled' || statusLower === 'confirmed') && (
+                        <button
+                          onClick={() => {
+                            if (confirm('Cancel this appointment?')) cancelAppointment(appointment.id);
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-all w-full"
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Cancel
+                        </button>
+                      )} */}
+
+                      {/* Reactivate for Cancelled */}
                       {statusLower === 'cancelled' && (
                         <button
                           onClick={() => {
-                            if(confirm('Are you sure you want to reconfirm this appointment?')){
-                              reConfirmAppointment(appointment.id)
-                            }
+                            if (confirm('Reactivate this appointment?')) reConfirmAppointment(appointment.id);
                           }}
-                          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-slate-800 text-white hover:bg-slate-700 transition-all w-full"
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-all w-full"
                         >
                           <RefreshCw className="h-4 w-4" />
                           Reactivate
                         </button>
-                      )}
-
-                      {statusLower === 'confirmed' && (
-                        <div className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-emerald-50 text-emerald-700 w-full">
-                          <CheckCircle className="h-4 w-4" />
-                          Ready
-                        </div>
                       )}
                     </div>
                   </div>
@@ -799,6 +890,160 @@ const CallCenter = () => {
         </div>
       )}
 
+
+  {/* Edit Appointment Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center sticky top-0">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Pencil className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Edit Appointment</h3>
+              <p className="text-blue-100 mt-1 text-sm">
+                {appointments.find((a: any) => a.id === showEditModal)?.firstName}{' '}
+                {appointments.find((a: any) => a.id === showEditModal)?.lastName}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Customer Info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={editData.firstName}
+                    onChange={(e) => setEditData(prev => ({ ...prev, firstName: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="First name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={editData.lastName}
+                    onChange={(e) => setEditData(prev => ({ ...prev, lastName: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Last name"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number</label>
+                <div className="flex">
+                  <span className="flex items-center px-3 bg-slate-200 rounded-l-xl text-sm text-slate-600 font-medium">+966</span>
+                  <input
+                    type="tel"
+                    value={editData.phone}
+                    onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="flex-1 px-4 py-3 bg-slate-50 border-0 rounded-r-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="5xxxxxxxx"
+                    maxLength={9}
+                  />
+                </div>
+              </div>
+
+              {/* Branch Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Select Branch *</label>
+                <select
+                  value={editData.branchId}
+                  onChange={(e) => {
+                    const branchId = e.target.value;
+                    setEditData(prev => ({ ...prev, branchId, selectedDayIndex: -1, date: '', fullDate: '', timeSlot: '' }));
+                    if (branchId) fetchBranchTimingsForEdit(branchId);
+                  }}
+                  className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                >
+                  <option value="">Select a branch</option>
+                  {branches.map((branch: any) => (
+                    <option key={branch.id || branch.uid} value={branch.id || branch.uid}>
+                      {branch.enName || branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Day Selection */}
+              {editData.branchId && editBranchTimings.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Select Day *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {editBranchTimings.map((t: any, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEditData(prev => ({ ...prev, selectedDayIndex: idx, fullDate: t.fullDate, date: t.displayDate, timeSlot: '' }))}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all text-center ${
+                          editData.selectedDayIndex === idx
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        <div className="font-semibold">{t.day}</div>
+                        <div className="text-xs opacity-80">{t.displayDate}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Time Slot Selection */}
+              {editData.selectedDayIndex >= 0 && editBranchTimings[editData.selectedDayIndex]?.slots?.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Select Time *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {editBranchTimings[editData.selectedDayIndex].slots.map((slot: any, idx: number) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEditData(prev => ({ ...prev, timeSlot: slot.label }))}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          editData.timeSlot === slot.label
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Note */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Note (Optional)</label>
+                <textarea
+                  value={editData.note}
+                  onChange={(e) => setEditData(prev => ({ ...prev, note: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                  placeholder="Add a note..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowEditModal(null)}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitEdit}
+                  disabled={editLoading || !editData.branchId || !editData.fullDate || !editData.timeSlot}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
   {/* Walk In Appointment Modal */}
       <WalkInAppointmentModal
