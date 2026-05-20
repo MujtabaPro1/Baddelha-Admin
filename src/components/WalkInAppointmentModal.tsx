@@ -157,7 +157,10 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
   const fetchBranches = async () => {
     try {
       const response = await axiosInstance.get('/1.0/branch');
-      setBranches(response.data);
+      let branches = response.data;
+      // Filter out branches that are not active
+      branches = branches.filter((branch: any) => branch.is_active);
+      setBranches(branches);
     } catch (error) {
       console.error('Error fetching branches:', error);
       toast.error('Failed to load branches');
