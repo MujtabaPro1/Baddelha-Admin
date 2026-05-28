@@ -27,13 +27,15 @@ const MyInspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
   const [appointments, setAppointments]: any = useState([]);
-  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections'>('appointments');
+  const [allAppointments, setAllAppointments]: any = useState([]);
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [assigningJob, setAssigningJob] = useState<number | null>(null);
   const navigate = useNavigate();
   const [inspectorBranchId, setInspectorBranchId] = useState<number | null>(null);
   const [inspectorId, setInspectorId] = useState<number | null>(null);
@@ -79,6 +81,7 @@ const MyInspections = () => {
   useEffect(() => {
     if (inspectorBranchId && inspectorId) {
       fetchInspections();
+      fetchAvailableJobs();
       fetchAppointments();
     }
   }, [inspectorBranchId, inspectorId]);
@@ -107,6 +110,46 @@ const MyInspections = () => {
     }
   };
 
+  const fetchAvailableJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get('/1.0/inspection/available');
+      const data = response?.data?.data?.map((r: any) => {
+        r['car'] = r['Car'];
+        return r;
+      });
+
+      const filteredData = data?.filter((inspection: any) => 
+        inspection.branchId == inspectorBranchId
+      );
+      console.log("filteredData", filteredData);
+      setAllAppointments(filteredData || []);
+    } catch (err) {
+      console.error('Error fetching inspections:', err);
+      setError('Failed to load inspections. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelfAssignJob = async (bookingId: string, inspectionId: number) => {
+    setAssigningJob(inspectionId);
+    try {
+      await axiosInstance.patch(`/1.0/book-appointment/${bookingId}/self-assign`);
+      toast.success('Job assigned successfully');
+      // Refresh the available jobs list
+      await fetchAvailableJobs();
+      // Navigate to inspection report
+      navigate(`/customer-checkin/${inspectionId}`);
+    } catch (err: any) {
+      console.error('Error self-assigning job:', err);
+      toast.error(err?.response?.data?.message || 'Failed to assign job');
+    } finally {
+      setAssigningJob(null);
+    }
+  };
+
   const fetchAppointments = async () => {
     try {
       const response = await axiosInstance.get('/1.0/book-appointment');
@@ -117,11 +160,13 @@ const MyInspections = () => {
           car: JSON.parse(a.carDetail),
         };
       });
-      const _appointments = data?.filter((appointment: any) => 
-        appointment.inspectorUserId === inspectorId
-      );
+        const _appointments = data?.filter((appointment: any) => 
+          appointment.inspectorUserId === inspectorId
+        );
+      
       console.log("_appointments", _appointments);
       setAppointments(_appointments || []);
+
     } catch (err) {
       console.error('Error fetching appointments:', err);
     }
@@ -182,6 +227,16 @@ const MyInspections = () => {
             >
               Inspections ({inspections.length})
             </button>
+             <button
+              onClick={() => setActiveTab('available')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'available'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Available Jobs ({allAppointments?.length || 0})
+            </button>
           </nav>
         </div>
       </div>
@@ -229,7 +284,7 @@ const MyInspections = () => {
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {(activeTab === 'appointments' ? appointments : inspections)
+        {(activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
           .filter((inspection: any) => {
             if (activeTab === 'appointments') {
               return inspection.status == 'Confirmed';
@@ -336,7 +391,26 @@ const MyInspections = () => {
                       </button>
                     )}
                   </>
-                ) : inspection.inspectionStatus == 'Pending' ? 
+                ) : activeTab === 'available' ? <>
+                  <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSelfAssignJob(inspection?.BookAppointments?.[0]?.uid, inspection.id);
+                        }}
+                        disabled={assigningJob === inspection.id}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                      >
+                        {assigningJob === inspection.id ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                            Assigning...
+                          </>
+                        ) : (
+                          'Start Job'
+                        )}
+                      </button>
+                </>
+                : inspection.inspectionStatus == 'Pending' ? 
                   <button 
                         onClick={(e) => {
                           e.preventDefault();
