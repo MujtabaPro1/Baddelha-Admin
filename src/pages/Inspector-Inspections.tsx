@@ -30,6 +30,7 @@ const MyInspections = () => {
   const [allAppointments, setAllAppointments]: any = useState([]);
   const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<'phone' | 'email'>('phone');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
@@ -245,17 +246,27 @@ const MyInspections = () => {
       
       {/* Filters and search */}
       <div className="mb-8 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+        <div className="relative flex-1 flex">
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value as 'phone' | 'email')}
+            className="form-input rounded-r-none border-r-0 w-28 bg-gray-50"
+          >
+            <option value="phone">Phone</option>
+            <option value="email">Email</option>
+          </select>
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder={searchType === 'phone' ? 'Search by phone...' : 'Search by email...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input pl-10 rounded-l-none"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Search inspections..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input pl-10"
-          />
         </div>
         <div className="sm:w-48 flex">
           <div className="relative flex-1">
@@ -286,10 +297,16 @@ const MyInspections = () => {
       <div className="space-y-4">
         {(activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
           .filter((inspection: any) => {
-            if (activeTab === 'appointments') {
-              return inspection.status == 'Confirmed';
+            if (activeTab === 'appointments' && inspection.status !== 'Confirmed') return false;
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.trim().toLowerCase();
+            if (searchType === 'phone') {
+              const phone = (inspection?.phone || inspection?.BookAppointments?.[0]?.phone || '').toLowerCase();
+              return phone.includes(q);
+            } else {
+              const email = (inspection?.email || inspection?.BookAppointments?.[0]?.email || '').toLowerCase();
+              return email.includes(q);
             }
-            return true;
           })
           .map((inspection: any, index: number) => (
           <div 
