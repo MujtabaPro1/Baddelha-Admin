@@ -59,6 +59,7 @@ const Layout = () => {
       { name: 'Trade-In Appointments', href: '/tradein-appointments', icon: Calendar },
       // { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
+      { name: 'Inspectors', href: '/inspectors', icon: Users },
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },

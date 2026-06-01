@@ -13,6 +13,8 @@ interface Branch {
   address?: string;
   city?: string;
   gmap?: string;
+  latitude?: string;
+  longitude?: string;
   is_active: boolean;
   createdAt: string;
 }
@@ -41,6 +43,8 @@ const Branches = () => {
     address: '',
     gmap: '',
     city: '',
+    latitude: '',
+    longitude: '',
     is_active: true
   });
 
@@ -92,6 +96,8 @@ const Branches = () => {
         arName: formData.arName,
         address: formData.address,
         gmap: formData.gmap,
+    latitude: Number(formData.latitude),
+        longitude: Number(formData.longitude),
         is_active: formData.is_active
       };
       
@@ -104,6 +110,8 @@ const Branches = () => {
         address: '',
         gmap: '',
         city: '',
+        latitude: '',
+        longitude: '',
         is_active: true
       });
       fetchBranches();
@@ -124,6 +132,8 @@ const Branches = () => {
         arName: formData.arName,
         address: formData.address,
         gmap: formData.gmap,
+        latitude: Number(formData.latitude),
+        longitude: Number(formData.longitude),
         is_active: formData.is_active
       };
       
@@ -158,6 +168,8 @@ const Branches = () => {
       address: branch.address || '',
       city: branch.city || '',
       gmap: branch.gmap || '',
+      latitude: branch.latitude || '',
+      longitude: branch.longitude || '',
       is_active: branch.is_active
     });
     setShowEditModal(true);
@@ -359,6 +371,30 @@ const Branches = () => {
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Latitude</label>
+                    <input
+                      type="text"
+                      name="latitude"
+                      value={formData.latitude}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 24.7136"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Longitude</label>
+                    <input
+                      type="text"
+                      name="longitude"
+                      value={formData.longitude}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 46.6753"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center">
                   <input
                     id="is_active"
@@ -458,6 +494,30 @@ const Branches = () => {
                     onChange={handleInputChange}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Latitude</label>
+                    <input
+                      type="text"
+                      name="latitude"
+                      value={formData.latitude}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 24.7136"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Longitude</label>
+                    <input
+                      type="text"
+                      name="longitude"
+                      value={formData.longitude}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 46.6753"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <input
