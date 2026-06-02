@@ -4,6 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import { Search, RefreshCw, Edit2, ChevronDown, X, Users, ClipboardCheck } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Inspector {
   id: string;
@@ -25,6 +26,7 @@ interface Branch {
 }
 
 const Inspectors = () => {
+  const { user } = useAuth();
   const [inspectors, setInspectors] = useState<Inspector[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -234,7 +236,7 @@ const Inspectors = () => {
                   <th>Phone</th>
                   <th>Branch</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  {user?.role?.toLowerCase() === 'admin' && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -247,26 +249,28 @@ const Inspectors = () => {
                     <td>{inspector.phone}</td>
                     <td className="text-gray-600">{getInspectorBranch(inspector)}</td>
                     <td>
-                      <StatusBadge status={inspector?.status || 'active'} />
+                      <StatusBadge status={inspector?.status as StatusType || 'active'} />
                     </td>
                     <td>
-                      <button
-                        onClick={(e) => {
-                          if (openDropdownId === inspector.id) {
-                            setOpenDropdownId(null);
-                            setDropdownPos(null);
-                          } else {
-                            const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                            setDropdownPos({ top: rect.bottom + 4, left: rect.right - 176 });
-                            setOpenDropdownId(inspector.id);
-                          }
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
-                      >
-                        <Edit2 size={13} />
-                        Edit
-                        <ChevronDown size={13} />
-                      </button>
+                      {user?.role?.toLowerCase() === 'admin' && (
+                        <button
+                          onClick={(e) => {
+                            if (openDropdownId === inspector.id) {
+                              setOpenDropdownId(null);
+                              setDropdownPos(null);
+                            } else {
+                              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                              setDropdownPos({ top: rect.bottom + 4, left: rect.right - 176 });
+                              setOpenDropdownId(inspector.id);
+                            }
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                        >
+                          <Edit2 size={13} />
+                          Edit
+                          <ChevronDown size={13} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
