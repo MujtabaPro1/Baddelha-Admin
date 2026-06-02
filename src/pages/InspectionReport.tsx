@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { saveInspection, getInspectionSchema } from "../service/inspection";
 import { createMedia } from "../service/media";
 import { dataURLToBlob } from "../types/dataUrlToBlob";
-import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus, Camera, X } from "lucide-react";
+import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus, Camera, X, ImageIcon } from "lucide-react";
 import axiosInstance from "../service/api";
 import { useNavigate, useParams } from "react-router-dom";
 import { axiosErrorHandler } from "../types/utils";
@@ -1180,11 +1180,23 @@ const InspectionForm = () => {
                                     </button>
                                   </div>
                                 ))}
-                                <label htmlFor={`fail_img_${_fieldName}`} className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-900 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-900">
+                                <label htmlFor={`fail_img_camera_${_fieldName}`} className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-900 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-900">
                                   <Camera size={20} />
-                                  <span className="text-[10px] font-medium">Photo</span>
+                                  <span className="text-[10px] font-medium">Camera</span>
                                   <input
-                                    id={`fail_img_${_fieldName}`}
+                                    id={`fail_img_camera_${_fieldName}`}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    capture="environment"
+                                    onChange={(e) => handleFailImageChange(_fieldName, e)}
+                                  />
+                                </label>
+                                <label htmlFor={`fail_img_gallery_${_fieldName}`} className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-900 hover:bg-blue-50 transition-colors text-gray-400 hover:text-blue-900">
+                                  <ImageIcon size={20} />
+                                  <span className="text-[10px] font-medium">Gallery</span>
+                                  <input
+                                    id={`fail_img_gallery_${_fieldName}`}
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
