@@ -496,7 +496,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
 
 
   const isFormValid = () => {
-    return formData.firstName && formData.lastName && formData.phone && formData.email && formData.make && formData?.makeName && formData.model && formData?.modelName && formData.year && formData.bodyType && formData?.bodyTypeName && formData.engineSize && formData?.engineSizeName && formData.mileage && formData?.mileageName;
+    return formData.firstName && formData.lastName && formData.phone && formData.email && formData.make && formData?.makeName && formData.model && formData?.modelName && formData.year && formData.bodyType && formData?.bodyTypeName && formData.engineSize && formData?.engineSizeName && formData.mileage && formData?.mileageName && formData?.carPrice && formData?.option && formData?.paint;
   };
 
   if (!isOpen) return null;
