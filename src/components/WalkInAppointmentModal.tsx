@@ -509,7 +509,8 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       formData.mileage &&
       formData.carPrice > 0 &&
       formData.option &&
-      formData.paint
+      formData.paint &&
+      formData.specs
     );
   };
 
