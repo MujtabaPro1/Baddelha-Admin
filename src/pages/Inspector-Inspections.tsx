@@ -7,7 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   Search, Filter, Plus, RefreshCw, Calendar, MapPin, 
   ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
-  Play
+  Play,
+  ChevronLeft
 } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -40,8 +41,46 @@ const MyInspections = () => {
   const navigate = useNavigate();
   const [inspectorBranchId, setInspectorBranchId] = useState<number | null>(null);
   const [inspectorId, setInspectorId] = useState<number | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
  
 
+
+
+
+  useEffect(() => {
+      fetchAvailableJobs();
+    }, [currentPage, itemsPerPage, searchQuery]);
+
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+  
 
   // First: fetch inspector info on component mount
   useEffect(() => {
@@ -91,11 +130,14 @@ const MyInspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/1.0/inspection/find-all');
+      const response = await axiosInstance.get(`/1.0/inspection/find-all?search=${searchQuery}`);
       const data = response?.data?.data?.map((r: any) => {
         r['car'] = r['Car'];
         return r;
       });
+
+
+
 
       const filteredData = data?.filter((inspection: any) => 
         inspection.inspectorId == inspectorId &&
@@ -115,7 +157,7 @@ const MyInspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/1.0/inspection/available');
+      const response = await axiosInstance.get(`/1.0/inspection/available?page=${currentPage}&limit=${itemsPerPage}`);
       const data = response?.data?.data?.map((r: any) => {
         r['car'] = r['Car'];
         return r;
@@ -124,6 +166,9 @@ const MyInspections = () => {
       const filteredData = data?.filter((inspection: any) => 
         inspection.branchId == inspectorBranchId
       );
+      const total = response?.data?.totalCount || 0;
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
       console.log("filteredData", filteredData);
       setAllAppointments(filteredData || []);
     } catch (err) {
@@ -165,6 +210,8 @@ const MyInspections = () => {
           appointment.inspectorUserId === inspectorId
         );
       
+
+    
       console.log("_appointments", _appointments);
       setAppointments(_appointments || []);
 
@@ -184,6 +231,11 @@ const MyInspections = () => {
 
 
 
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
 
   return (
@@ -457,12 +509,93 @@ const MyInspections = () => {
           </div>
         ))}
 
-        {inspections.length === 0 && (
+
+   {activeTab == 'inspections' && inspections.length === 0 ? (
           <div className="py-12 text-center bg-white rounded-lg shadow-sm">
             <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">No inspection requests found matching your criteria.</p>
           </div>
-        )}
+        ): <></>}
+
+        {activeTab == 'appointments' && appointments.length === 0 ? (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No appointments found matching your criteria.</p>
+          </div>
+        ): <></>}
+
+     
+
+        {activeTab == 'available' && allAppointments.length === 0 ? (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No available inspections found matching your criteria.</p>
+          </div>
+        ): <></>}
+
+
+     {/* Pagination */}
+      {activeTab === 'available' && totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="form-input py-1 px-2 w-20"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>of {totalItems} items</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {getPageNumbers().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => typeof page === 'number' && handlePageChange(page)}
+                disabled={page === '...'}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  page === currentPage
+                    ? 'bg-blue-900 text-white'
+                    : page === '...'
+                    ? 'cursor-default'
+                    : 'border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
+
       </div>
 
       {/* Walk In Appointment Modal */}
