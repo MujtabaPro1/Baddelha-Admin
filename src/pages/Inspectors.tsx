@@ -80,7 +80,9 @@ const Inspectors = () => {
   const fetchBranches = async () => {
     try {
       const res = await axiosInstance.get('/1.0/branch');
-      setBranches(res.data || []);
+      let branches = res.data || [];
+      branches = branches.filter((branch: any) => branch.is_active);
+      setBranches(branches);
     } catch (err) {
       console.error(err);
     }
