@@ -907,7 +907,7 @@ const InspectionForm = () => {
           
           return (
             <div key={i.name + index}>
-              <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] ">{i.name}</div>
+              <div className={`w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] ${language == 'en' ? 'text-left' : 'text-right'}`}>{language == 'en' ? i.name : i.nameAr}</div>
 
               {i.name === "Document Images" && (
                 <div className="mt-6">
