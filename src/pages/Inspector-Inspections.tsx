@@ -157,7 +157,7 @@ const MyInspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/1.0/inspection/available?page=${currentPage}&limit=${itemsPerPage}`);
+      const response = await axiosInstance.get(`/1.0/inspection/available?page=${currentPage}&limit=${itemsPerPage}&branchId=${inspectorBranchId}`);
       const data = response?.data?.data?.map((r: any) => {
         r['car'] = r['Car'];
         return r;
