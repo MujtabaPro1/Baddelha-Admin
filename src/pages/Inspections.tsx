@@ -9,7 +9,8 @@ import {
   ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
   Eye,
   Loader,
-  Check
+  Check,
+  ChevronLeft
 } from 'lucide-react';
 import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
@@ -33,21 +34,27 @@ const Inspections = () => {
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
 
 
   useEffect(() => {
-    fetchInspections();
+    setCurrentPage(1);
   }, [searchQuery]);
+
+  useEffect(() => {
+    fetchInspections();
+  }, [currentPage, itemsPerPage, searchQuery]);
 
   const fetchInspections = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/1.0/inspection/find-all?search=' + searchQuery);
+      const response = await axiosInstance.get(`/1.0/inspection/find-all?page=${currentPage}&limit=${itemsPerPage}&search=${searchQuery}`);
 
-    
-     
       const data = response?.data?.data?.map((a: any)=>{
         return {
           ...a,
@@ -60,7 +67,10 @@ const Inspections = () => {
         }
       });
     
-      setInspections(data);
+      setInspections(data || []);
+      const total = response?.data?.totalCount || 0;
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
     } catch (err) {
       console.error('Error fetching inspections:', err);
       setError('Failed to load inspections. Please try again.');
@@ -68,11 +78,40 @@ const Inspections = () => {
       setLoading(false);
     }
   };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
   
 
-  
-
-  // Filter inspections based on user role
   
 
 
@@ -215,13 +254,81 @@ const Inspections = () => {
           </div>
         ))}
 
-        {inspections.length === 0 && (
+        {inspections.length === 0 && !loading && (
           <div className="py-12 text-center bg-white rounded-lg shadow-sm">
             <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">No inspection requests found matching your criteria.</p>
           </div>
         )}
+
+        {loading && (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900 mx-auto"></div>
+          </div>
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="form-input py-1 px-2 w-20"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>of {totalItems} items</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {getPageNumbers().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => typeof page === 'number' && handlePageChange(page)}
+                disabled={page === '...'}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  page === currentPage
+                    ? 'bg-blue-900 text-white'
+                    : page === '...'
+                    ? 'cursor-default'
+                    : 'border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
