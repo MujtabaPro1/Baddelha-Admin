@@ -496,7 +496,21 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
 
 
   const isFormValid = () => {
-    return formData.firstName && formData.lastName && formData.phone && formData.email && formData.make && formData?.makeName && formData.model && formData?.modelName && formData.year && formData.bodyType && formData?.bodyTypeName && formData.engineSize && formData?.engineSizeName && formData.mileage && formData?.mileageName && formData?.carPrice && formData?.option && formData?.paint;
+    return !!(
+      formData.firstName &&
+      formData.lastName &&
+      formData.phone &&
+      formData.email &&
+      formData.make &&
+      formData.model &&
+      formData.year &&
+      formData.bodyType &&
+      formData.engineSize &&
+      formData.mileage &&
+      formData.carPrice > 0 &&
+      formData.option &&
+      formData.paint
+    );
   };
 
   if (!isOpen) return null;
@@ -896,7 +910,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             </button>
             <button
               type="submit"
-              className={`${loading || !isFormValid() ? 'btn btn-primary-disabled bg-gray-500' : 'btn btn-primary'}`}
+              className={`btn btn-primary transition-opacity ${loading || !isFormValid() ? 'opacity-40 cursor-not-allowed' : 'hover:opacity-90'}`}
               disabled={loading || !isFormValid()}
             >
               {loading ? 'Creating...' : 'Create Sell Request'}
