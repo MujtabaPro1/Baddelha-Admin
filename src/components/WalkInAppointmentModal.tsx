@@ -336,7 +336,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         if (selectedMileage) {
           setFormData(prev => ({ ...prev, 
             mileage: selectedMileage.id,
-            mileageName: selectedMileage.name }));
+            mileageName: selectedMileage.label }));
         }
       }
     }
@@ -896,7 +896,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             </button>
             <button
               type="submit"
-              className={`${loading || !isFormValid() ? 'btn btn-primary-disabled bg-gray-400' : 'btn btn-primary'}`}
+              className={`${loading || !isFormValid() ? 'btn btn-primary-disabled bg-gray-500' : 'btn btn-primary'}`}
               disabled={loading || !isFormValid()}
             >
               {loading ? 'Creating...' : 'Create Sell Request'}
