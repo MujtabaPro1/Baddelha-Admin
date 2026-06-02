@@ -896,7 +896,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             </button>
             <button
               type="submit"
-              className={`${loading || !isFormValid() ? 'btn btn-primary-disabled' : 'btn btn-primary'}`}
+              className={`${loading || !isFormValid() ? 'btn btn-primary-disabled bg-gray-400' : 'btn btn-primary'}`}
               disabled={loading || !isFormValid()}
             >
               {loading ? 'Creating...' : 'Create Sell Request'}
