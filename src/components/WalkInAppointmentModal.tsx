@@ -494,7 +494,14 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     }
   };
 
+
+  const isFormValid = () => {
+    return formData.firstName && formData.lastName && formData.phone && formData.email && formData.make && formData?.makeName && formData.model && formData?.modelName && formData.year && formData.bodyType && formData?.bodyTypeName && formData.engineSize && formData?.engineSizeName && formData.mileage && formData?.mileageName;
+  };
+
   if (!isOpen) return null;
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -890,7 +897,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading}
+              disabled={loading || !isFormValid()}
             >
               {loading ? 'Creating...' : 'Create Sell Request'}
             </button>
