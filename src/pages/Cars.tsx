@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AuctionCountdown from '../components/AuctionCountdown';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Filter, Plus, RefreshCw, Clock } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,11 @@ const Cars = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const carType = params.get('carType');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   
 
 
@@ -34,7 +39,7 @@ const Cars = () => {
 
   useEffect(()=>{
     fetchCars();
-  },[search]);
+  },[search, currentPage, itemsPerPage]);
 
   async function fetchAuctionCars() {
     try {
@@ -45,6 +50,7 @@ const Cars = () => {
           limit,
         },
       });
+
 
       
       if (resp.data.error) {
@@ -69,10 +75,15 @@ const Cars = () => {
       const resp = await axiosInstance.get("/1.0/car/find-all" + search, {
         params: {
           search,
-          page,
-          limit,
+          page: currentPage,
+          limit: itemsPerPage,
         },
       });
+
+      const total = resp.data.totalCount || 0;
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
+
 
       if (resp.data.error) {
         setError(resp.data);
@@ -110,6 +121,40 @@ const Cars = () => {
     fetchCars();
     fetchAuctionCars();
   };
+
+
+    const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+  
 
 
 
@@ -223,12 +268,74 @@ const Cars = () => {
               </div>
             </div>
           ))
+          
         ) : (
           <div className="col-span-3 py-12 text-center bg-white rounded-lg shadow-sm">
             <p className="text-gray-500">No cars found matching your criteria.</p>
           </div>
         )}
+      
           </div>
+             {totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="form-input py-1 px-2 w-20"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>of {totalItems} items</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {getPageNumbers().map((page, index) => (
+              <button
+                key={index}
+                onClick={() => typeof page === 'number' && handlePageChange(page)}
+                disabled={page === '...'}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  page === currentPage
+                    ? 'bg-blue-900 text-white'
+                    : page === '...'
+                    ? 'cursor-default'
+                    : 'border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
         </div>
         
         {/* Auction Cars - Right side */}
