@@ -294,7 +294,7 @@ const CarsDetails = () => {
   const markCarAsAuctionListed = async (carId: string) => {
     try {
       // Get the selling price from initialData
-      const startPrice = Number(carDetails.bookValue);
+      const startPrice = Number(carDetails.sellingPrice);
       const durationInMinutes = 30; // Default auction duration
 
       axiosInstance.post("/1.0/auction/push", {
