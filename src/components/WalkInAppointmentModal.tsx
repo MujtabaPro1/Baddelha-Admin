@@ -451,7 +451,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         year: formData.year,
         bodyType: formData.bodyTypeName,
         engineSize: formData.engineSizeName,
-        mileage: formData.mileageName,
+        mileage: formData.mileage,
         option: formData.option,
         paint: formData.paint,
         specs: formData.specs,
