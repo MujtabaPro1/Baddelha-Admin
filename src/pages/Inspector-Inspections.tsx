@@ -306,7 +306,7 @@ const MyInspections = () => {
    
       
       {/* Filters and search */}
-      {activeTab == 'appointments' && <div className="mb-8 flex flex-col sm:flex-row gap-4">
+      {activeTab == 'appointments' ? <div className="mb-8 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 flex">
           <select
             value={searchType}
@@ -352,7 +352,24 @@ const MyInspections = () => {
             <RefreshCw className="h-5 w-5 text-gray-600" />
           </button>
         </div>
-      </div>}
+      </div> :  activeTab == 'available' ? <div className="mb-8 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1 flex">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search Jobs..."
+              value={searchQueryAvailable}
+              onChange={(e) => setSearchQueryAvailable(e.target.value)}
+              className="form-input pl-10 rounded-l-none"
+            />
+          </div>
+        </div>
+
+
+      </div>: <></>}
 
       
       {/* Inspections list */}
