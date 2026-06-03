@@ -333,10 +333,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       } else if (name === 'mileage') {
         // Set mileageName when mileage is selected
         const selectedMileage = mileageOptions.find(item => item.id == value);
+        console.log(selectedMileage);
         if (selectedMileage) {
           setFormData(prev => ({ ...prev, 
             mileage: selectedMileage.id,
-            mileageName: selectedMileage.label }));
+            mileageName: selectedMileage.value }));
         }
       }
     }
@@ -451,7 +452,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         year: formData.year,
         bodyType: formData.bodyTypeName,
         engineSize: formData.engineSizeName,
-        mileage: formData.mileage,
+        mileage: formData.mileageName,
         option: formData.option,
         paint: formData.paint,
         specs: formData.specs,
