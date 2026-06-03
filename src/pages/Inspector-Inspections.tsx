@@ -31,6 +31,7 @@ const MyInspections = () => {
   const [allAppointments, setAllAppointments]: any = useState([]);
   const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryAvailable, setSearchQueryAvailable] = useState('');
   const [searchType, setSearchType] = useState<'phone' | 'email'>('phone');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
@@ -52,7 +53,9 @@ const MyInspections = () => {
 
   useEffect(() => {
       fetchAvailableJobs();
-    }, [currentPage, itemsPerPage, searchQuery]);
+    }, [currentPage, itemsPerPage, searchQueryAvailable]);
+
+
 
 
   const getPageNumbers = () => {
@@ -157,7 +160,7 @@ const MyInspections = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/1.0/inspection/available?page=${currentPage}&limit=${itemsPerPage}&branchId=${inspectorBranchId}`);
+      const response = await axiosInstance.get(`/1.0/inspection/available?page=${currentPage}&limit=${itemsPerPage}&branchId=${inspectorBranchId}&search=${searchQueryAvailable}`);
       const data = response?.data?.data?.map((r: any) => {
         r['car'] = r['Car'];
         return r;
@@ -297,7 +300,7 @@ const MyInspections = () => {
    
       
       {/* Filters and search */}
-      <div className="mb-8 flex flex-col sm:flex-row gap-4">
+      {activeTab == 'appointments' && <div className="mb-8 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 flex">
           <select
             value={searchType}
@@ -343,7 +346,8 @@ const MyInspections = () => {
             <RefreshCw className="h-5 w-5 text-gray-600" />
           </button>
         </div>
-      </div>
+      </div>}
+
       
       {/* Inspections list */}
       <div className="space-y-4">
@@ -602,10 +606,15 @@ const MyInspections = () => {
       <WalkInAppointmentModal
         isOpen={showWalkInModal}
         onClose={() => {
-                 fetchInspections();
+          fetchAppointments();
+          fetchInspections();
+          fetchAvailableJobs();
+
           setShowWalkInModal(false)}}
         onSuccess={() => {
+          fetchAppointments();
           fetchInspections();
+          fetchAvailableJobs();
           toast.success('Walk-in appointment created successfully');
         }}
       />
