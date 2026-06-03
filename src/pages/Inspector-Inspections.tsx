@@ -52,8 +52,10 @@ const MyInspections = () => {
 
 
   useEffect(() => {
-      fetchAvailableJobs();
-    }, [currentPage, itemsPerPage, searchQueryAvailable]);
+      if (inspectorBranchId) {
+        fetchAvailableJobs();
+      }
+    }, [currentPage, itemsPerPage, searchQueryAvailable, inspectorBranchId]);
 
 
 
@@ -157,6 +159,10 @@ const MyInspections = () => {
   };
 
   const fetchAvailableJobs = async () => {
+    if (!inspectorBranchId) {
+      console.log("No branch ID, skipping fetchAvailableJobs");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
