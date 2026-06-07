@@ -397,7 +397,7 @@ const CustomerCheckIn = () => {
                                             <p className="text-sm text-gray-500">Date & Time</p>
                                             <p className="font-medium">
                                                 {new Date(appointment.appointmentDate).toLocaleDateString()} at {' '}
-                                                {new Date(appointment.appointmentTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                {appointment.appointmentTime}
                                             </p>
                                         </div>
                                         <div>

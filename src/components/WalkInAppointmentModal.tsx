@@ -270,7 +270,14 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         
         if (inspectorData && inspectorData.branch_id) {
           // Auto-populate branch and lock it
-          setFormData(prev => ({ ...prev, branchId: inspectorData.branch_id.toString() }));
+          // For inspector walk-in, set current date and default time slot
+          const currentDate = format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX");
+          setFormData(prev => ({ 
+            ...prev, 
+            branchId: inspectorData.branch_id.toString(),
+            appointmentDate: type === 'inspector' ? currentDate : '',
+            appointmentTime: type === 'inspector' ? '00:00 AM - 00:00 PM' : ''
+          }));
           setBranchLocked(true);
         }
       }
@@ -419,11 +426,11 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       newErrors.inspectorId = 'Please select an inspector';
     }
 
-    // Validate appointment date and time when timings are available
-    if (timingsWithDates.length > 0 && !formData.appointmentDate) {
+    // Validate appointment date and time when timings are available (skip for inspector type)
+    if (type !== 'inspector' && timingsWithDates.length > 0 && !formData.appointmentDate) {
       newErrors.appointmentDate = 'Please select an appointment date';
     }
-    if (timingsWithDates.length > 0 && formData.appointmentDate && !formData.appointmentTime) {
+    if (type !== 'inspector' && timingsWithDates.length > 0 && formData.appointmentDate && !formData.appointmentTime) {
       newErrors.appointmentTime = 'Please select an appointment time';
     }
 
@@ -660,7 +667,22 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
           {formData.branchId && (
             <div className="pt-4 border-t space-y-4">
               <h3 className="text-lg font-medium">Appointment Date & Time</h3>
-              {loadingTimings ? (
+              {type === 'inspector' ? (
+                // For inspector walk-in, show auto-set current date and time
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span className="text-sm text-gray-600">Date:</span>
+                      <p className="font-medium">{format(new Date(), 'MMM dd, yyyy')}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Time:</span>
+                      <p className="font-medium">00:00 AM - 00:00 PM</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Walk-in appointment - Current date and time auto-set</p>
+                </div>
+              ) : loadingTimings ? (
                 <p className="text-sm text-gray-500">Loading available slots...</p>
               ) : timingsWithDates.length === 0 ? (
                 <p className="text-sm text-orange-500">No time slots configured for this branch.</p>

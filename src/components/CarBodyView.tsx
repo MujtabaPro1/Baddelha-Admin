@@ -48,15 +48,15 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
           }
           
           .part.damaged {
-            fill: orange;
+            fill: red;
           }
           
           .part.repainted {
-            fill: red;
+            fill: #FFC107;
           }
 
           .part.painted {
-            fill: red;
+            fill: #2196F3;
           }
           
           .part.portion-repainted {

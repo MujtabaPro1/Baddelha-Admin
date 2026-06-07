@@ -29,7 +29,7 @@ const MyInspections = () => {
   const [inspections, setInspections]: any = useState([]);
   const [appointments, setAppointments]: any = useState([]);
   const [allAppointments, setAllAppointments]: any = useState([]);
-  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available' | 'cancelled'>('appointments');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryAvailable, setSearchQueryAvailable] = useState('');
   const [searchType, setSearchType] = useState<'phone' | 'email'>('phone');
@@ -42,10 +42,11 @@ const MyInspections = () => {
   const navigate = useNavigate();
   const [inspectorBranchId, setInspectorBranchId] = useState<number | null>(null);
   const [inspectorId, setInspectorId] = useState<number | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [cancelledAppointments, setCancelledAppointments] = useState([]);
  
 
 
@@ -289,16 +290,26 @@ const MyInspections = () => {
             >
               Inspections ({inspections.length})
             </button>
-             <button
-              onClick={() => setActiveTab('available')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'available'
-                  ? 'border-blue-900 text-blue-900'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Available Jobs ({allAppointments?.length || 0})
-            </button>
+              <button
+                onClick={() => setActiveTab('available')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'available'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Available Jobs ({allAppointments?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab('cancelled')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'cancelled'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Cancelled ({cancelledAppointments?.length || 0})
+              </button>
           </nav>
         </div>
       </div>
@@ -560,6 +571,13 @@ const MyInspections = () => {
           </div>
         ): <></>}
 
+        {activeTab == 'cancelled' && cancelledAppointments.length === 0 ? (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No cancelled inspections found matching your criteria.</p>
+          </div>
+        ): <></>}
+
 
      {/* Pagination */}
       {activeTab === 'available' && totalPages > 1 && (
@@ -628,6 +646,7 @@ const MyInspections = () => {
       {/* Walk In Appointment Modal */}
       <WalkInAppointmentModal
         isOpen={showWalkInModal}
+        type='inspector'
         onClose={() => {
           fetchAppointments();
           fetchInspections();

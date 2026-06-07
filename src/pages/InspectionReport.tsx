@@ -18,6 +18,7 @@ import CarPartModal from "../components/CarPartModal";
 import FieldDetailsModal from "../components/FieldDetailsModal";
 
 import useStateRef from 'react-usestateref'
+import CarBodySvgView from "../components/CarBodyView";
 
 
 const InspectionForm = () => {
@@ -50,6 +51,7 @@ const InspectionForm = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   // Initialize all car parts with "original" condition
   const [partConditions, setPartConditions] = useState<Record<string, string>>({});
+  const [carBodyTab, setCarBodyTab] = useState<'edit' | 'view'>('edit');
   
   // State for field details modal
   const [isFieldDetailsModalOpen, setIsFieldDetailsModalOpen] = useState<boolean>(false);
@@ -835,53 +837,92 @@ const InspectionForm = () => {
 
           if(i.name == 'Car Body Condition'){
             return (
-              <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000] flex w-full justify-center items-center">
-                <CarBodySvg
-                  selectedPart={selectedPart}
-                  hoveredPart={hoveredPart}
-                  onSelectPart={(partName: string) => {
-                    setSelectedPart(partName);
-                    setIsModalOpen(true);
-                  }}
-                  onHoverPart={(partName: string | null) => {
-                    setHoveredPart(partName);
-                  }}
-                />
-                
-                {/* Display selected parts and their conditions */}
+              <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000]">
+                {/* Tabs - only show when partConditions has data */}
                 {Object.keys(partConditions).length > 0 && (
-                  <div className="mt-4 p-3 border border-gray-200 rounded-md">
-                    <h3 className="font-bold mb-2">Selected Parts Condition</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {Object.entries(partConditions).map(([part, condition]) => {
-                        const formattedPart = part
-                          .replace('c_n_', '')
-                          .split('_')
-                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                          .join(' ');
+                  <div className="flex mb-4 border-b border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setCarBodyTab('edit')}
+                      className={`px-4 py-2 text-sm font-medium transition-colors ${
+                        carBodyTab === 'edit'
+                          ? 'border-b-2 border-blue-900 text-blue-900'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Edit Parts
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCarBodyTab('view')}
+                      className={`px-4 py-2 text-sm font-medium transition-colors ${
+                        carBodyTab === 'view'
+                          ? 'border-b-2 border-blue-900 text-blue-900'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      View Summary
+                    </button>
+                  </div>
+                )}
+
+                {/* Edit Tab - SVG Editor */}
+                {(carBodyTab === 'edit' || Object.keys(partConditions).length === 0) && (
+                  <div className="flex w-full justify-center items-center">
+                    <CarBodySvg
+                      selectedPart={selectedPart}
+                      hoveredPart={hoveredPart}
+                      onSelectPart={(partName: string) => {
+                        setSelectedPart(partName);
+                        setIsModalOpen(true);
+                      }}
+                      onHoverPart={(partName: string | null) => {
+                        setHoveredPart(partName);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* View Tab - CarBodySvgView */}
+                {carBodyTab === 'view' && Object.keys(partConditions).length > 0 && (
+                  <div className="flex flex-col items-center">
+                    <CarBodySvgView data={partConditions as any} />
+                    
+                    {/* Parts Legend */}
+                    <div className="mt-4 p-3 border border-gray-200 rounded-md w-full max-w-md">
+                      <h3 className="font-bold mb-2">Parts Condition Summary</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(partConditions).map(([part, condition]) => {
+                          const formattedPart = part
+                            .replace('c_n_', '')
+                            .split('_')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                            
+                          let conditionColor = '';
+                          switch(condition) {
+                            case 'original': conditionColor = '#4CAF50'; break;
+                            case 'painted': conditionColor = '#2196F3'; break;
+                            case 'repainted': conditionColor = '#FFC107'; break;
+                            case 'damaged': conditionColor = '#F44336'; break;
+                          }
                           
-                        let conditionColor = '';
-                        switch(condition) {
-                          case 'original': conditionColor = '#4CAF50'; break;
-                          case 'painted': conditionColor = '#2196F3'; break;
-                          case 'repainted': conditionColor = '#FFC107'; break;
-                          case 'damaged': conditionColor = '#F44336'; break;
-                        }
-                        
-                        return (
-                          <div 
-                            key={part} 
-                            className="flex items-center p-2 rounded-md" 
-                            style={{ backgroundColor: `${conditionColor}20`, borderLeft: `3px solid ${conditionColor}` }}
-                          >
-                            <div className="flex-1">{formattedPart}</div>
-                            <div className="font-medium capitalize">{condition}</div>
-                          </div>
-                        );
-                      })}
+                          return (
+                            <div 
+                              key={part} 
+                              className="flex items-center p-2 rounded-md" 
+                              style={{ backgroundColor: `${conditionColor}20`, borderLeft: `3px solid ${conditionColor}` }}
+                            >
+                              <div className="flex-1 text-sm">{formattedPart}</div>
+                              <div className="font-medium capitalize text-sm">{condition}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
+              
                 
                 <CarPartModal
                   isOpen={isModalOpen}
