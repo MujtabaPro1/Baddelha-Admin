@@ -24,6 +24,7 @@ const Cars = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const carType = params.get('carType');
+  const [user, setUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -36,6 +37,16 @@ const Cars = () => {
     fetchCars();
     fetchAuctionCars();
   },[]);
+
+
+    useEffect(()=>{
+      const userDetails = localStorage.getItem('baddelha_user');
+      if(userDetails){
+        setUser(JSON.parse(userDetails || '{}'));
+      }
+    },[]);
+  
+
 
   useEffect(()=>{
     fetchCars();
@@ -156,6 +167,10 @@ const Cars = () => {
   };
   
 
+  const isUserAdmin = () => {
+     return user && user?.role && user?.role.includes('admin');
+  }
+
 
 
   return (
@@ -166,12 +181,12 @@ const Cars = () => {
         actions={
           <>
 
- {carType !== 'sold' && <button 
+ {carType !== 'sold' && isUserAdmin() ? <button 
  onClick={() => navigate('/cars/create')} className="btn btn-primary flex items-center">
               <Plus className="h-4 w-4 mr-1" /> Create Car
-            </button>
+            </button> : null}
 
-          }</>
+          </>
         }
       />
       
