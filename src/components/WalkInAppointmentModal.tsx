@@ -276,7 +276,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
             ...prev, 
             branchId: inspectorData.branch_id.toString(),
             appointmentDate: type === 'inspector' ? currentDate : '',
-            appointmentTime: type === 'inspector' ? '00:00 AM - 00:00 PM' : ''
+            appointmentTime: type === 'inspector' ? '00:00 AM - 11:59 PM' : ''
           }));
           setBranchLocked(true);
         }
@@ -508,7 +508,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       formData.firstName &&
       formData.lastName &&
       formData.phone &&
-      formData.email &&
       formData.make &&
       formData.model &&
       formData.year &&
@@ -677,7 +676,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
                     </div>
                     <div>
                       <span className="text-sm text-gray-600">Time:</span>
-                      <p className="font-medium">00:00 AM - 00:00 PM</p>
+                      <p className="font-medium">00:00 AM - 11:59 PM</p>
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">Walk-in appointment - Current date and time auto-set</p>
