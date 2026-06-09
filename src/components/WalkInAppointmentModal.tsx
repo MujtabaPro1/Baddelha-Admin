@@ -451,7 +451,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
 
     try {
       const appointmentDate = formData.appointmentDate || new Date().toISOString();
-      const appointmentTime = formData.appointmentTime || '';
+      let appointmentTime = formData.appointmentTime || '';
 
       const carDetail = JSON.stringify({
         make: formData.makeName,
@@ -465,6 +465,10 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         specs: formData.specs,
         carPrice: formData.carPrice ? formData.carPrice : 0,
       });
+
+      if(!appointmentTime && type == 'inspector') {
+        appointmentTime = '00:00 AM - 11:59 PM';
+      }
 
       const bookingData: any = {
         branchId: Number(formData.branchId),

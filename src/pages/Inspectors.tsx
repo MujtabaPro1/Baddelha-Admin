@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, RefreshCw, Edit2, ChevronDown, X, Users, ClipboardCheck } from 'lucide-react';
+import { Search, RefreshCw, Edit2, ChevronDown, X, Users, ClipboardCheck, Clock, CheckCircle, XCircle } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,6 +33,7 @@ const Inspectors = () => {
   const [loading, setLoading] = useState(false);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'inspectors' | 'inspections'>('inspectors');
+  const [inspectionSubTab, setInspectionSubTab] = useState<'scheduled' | 'completed' | 'cancelled'>('scheduled');
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearch, setMobileSearch] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -49,6 +50,9 @@ const Inspectors = () => {
     fetchInspectors();
     fetchBranches();
   }, []);
+
+
+  
 
   useEffect(() => {
     if (activeTab === 'inspections') {
@@ -145,7 +149,15 @@ const Inspectors = () => {
     setTimeout(() => setShowStatusModal(true), 0);
   };
 
+  const subTabStatuses: Record<typeof inspectionSubTab, string[]> = {
+    scheduled: ['scheduled', 'pending'],
+    completed: ['completed'],
+    cancelled: ['cancelled'],
+  };
+
   const filteredInspections = inspections.filter((insp: any) => {
+    const status = (insp.inspectionStatus || insp.status || '').toLowerCase();
+    if (!subTabStatuses[inspectionSubTab].includes(status)) return false;
     if (!mobileSearch.trim()) return true;
     const phone =
       insp?.BookAppointments?.[0]?.phone ||
@@ -296,6 +308,56 @@ const Inspectors = () => {
       {/* Inspections Tab */}
       {activeTab === 'inspections' && (
         <>
+          {/* Inspection Sub-tabs */}
+          <div className="mb-6">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-6">
+                <button
+                  onClick={() => setInspectionSubTab('scheduled')}
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                    inspectionSubTab === 'scheduled'
+                      ? 'border-yellow-500 text-yellow-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Clock size={15} />
+                  Scheduled
+                  <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                    {inspections.filter(i => ['scheduled','pending'].includes((i.inspectionStatus || i.status || '').toLowerCase())).length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setInspectionSubTab('completed')}
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                    inspectionSubTab === 'completed'
+                      ? 'border-green-600 text-green-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <CheckCircle size={15} />
+                  Completed
+                  <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+                    {inspections.filter(i => (i.inspectionStatus || i.status || '').toLowerCase() === 'completed').length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setInspectionSubTab('cancelled')}
+                  className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                    inspectionSubTab === 'cancelled'
+                      ? 'border-red-500 text-red-700'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <XCircle size={15} />
+                  Cancelled
+                  <span className="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">
+                    {inspections.filter(i => (i.inspectionStatus || i.status || '').toLowerCase() === 'cancelled').length}
+                  </span>
+                </button>
+              </nav>
+            </div>
+          </div>
+
           <div className="mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -367,7 +429,9 @@ const Inspectors = () => {
             {!inspectionsLoading && filteredInspections.length === 0 && (
               <div className="py-12 text-center">
                 <p className="text-gray-500">
-                  {mobileSearch ? 'No inspections found for this mobile number.' : 'No inspections found.'}
+                  {mobileSearch
+                    ? 'No inspections found for this mobile number.'
+                    : `No ${inspectionSubTab} inspections found.`}
                 </p>
               </div>
             )}

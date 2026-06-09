@@ -8,7 +8,8 @@ import {
   Search, Filter, Plus, RefreshCw, Calendar, MapPin, 
   ChevronRight, AlertTriangle, Clock, User, X, UserPlus,
   Play,
-  ChevronLeft
+  ChevronLeft,
+  XCircle
 } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -46,17 +47,32 @@ const MyInspections = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [cancelledAppointments, setCancelledAppointments] = useState([]);
+  const [cancelledAppointments, setCancelledAppointments] = useState<any[]>([]);
+  const [cancelledPage, setCancelledPage] = useState(1);
+  const [cancelledTotalPages, setCancelledTotalPages] = useState(1);
+  const [cancelledTotal, setCancelledTotal] = useState(0);
+  const [cancelledPerPage, setCancelledPerPage] = useState(20);
+  const [cancelledSearch, setCancelledSearch] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedInspection, setSelectedInspection] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
  
 
 
 
 
   useEffect(() => {
-      if (inspectorBranchId) {
-        fetchAvailableJobs();
-      }
-    }, [currentPage, itemsPerPage, searchQueryAvailable, inspectorBranchId]);
+    if (inspectorBranchId) {
+      fetchAvailableJobs();
+    }
+  }, [currentPage, itemsPerPage, searchQueryAvailable, inspectorBranchId]);
+
+  useEffect(() => {
+    if (activeTab === 'cancelled') {
+      fetchCancelledAppointment(cancelledPage, cancelledPerPage, cancelledSearch);
+    }
+  }, [cancelledPage, cancelledPerPage, cancelledSearch, activeTab]);
 
 
 
@@ -129,8 +145,36 @@ const MyInspections = () => {
       fetchInspections();
       fetchAvailableJobs();
       fetchAppointments();
+      fetchCancelledAppointment();
     }
   }, [inspectorBranchId, inspectorId]);
+
+
+  const fetchCancelledAppointment = async (page = cancelledPage, perPage = cancelledPerPage, search = cancelledSearch) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.post(`/1.0/book-appointment/search`, {
+        filters: { status: 'Cancelled' },
+        search: search.trim() || undefined,
+        page,
+        limit: perPage,
+      });
+      const raw = response.data?.data || [];
+      const parsed = raw.map((a: any) => ({
+        ...a,
+        car: (() => { try { return JSON.parse(a.carDetail); } catch { return {}; } })(),
+      }));
+      setCancelledAppointments(parsed);
+      setCancelledTotal(response.data?.meta?.total || 0);
+      setCancelledTotalPages(response.data?.meta?.totalPages || 1);
+    } catch (err) {
+      console.error('Error fetching cancelled appointments:', err);
+      setError('Failed to load cancelled appointments. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -248,6 +292,44 @@ const MyInspections = () => {
   };
 
 
+    const handleCancelAppointment = async () => {
+      console.log('selectedInspection',selectedInspection);
+    if (!selectedInspection || !cancelReason.trim()) return;
+    const appointmentId =
+      selectedInspection.BookAppointments?.[0]?.id ||
+      selectedInspection?.uid;
+    if (!appointmentId) {
+      toast.error('No appointment found for this inspection');
+      return;
+    }
+    setCancelling(true);
+    try {
+      await axiosInstance.post(`/1.0/book-appointment/${appointmentId}/cancel`, {
+        cancelReason: cancelReason.trim(),
+      });
+      toast.success('Appointment cancelled successfully');
+      setShowCancelModal(false);
+      setCancelReason('');
+      setSelectedInspection(null);
+      fetchAppointments();
+      fetchInspections();
+      fetchAvailableJobs();
+      fetchCancelledAppointment();
+
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to cancel appointment');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const openCancelModal = (insp: any) => {
+    setSelectedInspection(insp);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+
   return (
     <div>
       <PageHeader 
@@ -308,7 +390,7 @@ const MyInspections = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Cancelled ({cancelledAppointments?.length || 0})
+                Cancelled ({cancelledTotal})
               </button>
           </nav>
         </div>
@@ -380,12 +462,89 @@ const MyInspections = () => {
         </div>
 
 
-      </div>: <></>}
+      </div> : activeTab === 'cancelled' ? (
+        <div className="mb-8 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by phone or name..."
+              value={cancelledSearch}
+              onChange={(e) => { setCancelledSearch(e.target.value); setCancelledPage(1); }}
+              className="form-input pl-10"
+            />
+          </div>
+          <button
+            onClick={() => fetchCancelledAppointment(1, cancelledPerPage, cancelledSearch)}
+            className="p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+          >
+            <RefreshCw className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+      ) : <></>}
 
       
       {/* Inspections list */}
       <div className="space-y-4">
-        {(activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
+
+        {/* Cancelled appointments */}
+        {activeTab === 'cancelled' && cancelledAppointments.map((appt: any) => (
+          <div key={appt.uid} className="card p-6 hover:shadow-md animated-transition">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZD95oZGb_ZQ878HfJtb_LSfxO3tk5Eus0eG79chwbHf3t6lhfDBOyL7s0pedxMx6H2qY&usqp=CAU"
+                  alt="car"
+                  className="h-16 w-24 object-cover rounded-md flex-shrink-0"
+                />
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-blue-900 bg-blue-50 px-2 py-1 rounded">
+                      {appt.displayId}
+                    </span>
+                    <StatusBadge status={appt.status} />
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{appt.category}</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mt-1">
+                    {appt.car?.year} {appt.car?.make} {appt.car?.model}
+                  </h3>
+                  <div className="mt-1 flex items-center text-sm text-gray-600 gap-2">
+                    <User className="h-4 w-4" />
+                    <span>{appt.firstName} {appt.lastName}</span>
+                    <span>•</span>
+                    <span>{appt.phone}</span>
+                  </div>
+                  {appt.cancelReason && (
+                    <div className="mt-2 flex items-start gap-1 text-sm text-red-600">
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>Reason: {appt.cancelReason}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-start md:items-end gap-1 text-sm text-gray-600 flex-shrink-0">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{appt.appointmentDate ? formatDate(appt.appointmentDate) : '-'}</span>
+                </div>
+                {appt.appointmentTime && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{appt.appointmentTime}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{appt.Branch?.enName || '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {(activeTab !== 'cancelled') && (activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
           .filter((inspection: any) => {
             if (activeTab === 'appointments' && inspection.status !== 'Confirmed') return false;
             if (!searchQuery.trim()) return true;
@@ -475,6 +634,7 @@ const MyInspections = () => {
                         Offer Pending
                       </button>
                     ) : inspection?.customerCheckIn != null ? (
+                      <>
                       <button 
                         onClick={(e) => {
                           e.preventDefault();
@@ -485,6 +645,17 @@ const MyInspections = () => {
                       >
                         Start Inspection
                       </button>
+                        <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // TODO: Add cancel inspection logic
+                          openCancelModal(inspection)
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                      >
+                        Cancel Inspection
+                      </button>
+                      </>
                     ) : (
                       <button 
                         onClick={(e) => {
@@ -579,7 +750,7 @@ const MyInspections = () => {
         ): <></>}
 
 
-     {/* Pagination */}
+     {/* Pagination — Available Jobs */}
       {activeTab === 'available' && totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow-sm">
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -641,7 +812,126 @@ const MyInspections = () => {
         </div>
       )}
 
+      {/* Pagination — Cancelled */}
+      {activeTab === 'cancelled' && cancelledTotalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Show</span>
+            <select
+              value={cancelledPerPage}
+              onChange={(e) => { setCancelledPerPage(Number(e.target.value)); setCancelledPage(1); }}
+              className="form-input py-1 px-2 w-20"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>of {cancelledTotal} items</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCancelledPage(p => Math.max(1, p - 1))}
+              disabled={cancelledPage === 1}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: cancelledTotalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setCancelledPage(p)}
+                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                  p === cancelledPage ? 'bg-blue-900 text-white' : 'border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => setCancelledPage(p => Math.min(cancelledTotalPages, p + 1))}
+              disabled={cancelledPage === cancelledTotalPages}
+              className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="text-sm text-gray-600">
+            Page {cancelledPage} of {cancelledTotalPages}
+          </div>
+        </div>
+      )}
+
       </div>
+
+   {/* Cancel Appointment Modal */}
+      {showCancelModal && selectedInspection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCancelModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Cancel Appointment</h2>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-600">
+                Cancel appointment for{' '}
+                <span className="font-medium">
+                  {selectedInspection.Car?.year} {selectedInspection.Car?.make} {selectedInspection.Car?.model}
+                </span>{' '}
+                — Ref{' '}
+                <span className="font-medium">#{selectedInspection.id}</span>.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cancellation Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Enter reason for cancellation..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+                />
+                {cancelReason.trim() === '' && (
+                  <p className="mt-1 text-xs text-red-500">A cancellation reason is required.</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleCancelAppointment}
+                  disabled={cancelling || !cancelReason.trim()}
+                  className="flex items-center gap-2 px-5 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cancelling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={16} />
+                      Cancel Appointment
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Walk In Appointment Modal */}
       <WalkInAppointmentModal
@@ -651,16 +941,21 @@ const MyInspections = () => {
           fetchAppointments();
           fetchInspections();
           fetchAvailableJobs();
+          fetchCancelledAppointment();
 
           setShowWalkInModal(false)}}
         onSuccess={() => {
           fetchAppointments();
           fetchInspections();
           fetchAvailableJobs();
+          fetchCancelledAppointment();
           toast.success('Walk-in appointment created successfully');
         }}
       />
     </div>
+
+
+
   );
 };
 
