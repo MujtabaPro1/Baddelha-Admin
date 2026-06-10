@@ -1088,7 +1088,7 @@ const InspectionForm = () => {
                       defaults.disabled = true;
                     }
                     if(field.value){
-                      defaults.value = field.value;
+                      defaults.defaultValue = field.value;
                     }
 
                     return (
