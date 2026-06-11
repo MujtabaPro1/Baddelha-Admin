@@ -41,7 +41,7 @@ const CreateRolePage = () => {
         </div>
         <button
           onClick={() => setShowCreateModuleModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+          className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
         >
           <Plus className="h-4 w-4 mr-2" />
           Create App Module

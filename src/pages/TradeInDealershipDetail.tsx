@@ -248,7 +248,7 @@ const TradeInDealershipDetail = () => {
         <div className="text-red-600 font-medium mb-4">Dealership not found</div>
         <button
           onClick={() => navigate('/tradein-dealerships')}
-          className="flex items-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
+          className="flex items-center gap-2 bg-primary text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
           Back to Dealerships
@@ -308,7 +308,7 @@ const TradeInDealershipDetail = () => {
           </button>
           <button
             onClick={handleEditDealership}
-            className="flex items-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
+            className="flex items-center gap-2 bg-primary text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
           >
             <Edit className="h-5 w-5" />
             <span>Edit</span>
@@ -421,7 +421,7 @@ const TradeInDealershipDetail = () => {
             <h3 className="text-lg font-semibold">Car Listings</h3>
             <button
               onClick={handleAddCar}
-              className="flex items-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
+              className="flex items-center gap-2 bg-primary text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
             >
               <Plus className="h-5 w-5" />
               <span>Add Car</span>
@@ -434,7 +434,7 @@ const TradeInDealershipDetail = () => {
               onClick={() => setActiveTab('all')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
                 activeTab === 'all'
-                  ? 'bg-blue-900 text-white'
+                  ? 'bg-primary text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -444,7 +444,7 @@ const TradeInDealershipDetail = () => {
               onClick={() => setActiveTab('available')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
                 activeTab === 'available'
-                  ? 'bg-blue-900 text-white'
+                  ? 'bg-primary text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -454,7 +454,7 @@ const TradeInDealershipDetail = () => {
               onClick={() => setActiveTab('pending')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
                 activeTab === 'pending'
-                  ? 'bg-blue-900 text-white'
+                  ? 'bg-primary text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
@@ -464,7 +464,7 @@ const TradeInDealershipDetail = () => {
               onClick={() => setActiveTab('sold')}
               className={`px-4 py-2 text-sm font-medium rounded-md ${
                 activeTab === 'sold'
-                  ? 'bg-blue-900 text-white'
+                  ? 'bg-primary text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >

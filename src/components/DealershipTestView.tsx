@@ -154,7 +154,7 @@ const DealershipTestView: React.FC = () => {
                 <p className="text-xs text-gray-500 mb-1">Specialties</p>
                 <div className="flex flex-wrap gap-1">
                   {sampleAppointment.dealership.specialties.map((specialty, index) => (
-                    <span key={index} className="px-2 py-1 bg-blue-900 text-white text-xs rounded-full">
+                    <span key={index} className="px-2 py-1 bg-primary text-white text-xs rounded-full">
                       {specialty}
                     </span>
                   ))}

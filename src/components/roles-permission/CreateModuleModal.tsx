@@ -44,7 +44,7 @@ const CreateModuleModal: React.FC<CreateModuleModalProps> = ({ onClose, onModule
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
         {/* Header */}
-        <div className="bg-blue-900 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+        <div className="bg-primary text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
           <h2 className="text-xl font-semibold">Create New App Module</h2>
           <button
             onClick={onClose}
@@ -117,7 +117,7 @@ const CreateModuleModal: React.FC<CreateModuleModalProps> = ({ onClose, onModule
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {loading ? (
                 <>

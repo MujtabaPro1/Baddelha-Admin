@@ -278,7 +278,7 @@ const Inspectors = () => {
                               setOpenDropdownId(inspector.id);
                             }
                           }}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors"
                         >
                           <Edit2 size={13} />
                           Edit
@@ -523,7 +523,7 @@ const Inspectors = () => {
                 <button
                   onClick={handleUpdateBranch}
                   disabled={saving || !selectedBranchId}
-                  className="flex items-center gap-2 px-5 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <>
@@ -585,7 +585,7 @@ const Inspectors = () => {
                 <button
                   onClick={handleUpdateStatus}
                   disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <>

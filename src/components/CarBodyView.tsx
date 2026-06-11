@@ -30,7 +30,7 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
 
     <svg version="1.1" id="car_unfolded" xmlns="http://www.w3.org/2000/svg"
        x="0px" y="0px" viewBox="-7 97 595.3 600"
-       enableBackground="new -7 97 595.3 600" height="600" xmlSpace="preserve">
+       enableBackground="new -7 97 595.3 600" width="100%" style={{display:"block"}} xmlSpace="preserve">
       <defs>
         <style type="text/css">
           {`.part {

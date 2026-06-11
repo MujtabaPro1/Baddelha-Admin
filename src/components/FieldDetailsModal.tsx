@@ -116,7 +116,7 @@ const FieldDetailsModal: React.FC<FieldDetailsModalProps> = ({
             </button>
             <button
               onClick={handleSubmit}
-              className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800"
             >
               Save
             </button>

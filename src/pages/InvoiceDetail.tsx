@@ -129,7 +129,7 @@ const InvoiceDetail = () => {
           <p className="text-gray-600 mb-4">The invoice you're looking for doesn't exist or has been removed.</p>
           <button
             onClick={() => navigate('/invoicing')}
-            className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800"
           >
             Return to Invoices
           </button>
@@ -172,7 +172,7 @@ const InvoiceDetail = () => {
           {invoice.status !== 'paid' && (
             <button
               onClick={handleSendInvoice}
-              className="px-3 py-1.5 bg-blue-900 text-white rounded-md hover:bg-blue-800 flex items-center gap-1"
+              className="px-3 py-1.5 bg-primary text-white rounded-md hover:bg-blue-800 flex items-center gap-1"
             >
               <Send size={16} />
               <span>Send Invoice</span>
@@ -375,7 +375,7 @@ const InvoiceDetail = () => {
       <div className="mt-6 flex justify-center">
         <button
           onClick={() => setShowPreview(true)}
-          className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800"
         >
           View Full Invoice
         </button>

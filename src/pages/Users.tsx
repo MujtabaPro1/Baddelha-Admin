@@ -179,7 +179,7 @@ const Users = () => {
         actions={
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors"
           >
             <Plus size={18} />
             Add User
@@ -396,7 +396,7 @@ const Users = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <>

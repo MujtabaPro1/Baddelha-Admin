@@ -101,7 +101,7 @@ const RolesPermissionForm = ({ initialData }: RolesPermissionFormProps) => {
     <>
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm">
         {/* Timer Section */}
-        <div className="bg-blue-900 text-white p-4 rounded-t-lg flex justify-between items-center">
+        <div className="bg-primary text-white p-4 rounded-t-lg flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <Shield className="h-6 w-6" />
             <h2 className="text-xl font-bold">Role Configuration</h2>
@@ -184,7 +184,7 @@ const RolesPermissionForm = ({ initialData }: RolesPermissionFormProps) => {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center space-x-2 rounded-full bg-blue-900 px-6 py-3 font-medium text-white hover:bg-blue-800 shadow-lg transition-all duration-200 transform hover:scale-105"
+            className="flex items-center justify-center space-x-2 rounded-full bg-primary px-6 py-3 font-medium text-white hover:bg-blue-800 shadow-lg transition-all duration-200 transform hover:scale-105"
           >
             {loading ? (
               <>
@@ -203,7 +203,7 @@ const RolesPermissionForm = ({ initialData }: RolesPermissionFormProps) => {
         {/* Modules & Permissions */}
         <div className="p-6 pt-0">
           <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-            <div className="bg-blue-900 px-6 py-4 border-b border-blue-800">
+            <div className="bg-primary px-6 py-4 border-b border-blue-800">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
                   <Info className="h-5 w-5 text-white" />
@@ -249,7 +249,7 @@ const RolesPermissionForm = ({ initialData }: RolesPermissionFormProps) => {
                                     handleChange(permission, e.target.checked, i);
                                   }}
                                 />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-900"></div>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                               </label>
                               <span className={`text-sm font-medium capitalize ${isActive ? 'text-blue-900' : 'text-gray-500'}`}>
                                 {permission}

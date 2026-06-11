@@ -100,7 +100,7 @@ const Layout = () => {
           onClick={() => setSidebarOpen(false)}
         />
         
-        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-blue-900 transform transition ease-in-out duration-300 ${
+        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-primary transform transition ease-in-out duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <div className="absolute top-0 right-0 -mr-12 pt-2">
@@ -160,7 +160,7 @@ const Layout = () => {
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 bg-blue-900">
+          <div className="flex flex-col h-0 flex-1 bg-primary">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4">
                 <h1 className="text-2xl font-bold text-white">

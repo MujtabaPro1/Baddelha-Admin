@@ -303,7 +303,7 @@ const DealershipCarForm = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none"
             >
               {isEdit ? 'Update Car' : 'Add Car'}
             </button>

@@ -658,7 +658,7 @@ const InspectionForm = () => {
             <div className="space-y-3">
               <button
                 onClick={() => window.location.reload()}
-                className="w-full px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-800 transition-colors"
               >
                 Try Again
               </button>
@@ -753,7 +753,7 @@ const InspectionForm = () => {
             type="button"
             onClick={() => setLanguage(prev => prev === 'en' ? 'ar' : 'en')}
             className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
-              language === 'ar' ? 'bg-blue-900' : 'bg-gray-300'
+              language === 'ar' ? 'bg-primary' : 'bg-gray-300'
             }`}
             aria-label="Toggle language"
           >
@@ -766,7 +766,7 @@ const InspectionForm = () => {
           <span className={`text-sm font-semibold ${language === 'ar' ? 'text-blue-900' : 'text-gray-400'}`}>AR</span>
         </div>
 
-        <div className="flex items-center bg-blue-900 bg-opacity-10 px-4 py-2 rounded-lg shadow-sm">
+        <div className="flex items-center bg-primary bg-opacity-10 px-4 py-2 rounded-lg shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-900 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -973,7 +973,7 @@ const InspectionForm = () => {
                               />
                               {!hasImage && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="bg-blue-900 text-white text-xs px-2 py-1 rounded-full">Add Image</span>
+                                  <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">Add Image</span>
                                 </div>
                               )}
                             </label>
@@ -1001,7 +1001,7 @@ const InspectionForm = () => {
                             )}
                           </div>
                           {hasImage && (
-                            <div className="absolute top-2 right-2 bg-blue-900 rounded-full p-1 shadow-md">
+                            <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md">
                               <Check size={12} color="white" />
                             </div>
                           )}
@@ -1035,7 +1035,7 @@ const InspectionForm = () => {
                               />
                               {!hasImage && (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="bg-blue-900 text-white text-xs px-2 py-1 rounded-full">Add Image</span>
+                                  <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">Add Image</span>
                                 </div>
                               )}
                             </label>
@@ -1063,7 +1063,7 @@ const InspectionForm = () => {
                             )}
                           </div>
                           {hasImage && (
-                            <div className="absolute top-2 right-2 bg-blue-900 rounded-full p-1 shadow-md">
+                            <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md">
                               <Check size={12} color="white" />
                             </div>
                           )}
@@ -1199,7 +1199,7 @@ const InspectionForm = () => {
                                     setSelectedField(_fieldName);
                                     setIsFieldDetailsModalOpen(true);
                                   }}
-                                  className="bg-blue-900 text-white p-1 mt-2  rounded-sm hover:bg-blue-800 transition-colors"
+                                  className="bg-primary text-white p-1 mt-2  rounded-sm hover:bg-blue-800 transition-colors"
                                   title="Add"
                                 >
                                   <Plus size={16} />
@@ -1435,7 +1435,7 @@ const InspectionForm = () => {
                 <div className="mt-1">
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
-                      className="bg-blue-900 h-2.5 rounded-full transition-all duration-300" 
+                      className="bg-primary h-2.5 rounded-full transition-all duration-300" 
                       style={{ width: submitState.includes('%') ? submitState : '100%' }}
                     ></div>
                   </div>
@@ -1474,7 +1474,7 @@ const InspectionForm = () => {
                   }
                   setCurrentStep(prev => prev + 1);
                 }}
-                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${isCurrentStepValid ? 'bg-blue-900 hover:bg-blue-800' : 'bg-blue-900 opacity-50 cursor-not-allowed'}`}
+                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${isCurrentStepValid ? 'bg-primary hover:bg-blue-800' : 'bg-primary opacity-50 cursor-not-allowed'}`}
               >
                 {language === 'ar' ? 'التالي' : 'Next'}
                 <ChevronRight size={16} className="ml-1" />
@@ -1485,7 +1485,7 @@ const InspectionForm = () => {
                 disabled={loading || !isCurrentStepValid}
                 type="submit"
                 onClick={() => setIsSubmitting(true)}
-                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${loading || !isCurrentStepValid ? 'bg-blue-900 opacity-50 cursor-not-allowed' : 'bg-blue-900 hover:bg-opacity-90'}`}
+                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-center font-medium text-white transition-colors ${loading || !isCurrentStepValid ? 'bg-primary opacity-50 cursor-not-allowed' : 'bg-primary hover:bg-opacity-90'}`}
               >
                 {loading ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (language === 'ar' ? 'إرسال' : 'Submit')}
               </button>

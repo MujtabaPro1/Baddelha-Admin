@@ -294,7 +294,7 @@ const CustomerCheckIn = () => {
                         <button 
                             onClick={fetchAppointment}
                             disabled={loading || !identifier}
-                            className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                            className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Searching...' : 'Find My Appointment'}
                         </button>
@@ -352,7 +352,7 @@ const CustomerCheckIn = () => {
                                     setCurrentStep(2);
                                 }}
                                 disabled={!termsAccepted}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                             >
                                 Continue
                                 <ChevronRight size={16} className="ml-1" />
@@ -436,7 +436,7 @@ const CustomerCheckIn = () => {
                                     setCurrentStep(3);
                                 }}
                                 disabled={!appointment}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                             >
                                 Continue
                                 <ChevronRight size={16} className="ml-1" />
@@ -499,7 +499,7 @@ const CustomerCheckIn = () => {
                                     }
                                     setCurrentStep(4);
                                 }}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                             >
                                 Continue
                                 <ChevronRight size={16} className="ml-1" />
@@ -543,7 +543,7 @@ const CustomerCheckIn = () => {
                             <button
                                 onClick={startInspection}
                                 disabled={loading}
-                                className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                                className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Starting...' : 'Start Inspection'}
                             </button>
@@ -632,7 +632,7 @@ const CustomerCheckIn = () => {
             
             {/* Timer display */}
             {/* <div className="mb-6 flex justify-center">
-                <div className="bg-blue-900 text-white px-4 py-2 rounded-md inline-flex items-center">
+                <div className="bg-primary text-white px-4 py-2 rounded-md inline-flex items-center">
                     <span className="mr-2">Time Remaining:</span>
                     <span className="font-mono font-bold">{formatTime(timeRemaining)}</span>
                 </div>
@@ -651,7 +651,7 @@ const CustomerCheckIn = () => {
                                 className="flex flex-col items-center relative"
                             >
                                 <div 
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-blue-900 text-white' : 
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-primary text-white' : 
                                         completedSteps.includes(index) ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'}`}
                                 >
                                     {completedSteps.includes(index) ? (
@@ -672,7 +672,7 @@ const CustomerCheckIn = () => {
                             style={{ 
                                 width: `${(currentStep / (steps.length - 1)) * 100}%` 
                             }} 
-                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-900 transition-all duration-500"
+                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500"
                         ></div>
                     </div>
                 </div>

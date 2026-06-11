@@ -202,8 +202,8 @@ const Inspections = () => {
                       {inspection.car.year} {inspection.car.make} {inspection.car.model}
                     </h3>
                   </div>
-                  <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 mb-2 rounded">
-                      Ref: {inspection.id}
+                  <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 w-auto mb-2 rounded">
+                      Display ID: {inspection.displayId}
                   </div>
                   <div className="mt-1 flex items-center text-sm text-gray-600">
                       <StatusBadge status={inspection.inspectionStatus} />
@@ -305,7 +305,7 @@ const Inspections = () => {
                 disabled={page === '...'}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
                   page === currentPage
-                    ? 'bg-blue-900 text-white'
+                    ? 'bg-primary text-white'
                     : page === '...'
                     ? 'cursor-default'
                     : 'border border-gray-300 hover:bg-gray-50'

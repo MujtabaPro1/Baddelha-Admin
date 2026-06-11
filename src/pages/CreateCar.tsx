@@ -295,7 +295,7 @@ const CreateCar = () => {
             <div key={step.number} className="flex flex-col items-center relative z-10" style={{ width: '33.33%' }}>
               <div className={`flex items-center justify-center w-14 h-14 rounded-full font-semibold text-lg transition-all ${
                 currentStep >= step.number 
-                  ? 'bg-blue-900 text-white shadow-md' 
+                  ? 'bg-primary text-white shadow-md' 
                   : 'bg-gray-200 text-gray-500'
               }`}>
                 {step.number}
@@ -312,7 +312,7 @@ const CreateCar = () => {
                   style={{ transform: 'translateY(-50%)' }}
                 >
                   <div className={`h-full transition-colors ${
-                    currentStep > step.number ? 'bg-blue-900' : 'bg-gray-300'
+                    currentStep > step.number ? 'bg-primary' : 'bg-gray-300'
                   }`} />
                 </div>
               )}

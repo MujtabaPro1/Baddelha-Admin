@@ -1,1364 +1,828 @@
-import React, { useEffect, useState } from 'react';
-import PageHeader from '../components/PageHeader';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
-import { findInspection, getInspectionSchema } from '../service/inspection';
 import { toast } from 'react-toastify';
-import { Check, X, Clock, AlertCircle, ArrowUp, Clock10, DollarSign, Trophy } from 'lucide-react';
+import {
+  Check, X, Clock, ArrowUp, Clock10, DollarSign,
+  Trophy, Car, Gauge, Cog, Calendar,
+  Tag, Pencil, Eye, Ban, Package, RotateCcw, Bookmark,
+} from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
 import RevealPriceHistory from '../components/RevealPriceHistory';
 
-const numberWithCommas = (x: number) => {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+const fmt = (x: number) => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
+  available:         { bg: 'bg-green-100',  text: 'text-green-700',  dot: 'bg-green-500'  },
+  listed:            { bg: 'bg-green-100',  text: 'text-green-700',  dot: 'bg-green-500'  },
+  sold:              { bg: 'bg-blue-100',   text: 'text-blue-700',   dot: 'bg-blue-500'   },
+  inspected:         { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500' },
+  unlisted:          { bg: 'bg-gray-100',   text: 'text-gray-600',   dot: 'bg-gray-400'   },
+  hold:              { bg: 'bg-indigo-100', text: 'text-indigo-700', dot: 'bg-indigo-500' },
+  returned:          { bg: 'bg-orange-100', text: 'text-orange-700', dot: 'bg-orange-500' },
+  push_to_inventory: { bg: 'bg-teal-100',   text: 'text-teal-700',   dot: 'bg-teal-500'   },
+  push_to_auction:   { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+  pending:           { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+  pending_inspection:{ bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+  rejected:          { bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-500'    },
+};
+
+const StatusPill = ({ status }: { status: string }) => {
+  const cfg = statusConfig[status?.toLowerCase()] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' };
+  const label = status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? '—';
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {label}
+    </span>
+  );
+};
+
+const PriceModal = ({
+  title, label, value, onChange, onSave, onClose, saving, coverImage, car,
+}: {
+  title: string; label: string; value: number | null;
+  onChange: (v: number) => void; onSave: () => void; onClose: () => void;
+  saving: boolean; coverImage: string | null; car: any;
+}) => (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+        <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+          <X size={18} />
+        </button>
+      </div>
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+          {coverImage ? (
+            <img src={coverImage} alt="car" className="w-16 h-16 object-cover rounded-lg" />
+          ) : (
+            <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+              <Car size={24} className="text-gray-400" />
+            </div>
+          )}
+          <div>
+            <p className="font-semibold text-gray-800">{car?.make} {car?.model}</p>
+            <p className="text-sm text-gray-500">{car?.modelYear}</p>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">{label}</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">SAR</span>
+            <input
+              type="number"
+              className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003B7E] text-sm"
+              value={value || ''}
+              onChange={e => onChange(Number(e.target.value))}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 pt-1">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2 bg-[#003B7E] text-white text-sm font-medium rounded-xl hover:bg-[#002d61] transition-colors disabled:opacity-50"
+          >
+            {saving ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />Saving…</> : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const TABS = [
+  { id: 'details',    label: 'Car Details' },
+  { id: 'inspection', label: 'Inspection Report' },
+  { id: 'bids',       label: 'Bids' },
+  { id: 'images',     label: 'Images' },
+];
 
 const CarsDetails = () => {
-  const [carDetails, setCarDetails] = useState<any>(null);
-  const [images, setImages] = useState<any>([]);
-  const [inspectionDetails, setInspectionDetails] = useState<any>(null);
-  const [inspectionSchema, setInspectionSchema] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('details');
-  const [timeRemaining, setTimeRemaining] = useState(30 * 60); // 30 minutes in seconds
-  const [user, setUser] = useState<any>(null);
-  const [bidAmount, setBidAmount] = useState<number | null>(null);
-  const [placingBid, setPlacingBid] = useState<boolean>(false);
-  const [winner, setWinner] = useState<any>(null);
-  const [loadingWinner, setLoadingWinner] = useState<boolean>(false);
+  const [carDetails, setCarDetails]                         = useState<any>(null);
+  const [images, setImages]                                 = useState<any>([]);
+  const [inspectionDetails, setInspectionDetails]           = useState<any>(null);
+  const [inspectionSchema, setInspectionSchema]             = useState<any>(null);
+  const [loading, setLoading]                               = useState<boolean>(true);
+  const [error, setError]                                   = useState<string | null>(null);
+  const [activeTab, setActiveTab]                           = useState<string>('details');
+  const [timeRemaining, setTimeRemaining]                   = useState(30 * 60);
+  const [user, setUser]                                     = useState<any>(null);
+  const [bidAmount, setBidAmount]                           = useState<number | null>(null);
+  const [placingBid, setPlacingBid]                         = useState<boolean>(false);
+  const [winner, setWinner]                                 = useState<any>(null);
+  const [loadingWinner, setLoadingWinner]                   = useState<boolean>(false);
   const params = useParams();
   const searchParams = new URLSearchParams(window.location.search);
-  const [bids, setBids] = useState<any>([]);
-  const [auctionHistory, setAuctionHistory] = useState<any>([]);
-  const [showPriceModal, setShowPriceModal] = useState<boolean>(false);
-  const [editedPrice, setEditedPrice] = useState<number | null>(null);
-  const [updatingPrice, setUpdatingPrice] = useState<boolean>(false);
-  const [coverImage,setCoverImage] = useState(null);
-  const [showRevealPriceModal, setShowRevealPriceModal] = useState<boolean>(false);
-  const [revealPrice, setRevealPrice] = useState<number | null>(null);
+  const [bids, setBids]                                     = useState<any>([]);
+  const [auctionHistory, setAuctionHistory]                 = useState<any>([]);
+  const [showPriceModal, setShowPriceModal]                 = useState<boolean>(false);
+  const [editedPrice, setEditedPrice]                       = useState<number | null>(null);
+  const [updatingPrice, setUpdatingPrice]                   = useState<boolean>(false);
+  const [coverImage, setCoverImage]                         = useState<any>(null);
+  const [showRevealPriceModal, setShowRevealPriceModal]     = useState<boolean>(false);
+  const [revealPrice, setRevealPrice]                       = useState<number | null>(null);
   const [editedSellerAskingPrice, setEditedSellerAskingPrice] = useState<number | null>(null);
   const [updatingSellerAskingPrice, setUpdatingSellerAskingPrice] = useState<boolean>(false);
   const [showSellerAskingPriceModal, setShowSellerAskingPriceModal] = useState<boolean>(false);
 
-
-
-  // Set initial edited price when car details are loaded
   useEffect(() => {
-    if (carDetails?.sellingPrice) {
-      setEditedPrice(Number(carDetails.sellingPrice));
-    }
-    if (carDetails?.sellerAskingPrice) {
-      setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice));
-    }
+    if (carDetails?.sellingPrice)      setEditedPrice(Number(carDetails.sellingPrice));
+    if (carDetails?.sellerAskingPrice) setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice));
   }, [carDetails]);
 
-  useEffect(()=>{
-    const userDetails = localStorage.getItem('baddelha_user');
-    if(userDetails){
-      console.log(JSON.parse(userDetails || '{}'));
-      setUser(JSON.parse(userDetails || '{}'));
-    }
-  },[]);
-
- 
+  useEffect(() => {
+    const ud = localStorage.getItem('baddelha_user');
+    if (ud) setUser(JSON.parse(ud));
+  }, []);
 
   useEffect(() => {
     fetchCarDetails();
-    
-    // Fetch auction winner if auctionId is available
     const auctionId = searchParams.get('auctionId');
     if (auctionId) {
-      // Initial fetch
       fetchAuctionWinner(auctionId);
       fetchAuctionBids(auctionId);
-      
-      // Set up polling every minute (60000 ms)
-      const pollingInterval = setInterval(() => {
-        console.log('Polling auction data...');
+      const iv = setInterval(() => {
         fetchAuctionWinner(auctionId);
         fetchAuctionBids(auctionId);
-      }, 60000); // Poll every minute
-      
-      // Cleanup interval when component unmounts
-      return () => {
-        console.log('Clearing auction polling interval');
-        clearInterval(pollingInterval);
-      };
-    }else{
+      }, 60000);
+      return () => clearInterval(iv);
+    } else {
       getAuctionDetails();
     }
   }, []);
 
+  useEffect(() => {
+    if (timeRemaining <= 0) { toast.warning('Time limit reached'); return; }
+    const iv = window.setInterval(() => setTimeRemaining(p => p - 1), 1000);
+    return () => window.clearInterval(iv);
+  }, [timeRemaining]);
+
   const getAuctionDetails = async () => {
     try {
-      const resp = await axiosInstance.get("/1.0/auction?status=ENDED&carId=" + params.id);
-      console.log(resp);
-      if (resp.data?.data && Array.isArray(resp.data?.data)) {
-        setAuctionHistory(resp.data?.data);
-      }
-    } catch (ex: unknown) {
-      console.error(ex);
-      setError("Failed to load auction details");
-      toast.error("Failed to load auction details");
-    }
-  }
-
-  // Countdown timer effect
-  useEffect(() => {
-    let interval: number | undefined;
-    
-    if (timeRemaining > 0) {
-      interval = window.setInterval(() => {
-        setTimeRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      toast.warning("Time limit reached");
-    }
-    
-    return () => {
-      if (interval) window.clearInterval(interval);
-    };
-  }, [timeRemaining]);
-  
-
+      const resp = await axiosInstance.get('/1.0/auction?status=ENDED&carId=' + params.id);
+      if (resp.data?.data && Array.isArray(resp.data?.data)) setAuctionHistory(resp.data.data);
+    } catch { toast.error('Failed to load auction details'); }
+  };
 
   async function fetchCarDetails() {
     setLoading(true);
     try {
-      const resp = await axiosInstance.get("/1.0/car/find/" + params.id);
-      console.log("Car details:", resp.data?.car);
+      const resp = await axiosInstance.get('/1.0/car/find/' + params.id);
       setCarDetails(resp.data.car);
       setInspectionDetails(resp.data.car?.Inspection?.[0]);
       setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
       setCoverImage(resp?.data?.carImages?.[0]?.url);
-      const auctionId = searchParams.get('auctionId');
-      if(!auctionId){
-      setBids(resp.data.car?.Bid);
-      }
-      
-  
-      // Fetch images if images exists
-      if (resp.data?.images) {
-        setImages(resp.data.images);
-      }
-    } catch (ex: unknown) {
-      console.error(ex);
-      setError("Failed to load car details");
-      toast.error("Failed to load car details");
-    } finally {
-      setLoading(false);
-    }
+      if (!searchParams.get('auctionId')) setBids(resp.data.car?.Bid);
+      if (resp.data?.images) setImages(resp.data.images);
+    } catch { toast.error('Failed to load car details'); setError('Failed to load car details'); }
+    finally { setLoading(false); }
   }
 
   async function fetchAuctionBids(auctionId: string) {
-    setLoadingWinner(true);
     try {
-      const response = await axiosInstance.get(`/1.0/auction/${auctionId}/bids`);
-      setBids(response.data);
-    } catch (error) {
-      console.error("Failed to fetch auction winner:", error);
-      // Don't show error toast as this is not critical
-    } finally {
-      setLoadingWinner(false);
-    }
+      const r = await axiosInstance.get(`/1.0/auction/${auctionId}/bids`);
+      setBids(r.data);
+    } catch {}
   }
-  
+
   const fetchAuctionWinner = async (auctionId: string) => {
     setLoadingWinner(true);
     try {
-      const response = await axiosInstance.get(`/1.0/auction/${auctionId}/winner`);
-      setWinner(response.data);
-    } catch (error) {
-      console.error("Failed to fetch auction winner:", error);
-      // Don't show error toast as this is not critical
-    } finally {
-      setLoadingWinner(false);
-    }
-  }
-  
-  
-  // Function to render status badge
-  const renderStatusBadge = (status: string) => {
-    let bgColor = "bg-gray-200";
-    let textColor = "text-gray-800";
-    let icon = <Clock className="w-4 h-4 mr-1" />;
-    
-    switch(status?.toLowerCase()) {
-      case 'available':
-        bgColor = "bg-green-100";
-        textColor = "text-green-800";
-        icon = <Check className="w-4 h-4 mr-1" />;
-        break;
-      case 'sold':
-        bgColor = "bg-blue-100";
-        textColor = "text-blue-800";
-        icon = <Check className="w-4 h-4 mr-1" />;
-        break;
-      case 'pending':
-      case 'pending_inspection':
-        bgColor = "bg-yellow-100";
-        textColor = "text-yellow-800";
-        icon = <Clock className="w-4 h-4 mr-1" />;
-        break;
-      case 'rejected':
-        bgColor = "bg-red-100";
-        textColor = "text-red-800";
-        icon = <X className="w-4 h-4 mr-1" />;
-        break;
-      default:
-        icon = <AlertCircle className="w-4 h-4 mr-1" />;
-    }
-    
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
-        {icon}
-        {status?.charAt(0).toUpperCase() + status?.slice(1).replace('_', ' ')}
-      </span>
-    );
+      const r = await axiosInstance.get(`/1.0/auction/${auctionId}/winner`);
+      setWinner(r.data);
+    } catch {}
+    finally { setLoadingWinner(false); }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 bg-red-50 text-red-800 rounded-md">
-        <h3 className="font-medium">Error</h3>
-        <p>{error}</p>
-      </div>
-    );
-  }
-
 
   const markCarAsListed = async (carId: string) => {
     try {
-
-        // let newPrice = Number(initialData.sellingPrice);
-
-        // if(initialData.carStatus == "unlisted"){
-        //   newPrice = Number(initialData.sellingPrice) * 1.02;
-        //   }else{
-        //   newPrice = Number(initialData.sellingPrice) * 1.05;
-        //   }
-
-
-        axiosInstance.put("/1.0/car/update/" + carId, {
-          carStatus: 'listed',
-          auctionEndTime: null,
-        }).then((res) => {
-          alert("Successfully updated your status");
-
-          setTimeout(()=>{
-            window.location.reload()
-          },1000);
-
-        }).catch((err) => {
-          console.log('err', err);
-        })
-
-
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
-      console.error("Error listing Car:", error);
-    }
-  }
+      await axiosInstance.put('/1.0/car/update/' + carId, { carStatus: 'listed', auctionEndTime: null });
+      alert('Successfully updated your status');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e: any) { toast.error(e?.message || 'Something went wrong'); }
+  };
 
   const markCarAsInventory = async (carId: string) => {
     try {
-      axiosInstance.post(`/1.0/car/${carId}/push/inventory`)
-        .then((res) => {
-
-          console.log(res);
-          alert("Successfully pushed car to inventory");
-          
-          setTimeout(() => {
-            window.location.href = '/cars'
-          }, 1000);
-        })
-        .catch((err) => {
-          alert(err?.response?.data?.message || "Something went wrong");
-          console.log('err', err);
-        });
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
-      console.error("Error pushing car to inventory:", error);
-    }
-  }
+      await axiosInstance.post(`/1.0/car/${carId}/push/inventory`);
+      alert('Successfully pushed car to inventory');
+      setTimeout(() => { window.location.href = '/cars'; }, 1000);
+    } catch (e: any) { alert(e?.response?.data?.message || 'Something went wrong'); }
+  };
 
   const markCarAsAuctionListed = async (carId: string) => {
     try {
-      // Get the selling price from initialData
-      const startPrice = Number(carDetails.sellingPrice);
-      const durationInMinutes = 30; // Default auction duration
+      await axiosInstance.post('/1.0/auction/push', {
+        carId, startPrice: Number(carDetails.sellingPrice), durationInMinutes: 30,
+      });
+      alert('Successfully pushed car to auction');
+      setTimeout(() => { window.location.href = '/cars'; }, 1000);
+    } catch (e: any) { alert(e?.response?.data?.message || 'Something went wrong'); }
+  };
 
-      axiosInstance.post("/1.0/auction/push", {
-        carId: carId,
-        startPrice: startPrice,
-        durationInMinutes: durationInMinutes
-      }).then((res) => {
-        alert("Successfully pushed car to auction");
-
-        setTimeout(()=>{
-            window.location.href = '/cars'
-        },1000);
-
-      }).catch((err) => {
-        alert(err?.response?.data?.message || "Something went wrong");
-        console.log('err', err);
-      })
-
-
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
-      console.error("Error listing Car:", error);
-    }
-  }
-
-  // Function to update car selling price
   const updateCarPrice = async () => {
     if (!carDetails?.id || !editedPrice) return;
-    
     try {
       setUpdatingPrice(true);
-      
-      await axiosInstance.put("/1.0/car/update/" + carDetails.id, {
-        sellingPrice: editedPrice.toString()
-      });
-      
-      toast.success("Price updated successfully");
-      
-      // Update local state with the new price
-      setCarDetails({...carDetails, sellingPrice: editedPrice});
+      await axiosInstance.put('/1.0/car/update/' + carDetails.id, { sellingPrice: editedPrice.toString() });
+      toast.success('Price updated successfully');
+      setCarDetails({ ...carDetails, sellingPrice: editedPrice });
       setShowPriceModal(false);
-      
-      // Refresh car details to ensure we have the latest data
       fetchCarDetails();
-      
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update price");
-      console.error("Error updating price:", error);
-    } finally {
-      setUpdatingPrice(false);
-    }
+    } catch (e: any) { toast.error(e?.message || 'Failed to update price'); }
+    finally { setUpdatingPrice(false); }
   };
 
   const updateSellerAskingPrice = async () => {
     if (!carDetails?.id || !editedSellerAskingPrice) return;
-    
     try {
       setUpdatingSellerAskingPrice(true);
-      
-      await axiosInstance.patch("/1.0/car/seller-price/" + carDetails.id, {
-        price: editedSellerAskingPrice.toString()
-      });
-      
-      toast.success("Seller asking price updated successfully");
-      
-      // Update local state with the new price
-      setCarDetails({...carDetails, sellerAskingPrice: editedSellerAskingPrice});
+      await axiosInstance.patch('/1.0/car/seller-price/' + carDetails.id, { price: editedSellerAskingPrice.toString() });
+      toast.success('Seller asking price updated successfully');
+      setCarDetails({ ...carDetails, sellerAskingPrice: editedSellerAskingPrice });
       setShowSellerAskingPriceModal(false);
-      
-      // Refresh car details to ensure we have the latest data
       fetchCarDetails();
-      
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to update seller asking price");
-      console.error("Error updating seller asking price:", error);
-    } finally {
-      setUpdatingSellerAskingPrice(false);
-    }
+    } catch (e: any) { toast.error(e?.message || 'Failed to update seller asking price'); }
+    finally { setUpdatingSellerAskingPrice(false); }
   };
 
-  const markCarStatus = async (carId: string,status:string) => {
+  const markCarStatus = async (carId: string, status: string) => {
     try {
-
-      axiosInstance.put("/1.0/car/update/" + carId, {
-        carStatus: status,
-      }).then((res) => {
-
-        setTimeout(()=>{
-          window.location.reload()
-        },1000);
-
-      }).catch((err) => {
-        console.log('err', err);
-      })
-
-
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
-      console.error("Error listing Car:", error);
-    }
-  }
-
-
-
+      await axiosInstance.put('/1.0/car/update/' + carId, { carStatus: status });
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e: any) { toast.error(e?.message || 'Something went wrong'); }
+  };
 
   const removeCarStatusFromAuction = async (auctionId: string) => {
     try {
-      axiosInstance.post("/1.0/auction/close/" + auctionId,{
-        closeReason: 'User requested to close the auction',
-      }).then((res) => {
-        alert("Successfully removed car from auction");
-
-        setTimeout(()=>{
-          window.location.reload()
-        },1000);
-
-      }).catch((err) => {
-        console.log('err', err);
-      })
-    } catch (error: any) {
-      toast.error(error?.message || "Something went wrong");
-      console.error("Error listing Car:", error);
-    }
-  }
-
-
-
-  // Function to place an internal bid based on selling price
-  const placeInternalBid = async () => {
-    if (!carDetails?.id || !bidAmount) return;
-    
-    try {
-      setPlacingBid(true);
-      
-      const auctionId = searchParams.get('auctionId') || '';
-
-      axiosInstance.post(`/1.0/auction/${auctionId}/bid`, {
-        amount: bidAmount
-      })
-      .then(response => {
-        // Show success message
-        alert(`Your bid of SAR ${numberWithCommas(bidAmount)} has been submitted successfully!`);
-        // Redirect to listing page
-        window.location.reload(); 
-      })
-      .catch(error => {
-        console.error('Error submitting bid:', error);
-        alert(`Failed to submit bid: ${error.response?.data?.message || 'Please try again later'}`);
-      });
-
-      
-      toast.success("Internal bid placed successfully");
-      
-      // Refresh the page to show the new bid
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-      
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to place internal bid");
-      console.error("Error placing internal bid:", error);
-    } finally {
-      setPlacingBid(false);
-    }
-  }
-
-
-  // Winner section component
-  const renderWinnerSection = () => {
-    const auctionId = searchParams.get('auctionId');
-    
-    if (!auctionId || !carDetails?.carStatus?.toLowerCase().includes('auction')) {
-      return null;
-    }
-    
-    return (
-      <div className="mb-6">
-        {loadingWinner ? (
-          <div className="bg-blue-50 p-4 rounded-lg shadow-sm flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-900 mr-3"></div>
-            <p className="text-blue-900 font-medium">Loading auction results...</p>
-          </div>
-        ) : winner ? (
-          <div className="bg-blue-50 p-4 rounded-lg shadow-sm border-l-4 border-blue-900">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Trophy className="h-8 w-8 text-blue-900" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-medium text-blue-900">Current High Bidder</h3>
-                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Current High Bidder</p>
-                    <p className="font-medium">{winner?.user?.firstName + " " + (winner?.user?.lastName || "" ) || 'Anonymous'}</p>
-                    {winner?.user?.email && <p className="text-sm text-gray-500">{winner?.user?.email}</p>}
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Current High Bid</p>
-                    <p className="font-bold text-blue-900">SAR {numberWithCommas(winner?.winningAmount || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      Winner
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-yellow-50 p-4 rounded-lg shadow-sm border-l-4 border-yellow-400">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <Clock className="h-5 w-5 text-yellow-400" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  Auction in progress. No winner has been determined yet.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
+      await axiosInstance.post('/1.0/auction/close/' + auctionId, { closeReason: 'User requested to close the auction' });
+      alert('Successfully removed car from auction');
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (e: any) { toast.error(e?.message || 'Something went wrong'); }
   };
 
+  const placeInternalBid = async () => {
+    if (!carDetails?.id || !bidAmount) return;
+    try {
+      setPlacingBid(true);
+      const auctionId = searchParams.get('auctionId') || '';
+      await axiosInstance.post(`/1.0/auction/${auctionId}/bid`, { amount: bidAmount });
+      alert(`Your bid of SAR ${fmt(bidAmount)} has been submitted successfully!`);
+      window.location.reload();
+    } catch (e: any) {
+      alert(`Failed to submit bid: ${e.response?.data?.message || 'Please try again later'}`);
+    } finally { setPlacingBid(false); }
+  };
 
+  // ── Loading / Error ──────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#003B7E]" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-800 rounded-xl">
+        <h3 className="font-semibold">Error</h3>
+        <p className="text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  const canPush = ['inspected', 'unlisted', 'push_to_inventory'].includes(carDetails?.carStatus);
+  const canUnlist = ['listed', 'hold', 'sold', 'returned', 'push_to_auction'].includes(carDetails?.carStatus);
+  const isAdmin = user?.role === 'admin' || user?.role === 'qa';
+  const auctionId = searchParams.get('auctionId');
+  const highestBid = bids?.length > 0 ? Math.max(...bids.map((b: any) => b.amount)) : 0;
+
+  const specs = [
+    { label: 'Make',      value: carDetails?.make,                             icon: <Car size={16} /> },
+    { label: 'Model',     value: carDetails?.model,                            icon: <Car size={16} /> },
+    { label: 'Year',      value: carDetails?.modelYear,                        icon: <Calendar size={16} /> },
+    { label: 'Mileage',   value: carDetails?.mileage ? `${carDetails.mileage.toLocaleString()} km` : 'N/A', icon: <Gauge size={16} /> },
+    { label: 'Body Type', value: carDetails?.bodyType || 'N/A',               icon: <Car size={16} /> },
+    { label: 'Engine',    value: carDetails?.engine || carDetails?.engineType || 'N/A', icon: <Cog size={16} /> },
+    { label: 'Gear Type', value: carDetails?.gearType || 'N/A',               icon: <Cog size={16} /> },
+    { label: 'Color',     value: carDetails?.color || 'N/A',                  icon: <Tag size={16} /> },
+  ].filter(s => s.value && s.value !== 'N/A');
 
   return (
-    <div>
-     
-      <PageHeader 
-        title={carDetails ? `${carDetails.make} ${carDetails.model} ${carDetails.modelYear}` : "Car Details"} 
-        description={`Car ID: ${params.id}`}
-      />
-      
-      {/* Reveal Price Modal */}
+    <>
+      {/* ── Modals ─────────────────────────────────────────────────────────── */}
       {showPriceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Selling Price</h3>
-              
-              <div className="flex items-center mb-4">
-                {coverImage ? (
-                  <img 
-                    src={coverImage} 
-                    alt="Car thumbnail" 
-                    className="w-20 h-20 object-cover rounded-md mr-4" 
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
-                    <span className="text-gray-400">No image</span>
-                  </div>
-                )}
-                
-                <div>
-                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
-                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
-                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">SAR</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="sellingPrice"
-                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
-                    value={editedPrice || ''}
-                    onChange={(e) => setEditedPrice(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => setShowPriceModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
-                  onClick={updateCarPrice}
-                  disabled={updatingPrice}
-                >
-                  {updatingPrice ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      Updating...
-                    </>
-                  ) : (
-                    <>Save</>  
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PriceModal
+          title="Edit Selling Price" label="Selling Price (SAR)"
+          value={editedPrice} onChange={setEditedPrice}
+          onSave={updateCarPrice} onClose={() => setShowPriceModal(false)}
+          saving={updatingPrice} coverImage={coverImage} car={carDetails}
+        />
       )}
-
       {showSellerAskingPriceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Seller Asking Price</h3>
-              
-              <div className="flex items-center mb-4">
+        <PriceModal
+          title="Edit Seller Asking Price" label="Seller Asking Price (SAR)"
+          value={editedSellerAskingPrice} onChange={setEditedSellerAskingPrice}
+          onSave={updateSellerAskingPrice} onClose={() => setShowSellerAskingPriceModal(false)}
+          saving={updatingSellerAskingPrice} coverImage={coverImage} car={carDetails}
+        />
+      )}
+      {showRevealPriceModal && (
+        <PriceModal
+          title="Reveal Price" label="Selling Price (SAR)"
+          value={revealPrice ?? carDetails?.sellingPrice} onChange={setRevealPrice}
+          onSave={() => {
+            if (confirm('Are you sure you want to reveal the price')) {
+              setShowRevealPriceModal(false);
+              toast.success('Price revealed successfully');
+            }
+          }}
+          onClose={() => setShowRevealPriceModal(false)}
+          saving={false} coverImage={coverImage} car={carDetails}
+        />
+      )}
+
+      <div className="space-y-5">
+        {/* ── Hero Card ────────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-[#003B7E] to-[#0055b3] px-6 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
                 {coverImage ? (
-                  <img 
-                    src={coverImage} 
-                    alt="Car thumbnail" 
-                    className="w-20 h-20 object-cover rounded-md mr-4" 
-                  />
+                  <img src={coverImage} alt="car" className="w-20 h-16 object-cover rounded-xl border-2 border-white/20 shadow-md" />
                 ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
-                    <span className="text-gray-400">No image</span>
+                  <div className="w-20 h-16 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/20">
+                    <Car size={28} className="text-white/60" />
                   </div>
                 )}
-                
                 <div>
-                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
-                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
-                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
+                  <p className="text-blue-200 text-xs uppercase tracking-widest mb-1">Car Details</p>
+                  <h1 className="text-white text-2xl font-bold">
+                    {carDetails?.make} {carDetails?.model} {carDetails?.modelYear}
+                  </h1>
+                  <p className="text-blue-200 text-xs mt-1">ID: {params?.id}</p>
                 </div>
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">SAR</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="sellerAskingPrice"
-                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
-                    value={editedSellerAskingPrice || ''}
-                    onChange={(e) => setEditedSellerAskingPrice(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => setShowSellerAskingPriceModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
-                  onClick={updateSellerAskingPrice}
-                  disabled={updatingSellerAskingPrice}
-                >
-                  {updatingSellerAskingPrice ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      Updating...
-                    </>
-                  ) : (
-                    <>Save</>  
-                  )}
-                </button>
-              </div>
+              <StatusPill status={carDetails?.carStatus ?? 'unknown'} />
             </div>
           </div>
-        </div>
-      )}
-      
 
-      {showRevealPriceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Reveal Price</h3>
-              
-              <div className="flex items-center mb-4">
-                {coverImage ? (
-                  <img 
-                    src={coverImage} 
-                    alt="Car thumbnail" 
-                    className="w-20 h-20 object-cover rounded-md mr-4" 
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center mr-4">
-                    <span className="text-gray-400">No image</span>
+          {/* Quick stats strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
+            {[
+              { label: 'Mileage',       value: carDetails?.mileage ? `${Number(carDetails.mileage).toLocaleString()} km` : '—' },
+              { label: 'Engine',        value: carDetails?.engine || carDetails?.engineType || '—' },
+              { label: 'Gear',          value: carDetails?.gearType || '—' },
+              { label: 'Selling Price', value: carDetails?.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set' },
+            ].map(({ label, value }) => (
+              <div key={label} className="px-5 py-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
+                <p className="text-sm font-semibold text-gray-800">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Winner Banner ────────────────────────────────────────────────── */}
+        {auctionId && carDetails?.carStatus?.toLowerCase().includes('auction') && (
+          <div>
+            {loadingWinner ? (
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-3">
+                <div className="animate-spin h-5 w-5 border-2 border-[#003B7E] border-t-transparent rounded-full" />
+                <p className="text-sm text-[#003B7E] font-medium">Loading auction results…</p>
+              </div>
+            ) : winner ? (
+              <div className="bg-blue-50 border-l-4 border-[#003B7E] rounded-2xl p-4 flex items-start gap-4">
+                <div className="p-2 bg-[#003B7E] rounded-xl">
+                  <Trophy size={20} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-[#003B7E] uppercase tracking-wide mb-2">Current High Bidder</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-400">Bidder</p>
+                      <p className="text-sm font-semibold text-gray-800">{winner?.user?.firstName} {winner?.user?.lastName || ''}</p>
+                      {winner?.user?.email && <p className="text-xs text-gray-500">{winner.user.email}</p>}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Winning Bid</p>
+                      <p className="text-sm font-bold text-[#003B7E]">SAR {fmt(winner?.winningAmount || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Status</p>
+                      <span className="inline-flex text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Winner</span>
+                    </div>
                   </div>
-                )}
-                
-                <div>
-                  <p className="font-medium">{carDetails?.make} {carDetails?.model}</p>
-                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
-                  <p className="text-xs text-gray-400">Reef: {carDetails?.id || 'N/A'}</p>
                 </div>
               </div>
-              
-              <div className="mb-4">
-                <label htmlFor="sellingPrice" className="block text-sm font-medium text-gray-700 mb-1">Selling Price (SAR)</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">SAR</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="sellingPrice"
-                    className="pl-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10 border-2"
-                    value={revealPrice || carDetails?.sellingPrice}
-                    onChange={(e) => setRevealPrice(Number(e.target.value))}
-                  />
-                </div>
+            ) : (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-2xl p-4 flex items-center gap-3">
+                <Clock size={18} className="text-yellow-500" />
+                <p className="text-sm text-yellow-700">Auction in progress — no winner determined yet.</p>
               </div>
-              
-              <div className="flex justify-end space-x-3 mt-6">
+            )}
+          </div>
+        )}
+
+        {/* ── Action Bar ────────────────────────────────────────────────────── */}
+        {user?.role !== 'inspector' && (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Push-phase actions */}
+            {canPush && (
+              <>
                 <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => setShowRevealPriceModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center"
                   onClick={() => {
-                    if(confirm("Are you sure you want to reveal the price")) {
-                      setShowRevealPriceModal(false);
-                      toast("Price revealed successfully",{autoClose: 5000,position: "top-right",type: "success"});
-      
+                    if (!carDetails?.sellingPrice) { toast.error('Selling price must be set before pushing to listing'); return; }
+                    if (confirm('Push this car to listing?')) markCarAsListed(carDetails.id);
+                  }}
+                  disabled={!carDetails?.sellingPrice}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <ArrowUp size={15} /> Push to Listing
+                </button>
+
+                {user?.role !== 'sale' && carDetails?.carStatus !== 'push_to_inventory' && (
+                  <button
+                    onClick={() => { if (confirm('Push this car to inventory?')) markCarAsInventory(carDetails.id); }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-sm"
+                  >
+                    <Package size={15} /> Push to Inventory
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    if (!carDetails?.sellingPrice) { toast.error('Selling price must be set before pushing to auction'); return; }
+                    if (confirm('Push this car to auction?')) markCarAsAuctionListed(carDetails.id);
+                  }}
+                  disabled={!carDetails?.sellingPrice}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-400 text-amber-900 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <Clock10 size={15} /> Push to Auction
+                </button>
+              </>
+            )}
+
+            {/* Post-list actions */}
+            {canUnlist && (
+              <>
+                <button
+                  onClick={() => {
+                    if (confirm('Unlist this car?')) {
+                      if (carDetails.carStatus === 'push_to_auction') removeCarStatusFromAuction(searchParams.get('auctionId') || '');
+                      else markCarStatus(carDetails.id, 'unlisted');
                     }
                   }}
-                  disabled={false}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors shadow-sm"
                 >
-                  {updatingPrice ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      Reveal...
-                    </>
-                  ) : (
-                    <>Reveal</>  
-                  )}
+                  <Ban size={15} /> Unlist
                 </button>
-              </div>
-            </div>
+                <button
+                  onClick={() => { if (confirm('Mark as reserved?')) markCarStatus(carDetails.id, 'hold'); }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors shadow-sm"
+                >
+                  <Bookmark size={15} /> Mark Reserved
+                </button>
+                <button
+                  onClick={() => { if (confirm('Push to inventory?')) markCarAsInventory(carDetails.id); }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-colors shadow-sm"
+                >
+                  <Package size={15} /> Push to Inventory
+                </button>
+                <button
+                  onClick={() => { if (confirm('Mark as sold?')) markCarStatus(carDetails.id, 'sold'); }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-600 text-white hover:bg-slate-700 transition-colors shadow-sm"
+                >
+                  <Check size={15} /> Mark Sold
+                </button>
+                <button
+                  onClick={() => { if (confirm('Mark as returned?')) markCarStatus(carDetails.id, 'returned'); }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-gray-700 text-white hover:bg-gray-800 transition-colors shadow-sm"
+                >
+                  <RotateCcw size={15} /> Mark Returned
+                </button>
+              </>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      
-      {/* Main content layout with auction history in right corner */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-grow">
-          {/* Winner Section */}
-          {winner && winner?.winnerUserId && user?.role != 'sale' && renderWinnerSection()}
-      
-
-
-        
-         
-         {user && user?.role != 'sale' ?  <>
-          {carDetails?.carStatus == 'inspected' || carDetails?.carStatus == 'unlisted' || carDetails?.carStatus == 'push_to_inventory' ?
-          <div className={'w-75 flex items-end justify-end'}>
-           <div 
-             onClick={()=>{
-               if(!carDetails?.sellingPrice) {
-                 toast.error("Cannot push to listing: Selling price is not set");
-                 return;
-               }
-               if(confirm("Are you sure you want to push this car for listing")) {
-                 markCarAsListed(carDetails?.id);
-               }
-             }} 
-             className={`flex border ${!carDetails?.sellingPrice ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5cb85c] cursor-pointer'} border-success p-2 rounded-md text-center text-white items-center justify-center`}
-             title={!carDetails?.sellingPrice ? "Selling price must be set before pushing to listing" : "Push this car to listing"}
-           >
-             <ArrowUp/>&nbsp;
-             <div>Push to Listing</div>
-           </div>
-
-
-          {carDetails?.carStatus != 'push_to_inventory' && <div onClick={()=>{
-             if(confirm("Are you sure you want to push this car for inventory")) {
-               markCarAsInventory(carDetails?.id);
-             }
-           }} className={'ml-1 mr-1 flex border bg-red-500 border-red-500 p-2 rounded-md text-center text-white items-center cursor-pointer justify-center'}>
-             <ArrowUp/>&nbsp;
-             <div >Push to Inventory</div>
-           </div>}
-
-
-           <div 
-             onClick={()=>{
-               if(!carDetails?.sellingPrice) {
-                 toast.error("Cannot push to auction: Selling price is not set");
-                 return;
-               }
-               if(confirm("Are you sure you want to push this car for auction")) {
-                 markCarAsAuctionListed(carDetails?.id);
-               }
-             }} 
-             className={`border ${!carDetails?.sellingPrice ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#e9d502] cursor-pointer'} p-2 flex items-center justify-center rounded-md text-center text-white ml-1 mr-1`}
-             title={!carDetails?.sellingPrice ? "Selling price must be set before pushing to auction" : "Push this car to auction"}
-           >
-             <Clock10/>&nbsp;
-             <div>
-               Push to Auction</div>
-           </div>
-           </div>
-
-            : <></>}
-             <div className={'w-75 flex items-end justify-end'}>
-             {carDetails?.carStatus == 'listed' || carDetails?.carStatus == 'hold' || carDetails?.carStatus == 'sold' || carDetails?.carStatus == 'returned' || carDetails?.carStatus == 'push_to_auction'     ?  <div className={'flex items-center'}><div className={`mr-1 border-2 border-red-500 p-2 rounded-md text-center text-red-500`}>
-          <button onClick={()=>{
-            if(confirm("Are you sure you want to unlist this car from listing")) {
-
-              if(carDetails?.carStatus == 'push_to_auction'){
-                removeCarStatusFromAuction(searchParams.get('auctionId') || '');
-              }else{
-                markCarStatus(carDetails?.id,'unlisted');
-              }
-            }
-
-          }}>Unlist the Car</button>
-        </div>
-            <div className={`border-blue-500 border-2 text-blue-500 ml-1 mr-1 p-2 rounded-md text-center`}>
-              <button onClick={()=>{
-                if(confirm("Are you sure you want to mark as reserved")) {
-                  markCarStatus(carDetails?.id,'hold');
-                }
-              }}>Mark as Reserved</button>
-            </div>
-            <div className={`border-2 border-red-800 text-red-800 ml-1 mr-1 p-2 rounded-md text-center`}>
-              <button onClick={()=>{
-                if(confirm("Are you sure you want to push to inventory")) {
-                     markCarAsInventory(carDetails?.id);
-                }
-              }}>Push to Inventory</button>
-            </div>
-              <div className={`border-gray-500 border-2 text-gray-500  ml-1 mr-1 p-2 rounded-md text-center `}>
-                <button onClick={()=>{
-                  if(confirm("Are you sure you want to mark as sold")) {
-                    markCarStatus(carDetails?.id,'sold');
-                  }
-                }}>Mark as Sold</button>
-              </div>
-              <div className={`border-black border-2 text-black  ml-1 mr-1 p-2 rounded-md text-center`}>
-                <button onClick={()=>{
-                  if(confirm("Are you sure you want to mark as hold")) {
-                    markCarStatus(carDetails?.id,'returned');
-                  }
-                }}>Mark as Returned</button>
-              </div>
-            </div>
-
-            : <></>}
-</div> 
-     
-         </> : <></>}
-    
-
-      {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('details')}
-            className={`${activeTab === 'details' ? 'border-blue-900 text-blue-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Car Details
-          </button>
-          <button
-            onClick={() => setActiveTab('inspection')}
-            className={`${activeTab === 'inspection' ? 'border-blue-900 text-blue-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Inspection Report
-          </button>
-          <button
-            onClick={() => setActiveTab('bids')}
-            className={`${activeTab === 'bids' ? 'border-blue-900 text-blue-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Bids
-          </button>
-          <button
-            onClick={() => setActiveTab('images')}
-            className={`${activeTab === 'images' ? 'border-blue-900 text-blue-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Images
-          </button>
-        </nav>
-      </div>
-      
-      {/* Content based on active tab */}
-      {activeTab === 'details' && carDetails && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Car General Details</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">Details and specifications.</p>
-          </div>
-          <div className="border-t border-gray-200">
-            <dl>
-              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Make</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.make}</dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Model</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.model}</dd>
-              </div>
-              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Year</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.modelYear}</dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Status</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {renderStatusBadge(carDetails.carStatus)}
-                </dd>
-              </div>
-              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Mileage</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {carDetails.mileage ? `${carDetails.mileage.toLocaleString()} km` : 'N/A'}
-                </dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Body Type</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.bodyType || 'N/A'}</dd>
-              </div>
-              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Engine</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.engine || carDetails.engineType || 'N/A'}</dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Gear Type</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.gearType || 'N/A'}</dd>
-              </div>
-              <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Book Value</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {carDetails.bookValue ? `SAR ${Number(carDetails.bookValue).toLocaleString()}` : 'N/A'}
-                </dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Selling Price</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex items-center">
-                  <span>{carDetails.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set'}</span>
-                  {user?.role == 'admin' || user?.role == 'qa' ? <button
-                    onClick={() => {
-                      setEditedPrice(Number(carDetails.sellingPrice) || 0);
-                      setShowPriceModal(true);
-                    }}
-                    className="ml-2 inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                    <span className="ml-1">Edit</span>
-                  </button> : <></>}
-                </dd>
-              </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Seller Asking Price</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex items-center">
-                  <span>{carDetails.sellerAskingPrice ? `SAR ${Number(carDetails.sellerAskingPrice).toLocaleString()}` : 'Not set'}</span>
-                  {/* {user?.role == 'admin' || user?.role == 'qa' ? <button
-                    onClick={() => {
-                      setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice) || 0);
-                      setShowSellerAskingPriceModal(true);
-                    }}
-                    className="ml-2 inline-flex items-center px-2 py-1 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-blue-500"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                    <span className="ml-1">Edit</span>
-                  </button> : <></>} */}
-                </dd>
-              </div>
-              {carDetails.notes && (
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Notes</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{carDetails.notes}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        </div>
-      )}
-
-  {/* Inspection Tab */}
-  {activeTab === 'inspection' && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Inspection Report</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">Detailed inspection information.</p>
-          </div>
-          
-          {!carDetails?.inspectionId ? (
-            <div className="px-4 py-5 sm:px-6 text-center">
-              <p className="text-gray-500">No inspection report available for this car.</p>
-            </div>
-          ) : !inspectionSchema ? (
-            <div className="px-4 py-5 sm:px-6 flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-900"></div>
-            </div>
-          ) : (
-            <div className="border-t border-gray-200">
-              {/* Inspection Progress Overview */}
-              <div className="px-4 py-5 sm:px-6">
-                <h4 className="text-md font-medium text-gray-900 mb-4">Inspection Overview</h4>
-            
-                <div className={"grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white p-2"}>
-            <div >
-              <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] flex justify-between items-center"}>
-                <h1>Information</h1>
-              </div>
-
-              {inspectionDetails ?
-              Object.keys(inspectionDetails?.inspectionJson).map((i, index) => {
-
-
-                if(i == 'overview'){
-                  return <></>;
-                }
-
-                return (
-                    <div key={i + index} >
-                      <div className={'w-full'}>
-                        <div className={"m-2  border-b border-b-[#F7F7F7] flex items-center justify-between"} key={i + index}>
-                          <p className={"font-bold text-[#000] mt-1 mb-1"}>{i.replace(/_/g, " ")}</p>
-                          <p className={"mt-1 mb-1"}>{typeof inspectionDetails?.inspectionJson[i] == 'object' && inspectionDetails?.inspectionJson[i]?.length ? inspectionDetails?.inspectionJson[i][0].value : typeof inspectionDetails?.inspectionJson[i] == 'object' && !inspectionDetails?.inspectionJson[i]?.length ?  inspectionDetails?.inspectionJson[i]?.value : inspectionDetails?.inspectionJson[i] == "" ? "N/A" : inspectionDetails?.inspectionJson[i]}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }) : <>
-                <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-                </>}
-            </div>
-
-            <div >
-              <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] "}>Images</div>
-              <div className="flex flex-wrap">
-                {images?.length && images?.map((img: any, index: number) => {
-                  return (
-                    <div key={img.caption + index}>
-                      <div className={"flex flex-wrap cursor-pointer items-start justify-start"}>
-                        <div
-                          onClick={() => {
-                           
-                          }}
-                          className={"w-[120px] text-center ml-2 mr-2"}
-                        >
-                          <img className={"w-[120px] h-[100px] m-2 rounded-lg"} src={img.url} />
-                          <small>{img.caption}</small>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <p className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] text-lg">Car Body Condition</p>
-              {inspectionDetails?.carBodyConditionJson && <CarBodySvgView data={inspectionDetails?.carBodyConditionJson}/>}
-            </div>
-          </div>
-          </div>
-              
-             
-            </div>
-          )}
-        </div>
-      )}
-    
-
-      
-    
-      {/* Bids Tab */}
-      {activeTab === 'bids' && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">{ searchParams.get('auctionId') ? 'Bids' : 'Bids History'}</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">All bids placed on this car.</p>
-          </div>
-          
-          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-            {/* Sales role internal bid section */}
-            {user && user.role === 'sale' && carDetails?.carStatus == 'push_to_auction'  && carDetails?.bookValue && (
-              <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2 flex items-center">
-                  Place Internal Bid
-                </h4>
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                  <div className="flex-grow">
-                    <label htmlFor="bidAmount" className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (SAR)</label>
-                    <div className="mt-1 relative rounded-md shadow-sm">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">SAR</span>
-                      </div>
-                      <input
-                        type="number"
-                        id="bidAmount"
-                        className="pl-12 pr-12 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md h-10"
-                        placeholder="0.00"
-                        min="0"
-                        step="1000"
-                        defaultValue={carDetails.bookValue}
-                        onChange={(e) => setBidAmount(Number(e.target.value))}
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center">
-                        <div className="flex px-2">
-                          <button 
-                            type="button" 
-                            className="text-blue-500 hover:text-blue-700 focus:outline-none"
-                            onClick={() => {
-                              const input = document.getElementById('bidAmount') as HTMLInputElement;
-                              const currentValue = Number(input.value) || 0;
-                              input.value = String(currentValue + 1000);
-                              setBidAmount(currentValue + 1000);
-                            }}
-                          >
-                            +
-                          </button>
-                          <span className="mx-1 text-gray-400">|</span>
-                          <button 
-                            type="button" 
-                            className="text-blue-500 hover:text-blue-700 focus:outline-none"
-                            onClick={() => {
-                              const input = document.getElementById('bidAmount') as HTMLInputElement;
-                              const currentValue = Number(input.value) || 0;
-                              if (currentValue >= 1000) {
-                                input.value = String(currentValue - 1000);
-                                setBidAmount(currentValue - 1000);
-                              }
-                            }}
-                          >
-                            -
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">Current book value: SAR {Number(carDetails.bookValue).toLocaleString()}</p>
-                  </div>
+        {/* ── Two-column layout ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* LEFT: Tabs */}
+          <div className="xl:col-span-2 space-y-5">
+            {/* Tab nav */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex border-b border-gray-100 px-2">
+                {TABS.map(tab => (
                   <button
-                    type="button"
-                    className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                    onClick={placeInternalBid}
-                    disabled={placingBid || !bidAmount}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-[#003B7E] text-[#003B7E]'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
                   >
-                    {placingBid ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                        Placing Bid...
-                      </>
-                    ) : (
-                      <>Place Bid</>
-                    )}
+                    {tab.label}
                   </button>
-                </div>
-                <p className="mt-2 text-xs text-gray-500">This will place an internal bid based on the selling price of the car.</p>
-              </div>
-            )}
-            
-            {/* Bids list or empty state */}
-            {bids && bids.length > 0 ? (
-              <div className="overflow-x-auto">
-                <div className="py-2 align-middle inline-block min-w-full">
-                  <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-blue-900">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Bidder
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Amount
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Date
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                            Type
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {bids.map((bid: any, index: number) => (
-                          <tr key={bid.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-900">
-                                  <DollarSign className="h-5 w-5" />
-                                </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {bid?.userJson ? bid.userJson?.firstName + " " +  (bid.userJson?.lastName || "") : 'Anonymous'}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {bid.userJson?.email || ''}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-bold text-gray-900">
-                                SAR {Number(bid.amount).toLocaleString()}
-                              </div>
-                              {bid.previousAmount && (
-                                <div className="text-xs text-gray-500">
-                                  Previous: SAR {Number(bid.previousAmount).toLocaleString()}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {new Date(bid.createdAt).toLocaleDateString()}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(bid.createdAt).toLocaleTimeString()}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${bid.status === 'accepted' ? 'bg-green-100 text-green-800' : 
-                                  bid.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                  bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                  bid.userJson?.id == winner?.winnerUserId ? 'bg-green-100 text-green-800' : 
-                                  'bg-blue-100 text-blue-800'}`}>
-                                {bid.userJson?.id == winner?.winnerUserId ? 'Winner' : bid.status || 'Active'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {bid.userJson?.type === 'Dealer' ? (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                  Dealer
-                                </span>
-                              ) : bid.userJson?.type === 'Sales Agent' ? (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                  Sales Agent
-                                </span>
-                              ) : (
-                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                  Standard
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                
-                {/* Bid progress indicator */}
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Bid Progress</h4>
-                  <div className="relative pt-1">
-                    <div className="flex mb-2 items-center justify-between">
-                      <div>
-                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-900 bg-blue-200">
-                          Starting: SAR {carDetails?.bookValue ? Number(carDetails.bookValue).toLocaleString() : '0'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-900 bg-blue-200">
-                          Current Highest: SAR {bids.length > 0 ? Number(Math.max(...bids.map((b: any) => b.amount))).toLocaleString() : '0'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
-                      <div 
-                        style={{ 
-                          width: `${bids.length > 0 ? 
-                            Math.min(100, ((Math.max(...bids.map((b: any) => b.amount)) - carDetails?.bookValue) / carDetails?.bookValue) * 100) : 0}%` 
-                        }} 
-                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-900"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No bids yet</h3>
-                <p className="mt-1 text-sm text-gray-500">No bids have been placed on this car yet.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Images Tab */}
-      {activeTab === 'images' && (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Car Images</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">All images related to this car.</p>
-          </div>
-          
-          <div className="border-t border-gray-200">
-            {images && images.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                {images.map((image: any, index: number) => (
-                  <div key={index} className="relative group overflow-hidden rounded-lg shadow-md">
-                    <img 
-                      src={image.url || image.path} 
-                      alt={`Car image ${index + 1}`} 
-                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    {image.caption && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 text-sm">
-                        {image.caption}
-                      </div>
-                    )}
-                  </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No images</h3>
-                <p className="mt-1 text-sm text-gray-500">No images available for this car.</p>
-              </div>
+
+              {/* ── Details Tab ── */}
+              {activeTab === 'details' && carDetails && (
+                <div className="p-5 space-y-5">
+                  {/* Specs grid */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Specifications</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {specs.map(s => (
+                        <div key={s.label} className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{s.label}</p>
+                          <p className="text-sm font-semibold text-gray-800">{s.value}</p>
+                        </div>
+                      ))}
+                      {/* Status */}
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Status</p>
+                        <StatusPill status={carDetails.carStatus} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Prices */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Pricing</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Book Value</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {carDetails.bookValue ? `SAR ${Number(carDetails.bookValue).toLocaleString()}` : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-blue-400 uppercase tracking-wide">Selling Price</p>
+                          {isAdmin && (
+                            <button
+                              onClick={() => { setEditedPrice(Number(carDetails.sellingPrice) || 0); setShowPriceModal(true); }}
+                              className="p-1 rounded-lg bg-[#003B7E]/10 hover:bg-[#003B7E]/20 text-[#003B7E] transition-colors"
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-[#003B7E]">
+                          {carDetails.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set'}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Seller Asking Price</p>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {carDetails.sellerAskingPrice ? `SAR ${Number(carDetails.sellerAskingPrice).toLocaleString()}` : 'Not set'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {carDetails.notes && (
+                    <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                      <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-1">Notes</p>
+                      <p className="text-sm text-gray-700">{carDetails.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Inspection Tab ── */}
+              {activeTab === 'inspection' && (
+                <div className="p-5">
+                  {!carDetails?.inspectionId ? (
+                    <div className="text-center py-12">
+                      <Car size={40} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-gray-400 text-sm">No inspection report available for this car.</p>
+                    </div>
+                  ) : !inspectionSchema ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#003B7E]" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Inspection Fields</p>
+                        {inspectionDetails ? (
+                          <div className="divide-y divide-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+                            {Object.keys(inspectionDetails.inspectionJson)
+                              .filter(k => k !== 'overview')
+                              .map(k => (
+                                <div key={k} className="flex items-center justify-between px-4 py-2.5 bg-white hover:bg-gray-50">
+                                  <span className="text-sm text-gray-500 capitalize">{k.replace(/_/g, ' ')}</span>
+                                  <span className="text-sm font-medium text-gray-800">
+                                    {typeof inspectionDetails.inspectionJson[k] === 'object' && inspectionDetails.inspectionJson[k]?.length
+                                      ? inspectionDetails.inspectionJson[k][0].value
+                                      : typeof inspectionDetails.inspectionJson[k] === 'object' && !inspectionDetails.inspectionJson[k]?.length
+                                        ? inspectionDetails.inspectionJson[k]?.value
+                                        : inspectionDetails.inspectionJson[k] === '' ? 'N/A'
+                                        : inspectionDetails.inspectionJson[k]}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-center text-gray-400 py-8 text-sm">Loading inspection preview…</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-5">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Photos</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {images?.map((img: any, i: number) => (
+                              <div key={i} className="rounded-lg overflow-hidden aspect-square bg-gray-100">
+                                <img src={img.url} alt={img.caption} className="w-full h-full object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {inspectionDetails?.carBodyConditionJson && (
+                          <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Car Body Condition</p>
+                            <div className="bg-gray-50 rounded-xl p-3">
+                              <CarBodySvgView data={inspectionDetails.carBodyConditionJson} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Bids Tab ── */}
+              {activeTab === 'bids' && (
+                <div className="p-5 space-y-5">
+                  {/* Internal bid form (sales role) */}
+                  {user?.role === 'sale' && carDetails?.carStatus === 'push_to_auction' && carDetails?.bookValue && (
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                      <p className="text-sm font-semibold text-[#003B7E] mb-3">Place Internal Bid</p>
+                      <div className="flex gap-3 items-end">
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 mb-1">Bid Amount (SAR)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">SAR</span>
+                            <input
+                              id="bidAmount"
+                              type="number"
+                              defaultValue={carDetails.bookValue}
+                              step={1000}
+                              onChange={e => setBidAmount(Number(e.target.value))}
+                              className="w-full pl-12 pr-4 py-2.5 border border-blue-200 bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#003B7E]"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">Book value: SAR {Number(carDetails.bookValue).toLocaleString()}</p>
+                        </div>
+                        <button
+                          onClick={placeInternalBid}
+                          disabled={placingBid || !bidAmount}
+                          className="px-5 py-2.5 bg-[#003B7E] text-white text-sm font-medium rounded-xl hover:bg-[#002d61] disabled:opacity-50 transition-colors"
+                        >
+                          {placingBid ? 'Placing…' : 'Place Bid'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bid progress */}
+                  {bids?.length > 0 && (
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2">
+                        <span>Start: SAR {carDetails?.bookValue ? Number(carDetails.bookValue).toLocaleString() : '0'}</span>
+                        <span>Highest: SAR {fmt(highestBid)}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-blue-100 overflow-hidden">
+                        <div
+                          className="h-full bg-[#003B7E] rounded-full transition-all"
+                          style={{ width: `${Math.min(100, ((highestBid - carDetails?.bookValue) / (carDetails?.bookValue || 1)) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bids table */}
+                  {bids?.length > 0 ? (
+                    <div className="overflow-x-auto rounded-xl border border-gray-100">
+                      <table className="min-w-full divide-y divide-gray-100">
+                        <thead>
+                          <tr className="bg-[#003B7E]">
+                            {['Bidder', 'Amount', 'Date', 'Status', 'Type'].map(h => (
+                              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wide">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 bg-white">
+                          {bids.map((bid: any, i: number) => (
+                            <tr key={bid.id || i} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-medium text-gray-800">
+                                  {bid?.userJson ? `${bid.userJson.firstName} ${bid.userJson.lastName || ''}` : 'Anonymous'}
+                                </p>
+                                <p className="text-xs text-gray-400">{bid.userJson?.email || ''}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-bold text-gray-800">SAR {Number(bid.amount).toLocaleString()}</p>
+                                {bid.previousAmount && <p className="text-xs text-gray-400">Prev: SAR {Number(bid.previousAmount).toLocaleString()}</p>}
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm text-gray-700">{new Date(bid.createdAt).toLocaleDateString()}</p>
+                                <p className="text-xs text-gray-400">{new Date(bid.createdAt).toLocaleTimeString()}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  bid.userJson?.id === winner?.winnerUserId ? 'bg-green-100 text-green-700'
+                                  : bid.status === 'accepted' ? 'bg-green-100 text-green-700'
+                                  : bid.status === 'rejected' ? 'bg-red-100 text-red-700'
+                                  : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {bid.userJson?.id === winner?.winnerUserId ? 'Winner' : bid.status || 'Active'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  bid.userJson?.type === 'Dealer' ? 'bg-blue-100 text-blue-700'
+                                  : bid.userJson?.type === 'Sales Agent' ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {bid.userJson?.type || 'Standard'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <DollarSign size={36} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-sm font-medium text-gray-500">No bids yet</p>
+                      <p className="text-xs text-gray-400 mt-1">No bids have been placed on this car.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Images Tab ── */}
+              {activeTab === 'images' && (
+                <div className="p-5">
+                  {images?.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {images.map((img: any, i: number) => (
+                        <div key={i} className="relative group rounded-xl overflow-hidden aspect-video bg-gray-100">
+                          <img
+                            src={img.url || img.path}
+                            alt={img.caption || `Image ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                          {img.caption && (
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs px-2 py-1 truncate">
+                              {img.caption}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Car size={36} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-sm font-medium text-gray-500">No images available</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Sidebar */}
+          <div className="space-y-4">
+            {isAdmin && (
+              <button
+                onClick={() => setShowRevealPriceModal(true)}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B7E] text-white text-sm font-semibold hover:bg-[#002d61] transition-colors shadow-sm"
+              >
+                <Eye size={16} /> Reveal Price
+              </button>
             )}
+            <AuctionHistory auctions={auctionHistory} />
+            <RevealPriceHistory history={[]} />
           </div>
         </div>
-      )}
-        </div>
-        
-        {/* Auction History in right corner */}
-        
-        <div className="md:w-1/4 lg:w-1/3">
-         {/* Reveal Price button is now accessible via the edit button next to the selling price */}
-         {(user?.role == 'admin' || user?.role == 'qa') ? <button
-         onClick={() => {
-             //setShowRevealPriceModal(true);
-             setShowRevealPriceModal(true);
-         }}
-         className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded mb-4"
-         >
-           Reveal Price
-         </button> : <></>}
-          <AuctionHistory auctions={auctionHistory} />
-          <RevealPriceHistory history={[]} />
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 

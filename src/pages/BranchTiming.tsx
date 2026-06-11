@@ -356,7 +356,7 @@ const BranchTiming: React.FC = () => {
             onClick={() => setActiveTab(tab)}
             className={`flex items-center gap-2 px-5 py-3 rounded-lg font-medium transition-all ${
               activeTab === tab
-                ? 'bg-blue-900 text-white shadow-lg'
+                ? 'bg-primary text-white shadow-lg'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
             }`}
           >
@@ -446,7 +446,7 @@ const BranchTiming: React.FC = () => {
                                   setAddSlotForm({ label: '', startTime: '09:00', capacity: 5 });
                                   setEditingSlotId(null);
                                 }}
-                                className="flex items-center gap-1 px-3 py-2 bg-blue-900 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+                                className="flex items-center gap-1 px-3 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
                               >
                                 <Plus size={16} />
                                 Add Slot
@@ -641,7 +641,7 @@ const BranchTiming: React.FC = () => {
                                     <button
                                       onClick={handleAddSlot}
                                       disabled={addingSlot}
-                                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-900 text-white text-sm font-medium rounded hover:bg-blue-800 disabled:opacity-50"
+                                      className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-sm font-medium rounded hover:bg-blue-800 disabled:opacity-50"
                                     >
                                       {addingSlot
                                         ? <span className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" />
@@ -720,7 +720,7 @@ const BranchTiming: React.FC = () => {
               <button
                 onClick={handleAddHoliday}
                 disabled={addingHoliday}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 {addingHoliday
                   ? <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />

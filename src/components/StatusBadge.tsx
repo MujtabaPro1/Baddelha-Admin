@@ -4,7 +4,8 @@ type StatusType =
   | 'active' | 'inactive'
   | 'available' | 'sold' | 'pending' | 'pending_approval'
   | 'scheduled' | 'completed' | 'cancelled'
-  | 'approved' | 'confirmed' | 'rejected';
+  | 'approved' | 'confirmed' | 'rejected'
+  | 'in_complete' | 'in_progress';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -12,7 +13,6 @@ interface StatusBadgeProps {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const getStatusStyles = () => {
-    console.log(status);
     switch (status.toLowerCase()) {
       case 'active':
       case 'available':
@@ -23,9 +23,11 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'inactive':
       case 'cancelled':
       case 'rejected':
+      case 'in_complete':  
         return 'bg-red-100 text-red-800';
       case 'pending':
       case 'scheduled':
+      case 'in_progress':  
         return 'bg-yellow-100 text-yellow-800';
       case 'sold':
       case 'pending_approval':
@@ -37,7 +39,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <span className={`badge ${getStatusStyles()} capitalize`}>
-      {status === 'pending_approval' ? 'Pending Approval' : status}
+      {status === 'pending_approval' ? 'Pending Approval' : status.toLowerCase() === 'in_complete' ? 'In Complete' : status.toLowerCase() === 'in_progress' ? 'In Progress' : status}
     </span>
   );
 };

@@ -1,88 +1,104 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import InspectionForm from "../InspectionForm";
-
-
 import ImageGallery from "react-image-gallery";
-
-import Link from "next/link";
 import { toast } from "react-toastify";
 import { findInspection } from "../service/inspection";
 import axiosInstance from "../service/api";
-import { Check, File, ShieldCloseIcon, TimerResetIcon, Trash } from "lucide-react";
+import { Check, File, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useParams } from "react-router-dom";
-import CarBodySvg from "../components/CarBody";
 import CarBodySvgView from "../components/CarBodyView";
 import LanguageSelectionModal from "../components/LanguageSelectionModal";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useAuth } from "../contexts/AuthContext";
 
+const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
-const isEmpty = (obj: any) => {
-  return Object.keys(obj).length === 0;
+interface ExtraDataItem {
+  comment: string;
+  image: string | null;
 }
+
+interface InspectionData {
+  extraData?: Record<string, ExtraDataItem>;
+  overview?: any;
+  [key: string]: any;
+}
+
+const SectionBlock = ({ title, items }: { title: string; items: [string, any][] }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className="mb-4 border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100 text-left"
+      >
+        <span className="font-semibold text-gray-700 text-sm uppercase tracking-wide">{title}</span>
+        {collapsed ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronUp size={16} className="text-gray-400" />}
+      </button>
+      {!collapsed && (
+        <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y divide-gray-50">
+          {items.map(([key, val]) => (
+            <div key={key} className="px-4 py-3 bg-white">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{key.replace(/_/g, " ")}</p>
+              <p className="text-sm font-medium text-gray-800 break-words">
+                {typeof val === "object" && val?.length ? val[0].value
+                  : typeof val === "object" && !val?.length ? val?.value
+                  : val === "" ? "N/A"
+                  : val ?? "N/A"}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ViewInspectionPage = () => {
   const [data, setData] = useState<any>(null);
   const params = useParams();
-  // Using ref for ImageGallery component
-  const imageGalleryRef = useRef<any>(null); 
-  
-
-
-
-  useEffect(() => {
-    if (params?.id) {
-      findInspection(params.id).then(async (res) => {
-        setData(res);
-      }).catch((err) => {
-        console.error(err);
-        toast.error("Failed to load inspection details");
-      });
-    }
-  }, [params?.id]);
-
+  const { user } = useAuth();
+  const imageGalleryRef = useRef<any>(null);
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [incompleteReason, setIncompleteReason] = useState("");
+  const [incompleteLoading, setIncompleteLoading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [itemIndex, setStartIndex] = useState(0);
-
   const [reportLoader, setReportLoader] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const { language } = useLanguage();
-  
+
+  useEffect(() => {
+    if (params?.id) {
+      findInspection(params.id)
+        .then((res) => setData(res))
+        .catch(() => toast.error("Failed to load inspection details"));
+    }
+  }, [params?.id]);
+
   const handleGenerateReport = async (reportLanguage: string) => {
     if (!params?.id) return;
-
     try {
       setReportLoader(true);
-      console.log("Generating report for inspection ID:", params.id, "with language:", reportLanguage);
-      const response = await axiosInstance.get(
-        `/1.0/reports/inspection/v1/html/${params.id}`,
-        { params: { lang: reportLanguage } }
-      );
-
+      const response = await axiosInstance.get(`/1.0/reports/inspection/v1/html/${params.id}`, {
+        params: { lang: reportLanguage },
+      });
       const htmlContent: string = response.data;
-
-      // Derive the server origin so relative font/CSS URLs resolve from the blob context
-
-      const serverOrigin = new URL(axiosInstance.defaults.baseURL || 'http://localhost:3000/').origin;
+      const serverOrigin = new URL(axiosInstance.defaults.baseURL || "http://localhost:3000/").origin;
       const baseTag = `<base href="${serverOrigin}/">`;
-
-      // Wait for fonts (especially Arabic) to fully load, then add a small buffer before print
       const printScript = `<script>document.fonts.ready.then(function(){setTimeout(function(){window.print();},800);});<\/script>`;
-
-      let modifiedHtml = htmlContent.includes('<head>')
-        ? htmlContent.replace('<head>', '<head>' + baseTag)
+      let modifiedHtml = htmlContent.includes("<head>")
+        ? htmlContent.replace("<head>", "<head>" + baseTag)
         : htmlContent;
-      modifiedHtml = modifiedHtml.includes('</body>')
-        ? modifiedHtml.replace('</body>', printScript + '</body>')
+      modifiedHtml = modifiedHtml.includes("</body>")
+        ? modifiedHtml.replace("</body>", printScript + "</body>")
         : modifiedHtml + printScript;
-
-      const blob = new Blob([modifiedHtml], { type: 'text/html' });
+      const blob = new Blob([modifiedHtml], { type: "text/html" });
       const blobUrl = window.URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+      window.open(blobUrl, "_blank");
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
-      console.error("Error generating report:", error);
     } finally {
       setReportLoader(false);
       setShowLanguageModal(false);
@@ -91,135 +107,135 @@ const ViewInspectionPage = () => {
 
   const markAsCompleted = async (inspectionId: string) => {
     try {
-      axiosInstance.get("/1.0/inspection/mark-as-completed/" + inspectionId).then((res)=>{
-        alert("Successfully updated your status");
-        window.location.reload();
-      }).catch((err)=>{
-        console.log('err',err);
-      })
-
+      await axiosInstance.get("/1.0/inspection/mark-as-completed/" + inspectionId);
+      alert("Successfully updated your status");
+      window.location.reload();
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
-      console.error("Error downloading report:", error);
+    }
+  };
+
+  const markAsIncomplete = async () => {
+    if (!incompleteReason.trim()) return;
+    setIncompleteLoading(true);
+    try {
+      await axiosInstance.post(`/1.0/inspection/mark-as-incomplete/${params.id}`, { comment: incompleteReason });
+      toast.success("Inspection marked as incomplete");
+      setShowIncompleteModal(false);
+      setIncompleteReason("");
+      if (params.id) findInspection(params.id).then((res) => setData(res));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
-      setReportLoader(false);
+      setIncompleteLoading(false);
     }
   };
 
   const markCarAsInspected = async (carId: string) => {
     try {
-      axiosInstance.put("/1.0/car/update/" + carId,{
-        carStatus: 'inspected',
-        inspectionId: params?.id
-      }).then((res)=>{
-        alert("Successfully updated your status");
-
-        findInspection(params.id).then((res) => {
-          setData(res);
-        });
-      }).catch((err)=>{
-        console.log('err',err);
-      })
-
+      await axiosInstance.put("/1.0/car/update/" + carId, {
+        carStatus: "inspected",
+        inspectionId: params?.id,
+      });
+      alert("Successfully updated your status");
+      if (params.id) findInspection(params.id).then((res) => setData(res));
     } catch (error: any) {
       toast.error(error?.message || "Something went wrong");
-      console.error("Error downloading report:", error);
-    } finally {
-      setReportLoader(false);
     }
+  };
+
+  let inspection: InspectionData | null = null;
+  if (data?.inspection?.inspectionJson && !isEmpty(data.inspection.inspectionJson)) {
+    inspection = data.inspection.inspectionJson;
   }
 
+  const statusColor: Record<string, string> = {
+    Submit: "bg-blue-100 text-blue-700",
+    Completed: "bg-green-100 text-green-700",
+    Incomplete: "bg-red-100 text-red-700",
+    Pending: "bg-yellow-100 text-yellow-700",
+  };
+  const status = data?.inspection?.inspectionStatus ?? "";
+  const badgeClass = statusColor[status] ?? "bg-gray-100 text-gray-600";
 
+  // Group inspection fields into the non-overview, non-extraData keys
+  const inspectionEntries = inspection
+    ? Object.entries(inspection).filter(([k]) => k !== "overview" && k !== "extraData")
+    : [];
 
-// Define interface for extra data items
-interface ExtraDataItem {
-  comment: string;
-  image: string | null;
-}
+  // Split into chunks of 9 for section blocks
+  const chunkSize = 9;
+  const sections: [string, any][][] = [];
+  for (let i = 0; i < inspectionEntries.length; i += chunkSize) {
+    sections.push(inspectionEntries.slice(i, i + chunkSize));
+  }
 
-// Define interface for inspection data
-interface InspectionData {
-  extraData?: Record<string, ExtraDataItem>;
-  overview?: any;
-  [key: string]: any; // For other fields
-}
-   
-let inspection: InspectionData | null = null;
-if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-  //return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-  inspection = null;
-}else if(data && data?.inspection?.inspectionJson){
-  inspection = data?.inspection?.inspectionJson;
-}
-
+  const images = data?.images ?? [];
+  const heroImages = images.slice(0, 6);
+  const remainingImages = images.slice(6);
 
   return (
     <>
-      <div className={'w-full flex justify-end mb-4'}>
+      {/* ── Action Bar ── */}
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-5">
         <button
-            className={`${data?.inspection?.inspectionStatus ==  "Submit" ? "mr-5" : ''} bg-primary rounded-md flex items-center border border-primary px-1 py-1 text-center font-medium text-primary hover:bg-opacity-90 lg:px-4 xl:px-4`}
-            aria-disabled={reportLoader}
-            onClick={() => {
-              setShowLanguageModal(true);
-            }}
-            style={{
-              background: '#ececec',
-              padding: '10px',
-              border: '1px solid',
-            }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#003B7E] text-[#003B7E] bg-white hover:bg-[#f0f4ff] text-sm font-medium transition-colors"
+          onClick={() => setShowLanguageModal(true)}
+          disabled={reportLoader}
         >
-          <File/>
-          &nbsp;
-          { reportLoader && (language === 'en' ? 'Generating Report.....' : 'جاري إنشاء التقرير...') }
-          { !reportLoader && (language === 'en' ? 'Generate Report' : 'إنشاء تقرير') }
+          <File size={15} />
+          {reportLoader
+            ? language === "en" ? "Generating..." : "جاري الإنشاء..."
+            : language === "en" ? "Generate Report" : "إنشاء تقرير"}
         </button>
-        {data?.inspection?.inspectionStatus == "Submit" ? <button
-            className="rounded-md bg-blue-900 flex items-center px-1 py-1 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-4"
-            onClick={() => {
 
-
-              if(data?.inspection?.inspectionStatus == "Submit") {
-
-                if(confirm("Are you sure you want to mark as completed")) {
-                  markAsCompleted(params.id);
+        {status === "Submit" && (
+          <>
+            {user?.role?.toLowerCase() === "qa" && (
+              <button
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 text-sm font-medium transition-colors"
+                onClick={() => setShowIncompleteModal(true)}
+              >
+                ⚠️ Request Justification
+              </button>
+            )}
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#003B7E] text-white hover:bg-[#002d61] text-sm font-medium transition-colors"
+              onClick={() => {
+                if (confirm("Are you sure you want to mark as completed")) {
+                  if (params.id) markAsCompleted(params.id);
                   markCarAsInspected(data?.inspection?.carId);
                 }
-              }else{
-                if(confirm("Are you sure you want to push this car for listing")) {
-                 // markCarAsListed(data?.inspection?.carId);
-                }
-              }
-            }}
-        >
-          <Check/>
-          &nbsp;
-          Mark as Completed
-        </button>: <></>}
+              }}
+            >
+              <Check size={15} />
+              Mark as Completed
+            </button>
+          </>
+        )}
       </div>
 
-      {data?.error && <div className="text-red"> {JSON.stringify(data.error)} </div>}
-      {showGallery ? (
-        <div className={"wrapper"}>
-          <div className={"thumbnails"}>
-            <div className="top-bar">
-              <button
-                onClick={() => {
-                  setShowGallery(!showGallery);
-                }}
-                type="button"
-                className="button cursor-pointer"
-              >
-                 <p className="text-white font-bold text-2xl">X</p>
-              </button>
-            </div>
+      {data?.error && (
+        <div className="text-red-600 mb-4 text-sm">{JSON.stringify(data.error)}</div>
+      )}
+
+      {/* ── Full-screen Gallery ── */}
+      {showGallery && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          <div className="flex justify-end p-4">
+            <button onClick={() => setShowGallery(false)} className="text-white font-bold text-xl">
+              <X size={28} />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
             <ImageGallery
               ref={imageGalleryRef}
               showPlayButton={false}
               startIndex={itemIndex}
-              onErrorImageURL={"/images/loader.webp"}
+              onErrorImageURL="/images/loader.webp"
               showFullscreenButton={false}
               lazyLoad={false}
-              items={data.images?.map((item: any) => ({
+              items={images.map((item: any) => ({
                 ...item,
                 original: item.url,
                 thumbnail: item.url,
@@ -227,144 +243,222 @@ if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspect
             />
           </div>
         </div>
-      ) : (
-        <div>
-          <div className={"grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white p-2"}>
-            <div >
-              <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] flex justify-between items-center"}>
-                <h1>Information</h1>
+      )}
+
+      {!showGallery && (
+        <div className="space-y-6">
+          {/* ── Header Card ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#003B7E] to-[#0055b3] px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-blue-200 text-xs uppercase tracking-widest mb-1">Inspection Report</p>
+                <h1 className="text-white text-2xl font-bold">
+                  {data?.inspection?.car?.year} {data?.inspection?.car?.make} {data?.inspection?.car?.model}
+                </h1>
+                <p className="text-blue-100 text-sm mt-1">ID: {params?.id}</p>
               </div>
-
-              {inspection && Object.keys(inspection).length > 0 ?
-              Object.keys(inspection).map((i, index) => {
-                // Re-check the inspection data in case it was updated
-                if(data && data?.inspection?.inspectionJson && isEmpty(data?.inspection?.inspectionJson)){
-                  return <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-                }else if(data && data?.inspection?.inspectionJson){
-                  inspection = data?.inspection?.inspectionJson;
-                }
-
-                if(!inspection || i === 'overview' || i === 'extraData'){
-                  return null;
-                }
-
-                return (
-                    <div key={i + index} >
-                      <div className={'w-full'}>
-                        <div className={"m-2  border-b border-b-[#F7F7F7] flex items-center justify-between"} key={i + index}>
-                          <p className={"font-bold text-[#000] mt-1 mb-1"}>{i.replace(/_/g, " ")}</p>
-                          <p className={"mt-1 mb-1"}>
-                            {inspection && (
-                              typeof inspection[i] === 'object' && inspection[i]?.length ? 
-                                inspection[i][0].value : 
-                              typeof inspection[i] === 'object' && !inspection[i]?.length ? 
-                                inspection[i]?.value : 
-                              inspection[i] === "" ? 
-                                "N/A" : 
-                                inspection[i]
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }) : <>
-                <p className="text-center mt-10 text-gray-500 text-lg">Loading Inspection Preview Soon .. </p>
-                </>}
+              <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${badgeClass}`}>
+                {status || "—"}
+              </span>
             </div>
 
-            <div >
-              {/* Extra Data Section */}
-              {inspection?.extraData && Object.keys(inspection.extraData).length > 0 && (
-                <>
-                  <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-2 text-[#000]"}>
-                    Additional Field Details
+            {/* Key stats row */}
+            {data?.inspection && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
+                {[
+                  { label: "Inspector", value: data.inspection.inspector?.name ?? data.inspection.inspectorName ?? "—" },
+                  { label: "Branch", value: data.inspection.branch?.name ?? "—" },
+                  { label: "Date", value: data.inspection.createdAt ? new Date(data.inspection.createdAt).toLocaleDateString() : "—" },
+                  { label: "Car Status", value: data.inspection.car?.carStatus ?? "—" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="px-5 py-4">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
+                    <p className="text-sm font-semibold text-gray-800">{value}</p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {Object.keys(inspection.extraData).map((key) => {
-                      const extraItem = inspection.extraData?.[key] as ExtraDataItem;
-                      if (!extraItem) return null;
-                      
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Hero Photo Grid ── */}
+          {heroImages.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Photos</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {heroImages.map((img: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="relative cursor-pointer rounded-lg overflow-hidden group aspect-video bg-gray-100"
+                    onClick={() => { setStartIndex(idx); setShowGallery(true); }}
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.caption}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                    {img.caption && (
+                      <div className="absolute bottom-0 inset-x-0 bg-black/40 text-white text-xs px-2 py-1 truncate">
+                        {img.caption}
+                      </div>
+                    )}
+                    {idx === 5 && remainingImages.length > 0 && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
+                        +{remainingImages.length}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* ── Inspection Data ── */}
+            <div className="xl:col-span-2 space-y-2">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Inspection Details</h2>
+
+              {inspectionEntries.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-400 text-sm">
+                  Loading Inspection Preview Soon…
+                </div>
+              ) : (
+                sections.map((chunk, si) => (
+                  <SectionBlock
+                    key={si}
+                    title={`Section ${si + 1}`}
+                    items={chunk}
+                  />
+                ))
+              )}
+
+              {/* Extra Data */}
+              {inspection?.extraData && Object.keys(inspection.extraData).length > 0 && (
+                <div className="mt-4">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Additional Field Details</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {Object.entries(inspection.extraData).map(([key, extraItem]) => {
+                      const item = extraItem as ExtraDataItem;
                       return (
-                        <div key={key} className="border rounded-md p-3 bg-white shadow-sm">
-                          <h3 className="font-bold text-gray-800 mb-2 border-b pb-2">
-                            {key.replace(/_/g, " ")}
-                          </h3>
-                          
-                          {extraItem.comment && (
-                            <div className="mb-2">
-                              <p className="text-sm font-medium text-gray-600">Comment:</p>
-                              <p className="text-gray-800">{extraItem.comment}</p>
-                            </div>
-                          )}
-                          
-                          {extraItem.image && (
-                            <div className="mt-3">
-                              <p className="text-sm font-medium text-gray-600 mb-1">Image:</p>
-                              <div className="relative">
-                                <img 
-                                  src={extraItem.image} 
-                                  alt={`${key} detail`} 
-                                  className="w-full h-auto max-h-48 object-contain rounded-md border" 
-                                  onClick={() => {
-                                    // Open image in new tab for better viewing
-                                    if (extraItem.image) {
-                                      window.open(extraItem.image, '_blank');
-                                    }
-                                  }}
-                                />
-                                <div className="absolute bottom-0 right-0 bg-blue-900 text-white text-xs px-2 py-1 rounded-tl-md cursor-pointer"
-                                  onClick={() => {
-                                    if (extraItem.image) {
-                                      window.open(extraItem.image, '_blank');
-                                    }
-                                  }}>
+                        <div key={key} className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
+                          <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+                            <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{key.replace(/_/g, " ")}</h3>
+                          </div>
+                          <div className="p-4 space-y-3">
+                            {item.comment && (
+                              <div>
+                                <p className="text-xs text-gray-400 mb-0.5">Comment</p>
+                                <p className="text-sm text-gray-800">{item.comment}</p>
+                              </div>
+                            )}
+                            {item.image && (
+                              <div className="relative cursor-pointer rounded-lg overflow-hidden" onClick={() => window.open(item.image!, "_blank")}>
+                                <img src={item.image} alt={key} className="w-full h-36 object-cover rounded-lg" />
+                                <div className="absolute bottom-2 right-2 bg-[#003B7E] text-white text-xs px-2 py-0.5 rounded-md">
                                   View Full
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                </>
+                </div>
               )}
-              
-              {/* Images Section */}
-              <div className={"w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] "}>Images</div>
-              <div className="flex flex-wrap">
-                {data && data.images && data?.images?.map((img: any, index: number) => {
-                  return (
-                    <div key={img.caption + index}>
-                      <div className={"flex flex-wrap cursor-pointer items-start justify-start"}>
-                        <div
-                          onClick={() => {
-                            setShowGallery(true);
-                            setStartIndex(index);
-                          }}
-                          className={"w-[120px] text-center ml-2 mr-2"}
-                        >
-                          <img className={"w-[120px] h-[100px] m-2 rounded-lg"} src={img.url} />
-                          <small>{img.caption}</small>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+            </div>
+
+            {/* ── Right Sidebar ── */}
+            <div className="space-y-6">
+              {/* Car Body */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Car Body Condition</h2>
+                {data?.inspection?.carBodyConditionJson ? (
+                  <CarBodySvgView data={data.inspection.carBodyConditionJson} />
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-6">No body condition data</p>
+                )}
               </div>
-              <p className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold  mt-2 mb-2 text-[#000] text-lg">Car Body Condition</p>
-              {data?.inspection?.carBodyConditionJson && <CarBodySvgView data={data?.inspection?.carBodyConditionJson}/>}
+
+              {/* Remaining images */}
+              {remainingImages.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">More Photos</h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    {remainingImages.map((img: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100"
+                        onClick={() => { setStartIndex(heroImages.length + idx); setShowGallery(true); }}
+                      >
+                        <img src={img.url} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
       <LanguageSelectionModal
         isOpen={showLanguageModal}
         onClose={() => setShowLanguageModal(false)}
         onSelectLanguage={handleGenerateReport}
         isLoading={reportLoader}
       />
+
+      {showIncompleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowIncompleteModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800">Mark as Incomplete</h2>
+              <button
+                onClick={() => setShowIncompleteModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-500">Provide a reason for marking this inspection as incomplete.</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Reason</label>
+                <textarea
+                  rows={4}
+                  value={incompleteReason}
+                  onChange={(e) => setIncompleteReason(e.target.value)}
+                  placeholder="Describe the issue..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400 resize-none text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setShowIncompleteModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={markAsIncomplete}
+                  disabled={incompleteLoading || !incompleteReason.trim()}
+                  className="flex items-center gap-2 px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {incompleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Confirm"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

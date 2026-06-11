@@ -419,7 +419,7 @@ const Branches = () => {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Add Branch
                 </button>
@@ -543,7 +543,7 @@ const Branches = () => {
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Update Branch
                 </button>
@@ -585,7 +585,7 @@ const Branches = () => {
                         <p className="text-sm text-gray-500">{supervisor.email}</p>
                       </div>
                       <button
-                        className="bg-blue-900 text-white px-3 py-1 rounded-md hover:bg-blue-800 text-sm"
+                        className="bg-primary text-white px-3 py-1 rounded-md hover:bg-blue-800 text-sm"
                         onClick={() => assignSupervisor(supervisor.id)}
                       >
                         Assign
@@ -639,7 +639,7 @@ const Branches = () => {
                         <p className="text-sm text-gray-500">{inspector.email}</p>
                       </div>
                       <button
-                        className="bg-blue-900 text-white px-3 py-1 rounded-md hover:bg-blue-800 text-sm"
+                        className="bg-primary text-white px-3 py-1 rounded-md hover:bg-blue-800 text-sm"
                         onClick={() => assignInspector(inspector.id)}
                       >
                         Assign

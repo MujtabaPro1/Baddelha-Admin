@@ -172,7 +172,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSubmit, onCancel, onPreview
           <button
             type="button"
             onClick={handleSubmit(handleFormSubmit)}
-            className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 flex items-center gap-1"
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800 flex items-center gap-1"
           >
             <Save size={18} />
             <span>Save Invoice</span>

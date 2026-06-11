@@ -116,7 +116,7 @@ const Invoicing = () => {
         </div>
         <button 
           onClick={handleCreateInvoice}
-          className="sm:w-auto flex items-center justify-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
+          className="sm:w-auto flex items-center justify-center gap-2 bg-primary text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
         >
           <Plus className="h-5 w-5" />
           <span>Create Invoice</span>

@@ -72,7 +72,7 @@ const BuyerSellerLeads = () => {
   const getStatusBadgeClass = (status: Lead['status']) => {
     switch (status) {
       case 'new':
-        return 'bg-blue-900 text-white';
+        return 'bg-primary text-white';
       case 'resolved':
         return 'bg-blue-500 text-white';
       default:

@@ -168,7 +168,7 @@ const TradeInDealerships = () => {
           onClick={() => {
             setShowDealershipForm(true);
           }}
-          className="sm:w-auto flex items-center justify-center gap-2 bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
+          className="sm:w-auto flex items-center justify-center gap-2 bg-primary text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors"
         >
           <Plus className="h-5 w-5" />
           <span>Add Dealership</span>
@@ -261,7 +261,7 @@ const TradeInDealerships = () => {
             <p>{error}</p>
             <button 
               onClick={fetchDealerships}
-              className="mt-4 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
+              className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800 transition-colors"
             >
               Try Again
             </button>

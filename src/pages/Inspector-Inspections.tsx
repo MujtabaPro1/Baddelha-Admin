@@ -57,6 +57,10 @@ const MyInspections = () => {
   const [selectedInspection, setSelectedInspection] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyInspectionId, setHistoryInspectionId] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
  
 
 
@@ -262,11 +266,12 @@ const MyInspections = () => {
       });
         const _appointments = data?.filter((appointment: any) => 
           appointment.inspectorUserId === inspectorId
+          && appointment.status != 'Cancelled'
         );
       
 
     
-      console.log("_appointments", _appointments);
+      console.log("_appointments", _appointments,data);
       setAppointments(_appointments || []);
 
     } catch (err) {
@@ -329,6 +334,20 @@ const MyInspections = () => {
     setShowCancelModal(true);
   };
 
+  const openHistoryModal = async (inspectionId: string) => {
+    setHistoryInspectionId(inspectionId);
+    setHistoryData([]);
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    try {
+      const res = await axiosInstance.get(`/1.0/inspection/${inspectionId}/history`);
+      setHistoryData(res.data || []);
+    } catch (err) {
+      console.error('Error fetching inspection history:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -546,7 +565,7 @@ const MyInspections = () => {
 
         {(activeTab !== 'cancelled') && (activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
           .filter((inspection: any) => {
-            if (activeTab === 'appointments' && inspection.status !== 'Confirmed') return false;
+           // if (activeTab === 'appointments' && (inspection.status !== 'Confirmed' || inspection.status !== 'In_Complete')) return false;
             if (!searchQuery.trim()) return true;
             const q = searchQuery.trim().toLowerCase();
             if (searchType === 'phone') {
@@ -634,7 +653,8 @@ const MyInspections = () => {
                         Offer Pending
                       </button>
                     ) : inspection?.customerCheckIn != null ? (
-                      <>
+                      <>{inspection?.Inspection?.inspectionStatus != 'In_Complete' ? 
+                        <>
                       <button 
                         onClick={(e) => {
                           e.preventDefault();
@@ -656,6 +676,25 @@ const MyInspections = () => {
                         Cancel Inspection
                       </button>
                       </>
+                        : <>
+                            <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/inspection-report/${inspection.inspectionId}`);                      
+                   
+                        }}
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                      >
+                        Edit Inspection
+                      </button>
+                                    <button
+                      onClick={(e) => { e.preventDefault(); openHistoryModal(inspection.inspectionId); }}
+                      className="btn mt-2 min-w-[175px] justify-center btn-sm flex items-center border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      View History
+                    </button>
+
+                        </> }</>
                     ) : (
                       <button 
                         onClick={(e) => {
@@ -688,27 +727,28 @@ const MyInspections = () => {
                         )}
                       </button>
                 </>
-                : inspection.inspectionStatus == 'Pending' ? 
-                  <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate(`/inspection-report/${inspection.id}`);
-                        }}
-                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
-                      >
-                        Start Inspection
-                      </button>:
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-  
-                        }}
-                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
-                      >
-                         {inspection?.insspectionStatus}
-                      </button>
-                      }
+                : inspection.inspectionStatus == 'Pending' ?
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/inspection-report/${inspection.id}`);
+                      }}
+                      className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                    >
+                      Start Inspection
+                    </button>
+                  </>
+                  :
+                  <>
+                    <button
+                      onClick={(e) => { e.preventDefault(); }}
+                      className="btn mt-3 min-w-[175px] justify-center btn-sm btn-primary flex items-center"
+                    >
+                      {inspection?.inspectionStatus}
+                    </button>
+                  </>
+                }
               </div>
             </div>
             
@@ -787,7 +827,7 @@ const MyInspections = () => {
                 disabled={page === '...'}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
                   page === currentPage
-                    ? 'bg-blue-900 text-white'
+                    ? 'bg-primary text-white'
                     : page === '...'
                     ? 'cursor-default'
                     : 'border border-gray-300 hover:bg-gray-50'
@@ -841,7 +881,7 @@ const MyInspections = () => {
                 key={p}
                 onClick={() => setCancelledPage(p)}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${
-                  p === cancelledPage ? 'bg-blue-900 text-white' : 'border border-gray-300 hover:bg-gray-50'
+                  p === cancelledPage ? 'bg-primary text-white' : 'border border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 {p}
@@ -862,6 +902,69 @@ const MyInspections = () => {
       )}
 
       </div>
+
+   {/* Inspection History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowHistoryModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Inspection History</h2>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 max-h-[60vh] overflow-y-auto">
+              {historyLoading ? (
+                <div className="py-8 flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+                </div>
+              ) : historyData.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No history found for this inspection.</p>
+              ) : (
+                <ol className="relative border-l border-gray-200 ml-3 space-y-6">
+                  {historyData.map((entry: any, idx: number) => (
+                    <li key={idx} className="ml-6">
+                      <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 ring-4 ring-white">
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold text-gray-800">
+                          {entry.status || entry.inspectionStatus || 'Status update'}
+                        </span>
+                        {entry.comment && (
+                          <p className="text-sm text-gray-600 bg-gray-50 rounded p-2 mt-1">{entry.comment}</p>
+                        )}
+                        {entry.createdAt && (
+                          <span className="text-xs text-gray-400 mt-0.5">
+                            {new Date(entry.createdAt).toLocaleString()}
+                          </span>
+                        )}
+                        {(entry.User || entry.createdBy) && (
+                          <span className="text-xs text-gray-500">
+                            By: {entry.User?.firstName || entry.createdBy}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <div className="flex justify-end p-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
    {/* Cancel Appointment Modal */}
       {showCancelModal && selectedInspection && (

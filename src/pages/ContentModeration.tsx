@@ -273,7 +273,7 @@ const ContentModeration: React.FC = () => {
           </button>
           <button
             onClick={toggleLanguage}
-            className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800"
           >
             {language === 'en' ? 'العربية' : 'English'}
           </button>
@@ -300,7 +300,7 @@ const ContentModeration: React.FC = () => {
                     onClick={() => handleSelectItem(item)}
                     className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2 rounded-md transition-colors ${
                       selectedItem?.id === item.id || selectedItem?.slug === item.slug
-                        ? 'bg-blue-900 text-white'
+                        ? 'bg-primary text-white'
                         : 'hover:bg-gray-100'
                     }`}
                   >
@@ -322,7 +322,7 @@ const ContentModeration: React.FC = () => {
                   <button
                     onClick={handleSaveContent}
                     disabled={isSaving || !newContentTitle || !newContentSlug}
-                    className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800 disabled:opacity-50"
                   >
                     {isSaving ? 'Saving' : 'Save'}
                   </button>
@@ -396,7 +396,7 @@ const ContentModeration: React.FC = () => {
                       <button
                         onClick={handleSaveContent}
                         disabled={isSaving}
-                        className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800 disabled:opacity-50"
                       >
                         {isSaving ? 'Saving' : 'Save'}
                       </button>
@@ -411,7 +411,7 @@ const ContentModeration: React.FC = () => {
                   ) : (
                     <button
                       onClick={handleEditContent}
-                      className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-800"
                     >
                       {'Edit'}
                     </button>
