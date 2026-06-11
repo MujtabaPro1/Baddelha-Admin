@@ -6,6 +6,7 @@ import {
    PlusSquare,
    PenSquare
 } from 'lucide-react';
+import { Button } from "@mui/material";
 
 const RolesList = () => {
   const [loading, setLoading] = useState(false);
@@ -34,12 +35,6 @@ const RolesList = () => {
           <div className="flex  justify-between items-center">
             <h3 className="font-medium text-black">Roles</h3>
 
-            <Link
-              href="/dashboard/roles-permission/create"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-2 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-            >
-            <PlusSquare />&nbsp;Create
-            </Link>
           </div>
         </div>
 
