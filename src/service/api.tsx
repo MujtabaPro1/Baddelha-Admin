@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://service.baddelha.com.sa/api/';
+const isDevelop = false;
+const PROD_BASE_URL = 'https://service.baddelha.com.sa/api/';
+const STG_NEW = 'https://stg-service.baddelha.com.sa/api';
+const BASE_URL = isDevelop ? STG_NEW : PROD_BASE_URL;
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -32,6 +35,11 @@ axiosInstance.interceptors.response.use(
       return response;
     },
     error => {
+      if (error.response?.status === 401) {
+        // Clear token and redirect to login
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
       return Promise.reject(error);
     },
   );
