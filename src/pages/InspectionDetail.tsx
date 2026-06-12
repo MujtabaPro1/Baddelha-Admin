@@ -37,17 +37,58 @@ const SectionBlock = ({ title, items }: { title: string; items: [string, any][] 
       </button>
       {!collapsed && (
         <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y divide-gray-50">
-          {items.map(([key, val]) => (
-            <div key={key} className="px-4 py-3 bg-white">
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{key.replace(/_/g, " ")}</p>
-              <p className="text-sm font-medium text-gray-800 break-words">
-                {typeof val === "object" && val?.length ? val[0].value
-                  : typeof val === "object" && !val?.length ? val?.value
-                  : val === "" ? "N/A"
-                  : val ?? "N/A"}
-              </p>
-            </div>
-          ))}
+          {items.map(([key, val]) => {
+            // Extract the actual value
+            let displayValue = typeof val === "object" && val?.length ? val[0].value
+              : typeof val === "object" && !val?.length ? val?.value
+              : val;
+
+            // Determine what to render
+            let content;
+            
+            if (displayValue === false) {
+              // Show blank for false
+              content = <span className="text-gray-300">N/A</span>;
+            } else if (displayValue === true) {
+              // Show checkmark for true
+              content = (
+                <span className="inline-flex items-center gap-1.5">
+                  <Check size={16} className="text-green-600" />
+                </span>
+              );
+            } else if (displayValue === "Pass" || displayValue === "pass") {
+              // Show text with circle checkmark for Pass
+              content = (
+                <span className="inline-flex items-center gap-1.5">
+                  <Check size={16} className="text-green-600 bg-green-100 rounded-full p-0.5" />
+                  <span>{displayValue}</span>
+                </span>
+              );
+            } else if (displayValue === "Leak" || displayValue === "leak" || displayValue === "Fail" || displayValue === "fail") {
+              // Show text with circle cross for Leak or Fail
+              content = (
+                <span className="inline-flex items-center gap-1.5">
+                  <X size={16} className="text-red-600 bg-red-100 rounded-full p-0.5" />
+                  <span>{displayValue}</span>
+                </span>
+              );
+            } else if (displayValue === "" || displayValue === null || displayValue === undefined) {
+              // Show N/A for empty values
+              content = "N/A";
+            } else {
+              // Show the actual value
+              content = displayValue;
+            }
+
+            return (
+              <div key={key} className="px-4 py-3 bg-white">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{key.replace(/_/g, " ")}</p>
+                <p className="text-sm font-medium text-gray-800 break-words">
+                  {content}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -267,9 +308,9 @@ const ViewInspectionPage = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
                 {[
                   { label: "Inspector", value: data.inspection.inspector?.name ?? data.inspection.inspectorName ?? "—" },
-                  { label: "Branch", value: data.inspection.branch?.name ?? "—" },
+                  { label: "Branch", value: data.inspection.BookAppointments?.[0]?.Branch?.enName ?? "—" },
                   { label: "Date", value: data.inspection.createdAt ? new Date(data.inspection.createdAt).toLocaleDateString() : "—" },
-                  { label: "Car Status", value: data.inspection.car?.carStatus ?? "—" },
+                  { label: "Display Id", value: data.inspection?.displayId ?? "—" },
                 ].map(({ label, value }) => (
                   <div key={label} className="px-5 py-4">
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
