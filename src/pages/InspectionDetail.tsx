@@ -307,7 +307,7 @@ const ViewInspectionPage = () => {
             {data?.inspection && (
               <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
                 {[
-                  { label: "Inspector", value: data.inspection.inspector?.name ?? data.inspection.inspectorName ?? "—" },
+                  { label: "Inspector", value: data.inspection.inspectorName ?? data.inspection.inspectorName ?? "—" },
                   { label: "Branch", value: data.inspection.BookAppointments?.[0]?.Branch?.enName ?? "—" },
                   { label: "Date", value: data.inspection.createdAt ? new Date(data.inspection.createdAt).toLocaleDateString() : "—" },
                   { label: "Display Id", value: data.inspection?.displayId ?? "—" },
