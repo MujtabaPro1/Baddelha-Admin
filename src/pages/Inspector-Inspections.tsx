@@ -30,7 +30,7 @@ const MyInspections = () => {
   const [inspections, setInspections]: any = useState([]);
   const [appointments, setAppointments]: any = useState([]);
   const [allAppointments, setAllAppointments]: any = useState([]);
-  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available' | 'cancelled'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available' | 'cancelled'>('available');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryAvailable, setSearchQueryAvailable] = useState('');
   const [searchType, setSearchType] = useState<'phone' | 'email'>('phone');
@@ -371,6 +371,16 @@ const MyInspections = () => {
       <div className="mb-6">
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
+               <button
+                onClick={() => setActiveTab('available')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'available'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Available Jobs ({allAppointments?.length || 0})
+              </button>
             <button
               onClick={() => setActiveTab('appointments')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -391,16 +401,7 @@ const MyInspections = () => {
             >
               Inspections ({inspections.length})
             </button>
-              <button
-                onClick={() => setActiveTab('available')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'available'
-                    ? 'border-blue-900 text-blue-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Available Jobs ({allAppointments?.length || 0})
-              </button>
+           
               <button
                 onClick={() => setActiveTab('cancelled')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -680,7 +681,7 @@ const MyInspections = () => {
                             <button 
                         onClick={(e) => {
                           e.preventDefault();
-                          navigate(`/inspection-report/${inspection.inspectionId}`);                      
+                          navigate(`/inspection-report/${inspection.inspectionId}?isEdit=true`);                      
                    
                         }}
                         className="btn mt-3 min-w-[175px] justify-center btn-sm btn-danger flex items-center"
