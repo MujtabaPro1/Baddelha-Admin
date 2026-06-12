@@ -702,7 +702,7 @@ const CarsDetails = () => {
                   {bids?.length > 0 && (
                     <div className="bg-gray-50 rounded-xl p-4">
                       <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2">
-                        <span>Start: SAR {carDetails?.bookValue ? Number(carDetails.bookValue).toLocaleString() : '0'}</span>
+                        <span>Start: SAR {carDetails?.sellingPrice ? Number(carDetails.sellingPrice).toLocaleString() : '0'}</span>
                         <span>Highest: SAR {fmt(highestBid)}</span>
                       </div>
                       <div className="h-2 rounded-full bg-blue-100 overflow-hidden">
