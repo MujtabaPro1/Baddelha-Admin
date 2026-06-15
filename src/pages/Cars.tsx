@@ -50,7 +50,7 @@ const Cars = () => {
 
   useEffect(()=>{
     fetchCars();
-  },[search, currentPage, itemsPerPage]);
+  },[search, currentPage, itemsPerPage, selectedStatus]);
 
   async function fetchAuctionCars() {
     try {
@@ -77,36 +77,30 @@ const Cars = () => {
   async function fetchCars() {
     setLoading(true);
     try {
-
-      let search = "";
-      if(carType === 'sold') {
-        search = "?carStatus=sold";
-      }
-      //let search = "";
-      const resp = await axiosInstance.get("/1.0/car/find-all" + search, {
+      const resp = await axiosInstance.get("/1.0/car/find-all", {
         params: {
-          search,
+          search: search || undefined,
           page: currentPage,
           limit: itemsPerPage,
+          status: selectedStatus || undefined,
+          ...(carType === 'sold' ? { carStatus: 'sold' } : {}),
         },
       });
 
+      console.log('API Response:', resp.data);
+      
       const total = resp.data.totalCount || 0;
       setTotalItems(total);
       setTotalPages(Math.ceil(total / itemsPerPage));
 
+      const carsData = resp.data.data || [];
+      
+      let _cars = carsData.filter((car: any) => {
+        return car.carStatus != 'push_to_inventory' && car.carStatus != 'push_to_auction';
+      });
 
-      if (resp.data.error) {
-        setError(resp.data);
-      } else {
-
-        let _cars = resp.data.data.filter((car: any) => {
-          return car.carStatus != 'push_to_inventory' && car.carStatus != 'push_to_auction';
-        });
-
-        setData(_cars);
-        setTotalCount(_cars.length);
-      }
+      setData(_cars);
+      setTotalCount(_cars.length);
     } catch (ex: unknown) {
       setError(ex);
     } finally {
@@ -202,6 +196,35 @@ const Cars = () => {
             className="form-input pl-12 bg-white border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
         </div>
+            <div className="sm:w-48 flex">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Filter className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="form-input pl-10 appearance-none"
+                    >
+                      <option value="">All statuses</option>
+                      <option value="new">New</option>
+                      <option value="pending_inspection">Pending</option>
+                      <option value="inspected">Inspected</option>
+                      <option value="listed">Listed</option>
+                      <option value="unlisted">Unlisted</option>
+                      <option value="sold">Sold</option>
+                      <option value="hold">Hold</option>
+                      <option value="returned">Returned</option>
+                      <option value="push_to_auction">Auction</option>
+                      <option value="push_to_inventory">Inventory</option>
+                      <option value="bid_won">Bid Won</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                  <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+                    <RefreshCw className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
         <button
           onClick={handleRefresh}
           className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-50 border border-gray-200 rounded-lg hover:from-gray-50 hover:to-gray-100 transition-all duration-200 flex items-center justify-center gap-2 text-gray-700 font-medium"
