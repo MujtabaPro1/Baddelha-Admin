@@ -380,7 +380,7 @@ const CarsDetails = () => {
               { label: 'Mileage',       value: carDetails?.mileage ? `${Number(carDetails.mileage).toLocaleString()} km` : '—' },
               { label: 'Engine',        value: carDetails?.engine || carDetails?.engineType || '—' },
               { label: 'Gear',          value: carDetails?.gearType || '—' },
-              { label: 'Selling Price', value: carDetails?.sellingPrice ? `SAR ${Number(carDetails.sellingPrice).toLocaleString()}` : 'Not set' },
+              { label: 'Inspector', value: carDetails?.Inspection?.[0]?.inspectorName || 'N/A'},
             ].map(({ label, value }) => (
               <div key={label} className="px-5 py-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
