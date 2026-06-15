@@ -47,13 +47,23 @@ const Inspections = () => {
 
   useEffect(() => {
     fetchInspections();
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery,selectedStatus]);
 
   const fetchInspections = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/1.0/inspection/find-all?page=${currentPage}&limit=${itemsPerPage}&search=${searchQuery}`);
+      let body: any = {
+        page: currentPage,
+        limit: itemsPerPage
+      }
+      if(searchQuery){
+        body['search'] = searchQuery;
+      }
+      if(selectedStatus){
+        body['inspectionStatus'] = selectedStatus;
+      }
+      const response = await axiosInstance.post(`/1.0/inspection/search`,body);
 
       const data = response?.data?.data?.map((a: any)=>{
         return {
@@ -164,11 +174,11 @@ const Inspections = () => {
               className="form-input pl-10 appearance-none"
             >
               <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="Pending">Pending</option>
+              <option value="In_Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="In_Complete">In_Complete</option>
+              <option value="Disqualified">Disqualified</option>
             </select>
           </div>
           <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
