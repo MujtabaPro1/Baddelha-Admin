@@ -212,8 +212,7 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
   };
 
   const generateYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const yearOptions = Array.from({ length: 20 }, (_, i) => (currentYear - i).toString());
+    const yearOptions = Array.from({ length: 21 }, (_, i) => (new Date().getFullYear() + 1 - i).toString());
     setYears(yearOptions);
   };
 
