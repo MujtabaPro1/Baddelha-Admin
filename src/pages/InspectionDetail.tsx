@@ -212,8 +212,15 @@ const ViewInspectionPage = () => {
   }
 
   const images = data?.images ?? [];
-  const heroImages = images.slice(0, 6);
-  const remainingImages = images.slice(6);
+  
+  // Primary car photos - specific angles only
+  const primaryCaptions = ["front", "left", "right", "back", "engine"];
+  const primaryImages = images.filter((img: any) => 
+    img.caption && primaryCaptions.includes(img.caption.toLowerCase())
+  );
+  const findingsImages = images.filter((img: any) => 
+    !img.caption || !primaryCaptions.includes(img.caption.toLowerCase())
+  );
 
   return (
     <>
@@ -321,34 +328,32 @@ const ViewInspectionPage = () => {
             )}
           </div>
 
-          {/* ── Hero Photo Grid ── */}
-          {heroImages.length > 0 && (
+          {/* ── Primary Car Photos ── */}
+          {primaryImages.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Photos</h2>
-              <div className="grid grid-cols-3 gap-2">
-                {heroImages.map((img: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="relative cursor-pointer rounded-lg overflow-hidden group aspect-video bg-gray-100"
-                    onClick={() => { setStartIndex(idx); setShowGallery(true); }}
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.caption}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                    {img.caption && (
-                      <div className="absolute bottom-0 inset-x-0 bg-black/40 text-white text-xs px-2 py-1 truncate">
-                        {img.caption}
-                      </div>
-                    )}
-                    {idx === 5 && remainingImages.length > 0 && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
-                        +{remainingImages.length}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Car Photos</h2>
+              <div className="grid grid-cols-5 gap-2">
+                {primaryImages.map((img: any, idx: number) => {
+                  const actualIndex = images.findIndex((i: any) => i.url === img.url);
+                  return (
+                    <div
+                      key={idx}
+                      className="relative cursor-pointer rounded-lg overflow-hidden group aspect-video bg-gray-100"
+                      onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.caption}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                      {img.caption && (
+                        <div className="absolute bottom-0 inset-x-0 bg-black/40 text-white text-xs px-2 py-1 truncate text-center">
+                          {img.caption}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -420,20 +425,23 @@ const ViewInspectionPage = () => {
                 )}
               </div>
 
-              {/* Remaining images */}
-              {remainingImages.length > 0 && (
+              {/* Findings images */}
+              {findingsImages.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">More Photos</h2>
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Findings</h2>
                   <div className="grid grid-cols-3 gap-2">
-                    {remainingImages.map((img: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100"
-                        onClick={() => { setStartIndex(heroImages.length + idx); setShowGallery(true); }}
-                      >
-                        <img src={img.url} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
-                      </div>
-                    ))}
+                    {findingsImages.map((img: any, idx: number) => {
+                      const actualIndex = images.findIndex((i: any) => i.url === img.url);
+                      return (
+                        <div
+                          key={idx}
+                          className="cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100"
+                          onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
+                        >
+                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
