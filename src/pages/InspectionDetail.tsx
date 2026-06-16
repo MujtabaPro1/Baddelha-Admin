@@ -103,6 +103,9 @@ const ViewInspectionPage = () => {
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [incompleteReason, setIncompleteReason] = useState("");
   const [incompleteLoading, setIncompleteLoading] = useState(false);
+  const [showDisqualifyModal, setShowDisqualifyModal] = useState(false);
+  const [disqualifyReason, setDisqualifyReason] = useState("");
+  const [disqualifyLoading, setDisqualifyLoading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [itemIndex, setStartIndex] = useState(0);
   const [reportLoader, setReportLoader] = useState(false);
@@ -185,6 +188,22 @@ const ViewInspectionPage = () => {
     }
   };
 
+  const markAsDisqualified = async () => {
+    if (!disqualifyReason.trim()) return;
+    setDisqualifyLoading(true);
+    try {
+      await axiosInstance.post(`/1.0/inspection/mark-as-disqualified/${params.id}`, { comment: disqualifyReason });
+      toast.success("Inspection marked as disqualified");
+      setShowDisqualifyModal(false);
+      setDisqualifyReason("");
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    } finally {
+      setDisqualifyLoading(false);
+    }
+  };
+
   let inspection: InspectionData | null = null;
   if (data?.inspection?.inspectionJson && !isEmpty(data.inspection.inspectionJson)) {
     inspection = data.inspection.inspectionJson;
@@ -260,6 +279,16 @@ const ViewInspectionPage = () => {
               Mark as Completed
             </button>
           </>
+        )}
+
+        {status !== "Completed" && (
+          <button
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 text-sm font-medium transition-colors"
+            onClick={() => setShowDisqualifyModal(true)}
+          >
+            <X size={15} />
+            Disqualify
+          </button>
         )}
       </div>
 
@@ -495,6 +524,58 @@ const ViewInspectionPage = () => {
                   className="flex items-center gap-2 px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   {incompleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Confirm"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDisqualifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDisqualifyModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-800">Disqualify Inspection</h2>
+              <button
+                onClick={() => setShowDisqualifyModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-gray-500">Provide a reason for disqualifying this inspection.</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Reason</label>
+                <textarea
+                  rows={4}
+                  value={disqualifyReason}
+                  onChange={(e) => setDisqualifyReason(e.target.value)}
+                  placeholder="Enter disqualification reason..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setShowDisqualifyModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={markAsDisqualified}
+                  disabled={disqualifyLoading || !disqualifyReason.trim()}
+                  className="flex items-center gap-2 px-5 py-2 bg-orange-600 text-white text-sm font-medium rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {disqualifyLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                       Saving...
