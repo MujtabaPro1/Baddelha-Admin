@@ -24,8 +24,8 @@ const CarPartModal: React.FC<CarPartModalProps> = ({
   const conditionOptions: ConditionOption[] = [
     { value: 'original', label: 'Original', color: '#4CAF50' },
    // { value: 'painted', label: 'Painted', color: '#2196F3' },
-    { value: 'repainted', label: 'Repainted', color: '#FFC107' },
-    { value: 'damaged', label: 'Damaged', color: '#F44336' },
+    { value: 'repainted', label: 'Repainted', color: '#ffb2b2' },
+    { value: 'damaged', label: 'Damaged', color: '#fff0c3' },
   ];
 
   const formatPartName = (name: string | null): string => {

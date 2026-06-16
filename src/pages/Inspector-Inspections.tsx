@@ -640,7 +640,7 @@ const MyInspections = () => {
                         onClick={(e) => {
                           e.preventDefault();
                         }}
-                        className="btn mt-3 min-w-[175px] justify-center btn-sm btn-danger flex items-center"
+                        className="btn mt-3 min-w-[175px] justify-center btn-sm bg-yellow-500 text-white hover:bg-yellow-600 flex items-center"
                       >
                         QA Pending
                       </button>
@@ -649,7 +649,7 @@ const MyInspections = () => {
                         onClick={(e) => {
                           e.preventDefault();
                         }}
-                        className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-[#f7cb73] flex items-center"
+                        className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-purple-600 hover:bg-purple-700 flex items-center"
                       >
                         Offer Pending
                       </button>

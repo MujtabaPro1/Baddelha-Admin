@@ -27,7 +27,7 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
   };
 
   return (
-
+    <div>
     <svg version="1.1" id="car_unfolded" xmlns="http://www.w3.org/2000/svg"
        x="0px" y="0px" viewBox="-7 97 595.3 600"
        enableBackground="new -7 97 595.3 600" width="100%" style={{display:"block"}} xmlSpace="preserve">
@@ -48,11 +48,11 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
           }
           
           .part.damaged {
-            fill: #ffb2b2;
+             fill: #fff0c3;
           }
           
           .part.repainted {
-            fill: #fff0c3;
+            fill: #ffb2b2;
           }
 
           .part.painted {
@@ -60,7 +60,7 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
           }
           
           .part.portion-repainted {
-            fill: yellow;
+            fill: #ffb2b2;
           }
           
           .part.not-available {
@@ -337,7 +337,19 @@ const CarBodySvgView: React.FC<CarBodySvgProps> = ({
     />
     <path id="antenna" fill="none" stroke="#032D37" strokeWidth="2" d="M280.3,460.3l13.9-13.9" />
     </svg>
-  
+    
+    {/* Color Legend */}
+    <div className="flex items-center justify-center gap-6 mt-4 p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-2">
+        <div className="w-5 h-5 rounded border border-gray-300" style={{ backgroundColor: '#fff0c3' }}></div>
+        <span className="text-sm text-gray-700">Damaged - ضرر</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-5 h-5 rounded border border-gray-300" style={{ backgroundColor: '#ffb2b2' }}></div>
+        <span className="text-sm text-gray-700">Repainted - مرشوش</span>
+      </div>
+    </div>
+    </div>
   );
 };
 

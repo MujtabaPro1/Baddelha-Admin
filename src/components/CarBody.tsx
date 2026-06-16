@@ -47,15 +47,15 @@ const CarBodySvg: React.FC<CarBodySvgProps> = ({
           }
           
           .part.damaged {
-            fill: orange;
+            fill: #fff0c3;
           }
           
           .part.repainted {
-            fill: red;
+            fill: #ffb2b2;
           }
           
           .part.portion-repainted {
-            fill: yellow;
+            fill: #ffb2b2;
           }
           
           .part.not-available {
