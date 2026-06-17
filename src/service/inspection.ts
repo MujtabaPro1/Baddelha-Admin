@@ -49,6 +49,17 @@ export const findInspection = async (inspectionId: string) => {
   }
 };
 
+export const findInspectionV2 = async (inspectionId: string, lang: string) => {
+  try {
+    console.log("inspectionId",inspectionId);
+    const res = await axiosInstance.get("/1.0/inspection/findv2/" + inspectionId + '?lang=' + lang);
+
+    return res.data;
+  } catch (ex: any) {
+    return axiosErrorHandler(ex);
+  }
+};
+
 export const updateInspection = async (
   inspectionId: number,
   body: InspectionUpdateDto
