@@ -195,6 +195,7 @@ const Inspections = () => {
             >
               <option value="">All statuses</option>
               <option value="Pending">Pending</option>
+              <option value="Submit">Submit</option>
               <option value="In_Progress">In Progress</option>
               <option value="Completed">Completed</option>
               <option value="In_Complete">In_Complete</option>
