@@ -51,7 +51,12 @@ const Inspections = () => {
 
   useEffect(() => {
     fetchInspections();
-  }, [currentPage, itemsPerPage, searchQuery,selectedStatus]);
+  }, [currentPage, itemsPerPage, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchInspections();
+  }, [selectedStatus]);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -239,7 +244,13 @@ const Inspections = () => {
                   <div className="mt-1 flex items-center text-sm text-gray-600">
                       <StatusBadge status={inspection.inspectionStatus} />
                   </div>
-                  
+                  {inspection.Inspector?.user && (
+                    <div className="mt-2 flex items-center text-sm text-gray-600">
+                      <User className="h-4 w-4 text-gray-500 mr-1" />
+                      <span>Inspector: {inspection.Inspector.user.firstName} {inspection.Inspector.user.lastName}</span>
+                    </div>
+                  )}
+
                 </div>
               </div>
               
@@ -247,13 +258,13 @@ const Inspections = () => {
                 <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                    {inspection.createdAt ? 
+                    {inspection.createdAt ?
                       `Scheduled: ${formatDate(inspection.createdAt)}` :
                       `Requested: ${formatDate(inspection.createdAt)}`
                     }
                   </span>
                 </div>
-                <div className="flex items-center text-sm text-gray-700">
+                <div className="flex items-center text-sm text-gray-700 mb-1">
                   <MapPin className="h-4 w-4 text-gray-500 mr-1" />
                   <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
                 </div>

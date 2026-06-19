@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AuctionCountdown from '../components/AuctionCountdown';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Filter, Plus, RefreshCw, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Cars = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCondition, setSelectedCondition] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('listed');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any | null>(null);
   const [data, setData] = useState<any[]>([]);
@@ -28,7 +27,7 @@ const Cars = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   
 
@@ -50,7 +49,12 @@ const Cars = () => {
 
   useEffect(()=>{
     fetchCars();
-  },[search, currentPage, itemsPerPage, selectedStatus]);
+  },[search, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchCars();
+  }, [selectedStatus]);
 
   async function fetchAuctionCars() {
     try {
@@ -193,38 +197,43 @@ const Cars = () => {
             placeholder="Search by make, model, year..."
             value={searchQuery}
             onChange={handleSearch}
-            className="form-input pl-12 bg-white border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+            className="form-input pl-12 pr-10 bg-white border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setSearch(''); }}
+              aria-label="Clear search"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-            <div className="sm:w-48 flex">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Filter className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="form-input pl-10 appearance-none"
-                    >
-                      <option value="">All statuses</option>
-                      <option value="new">New</option>
-                      <option value="pending_inspection">Pending</option>
-                      <option value="inspected">Inspected</option>
-                      <option value="listed">Listed</option>
-                      <option value="unlisted">Unlisted</option>
-                      <option value="sold">Sold</option>
-                      <option value="hold">Hold</option>
-                      <option value="returned">Returned</option>
-                      <option value="push_to_auction">Auction</option>
-                      <option value="push_to_inventory">Inventory</option>
-                      <option value="bid_won">Bid Won</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </div>
-                  <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
-                    <RefreshCw className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
+            <div className="relative sm:w-48">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="form-input pl-10 appearance-none"
+              >
+                <option value="">All statuses</option>
+                <option value="new">New</option>
+                <option value="pending_inspection">Pending</option>
+                <option value="inspected">Inspected</option>
+                <option value="listed">Listed</option>
+                <option value="unlisted">Unlisted</option>
+                <option value="sold">Sold</option>
+                <option value="hold">Hold</option>
+                <option value="returned">Returned</option>
+                <option value="push_to_auction">Auction</option>
+                <option value="push_to_inventory">Inventory</option>
+                <option value="bid_won">Bid Won</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
         <button
           onClick={handleRefresh}
           className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-50 border border-gray-200 rounded-lg hover:from-gray-50 hover:to-gray-100 transition-all duration-200 flex items-center justify-center gap-2 text-gray-700 font-medium"
@@ -241,79 +250,57 @@ const Cars = () => {
             <p className="text-sm text-gray-500 mt-1">{totalItems} vehicles in inventory</p>
           </div>}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
             {loading ? (
-              <div className="col-span-2 py-16 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
-                  <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              Array.from({ length: itemsPerPage > 10 ? 10 : itemsPerPage }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-3 animate-pulse">
+                  <div className="w-16 h-16 rounded-lg bg-gray-200 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/3" />
+                    <div className="h-3 bg-gray-100 rounded w-1/4" />
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-20" />
                 </div>
-                <p className="text-gray-600 font-medium">Loading cars...</p>
-              </div>
+              ))
             ) : filteredCars.length > 0 ? (
               filteredCars.map((car) => (
                 <div
                   onClick={() => navigate(`/cars/details/${car.id}`)}
                   key={car.id}
-                  className="group bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-xl cursor-pointer hover:-translate-y-1"
+                  className="group flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  <div className="relative h-52 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    {car.coverImage ? (
-                      <img
-                        src={car.coverImage}
-                        alt={`${car.modelYear} ${car.make} ${car.model}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    ) : (
-                      <img
-                        src="https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"
-                        alt={`${car.modelYear} ${car.make} ${car.model}`}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="absolute top-3 right-3">
-                      <StatusBadge status={car.carStatus == 'pending_inspection' ? 'pending' : 'available'} />
-                    </div>
+                  <img
+                    src={car.coverImage || "https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"}
+                    alt={`${car.modelYear} ${car.make} ${car.model}`}
+                    className="w-16 h-16 rounded-lg object-cover bg-gray-100 shrink-0"
+                  />
+
+                  <div className="min-w-[10rem] flex-1">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                      {car.modelYear} {car.make} {car.model}
+                    </h3>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">ID: {car?.id?.slice(0, 8)}</p>
                   </div>
 
-                  <div className="p-5">
-                    <div className="mb-3">
-                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {car.modelYear} {car.make} {car.model}
-                      </h3>
-                      <p className='text-xs text-gray-400 font-medium mt-1'>ID: {car?.id?.slice(0, 8)}</p>
-                    </div>
-
-                    <div className="mb-4 pt-3 border-t border-gray-100">
-                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                        {car.sellingPrice ? `SAR ${Number(car.sellingPrice).toLocaleString()}` :
-                         car.bookValue ? `SAR ${Number(car.bookValue).toLocaleString()}` : 'Price TBA'}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-500 text-xs font-medium">Engine</p>
-                        <p className="text-gray-900 font-semibold text-sm mt-0.5">{car.engine || car.engineType || 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-500 text-xs font-medium">Mileage</p>
-                        <p className="text-gray-900 font-semibold text-sm mt-0.5">{car.mileage ? `${(car.mileage / 1000).toFixed(0)}K km` : 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-500 text-xs font-medium">Body</p>
-                        <p className="text-gray-900 font-semibold text-sm mt-0.5">{car.bodyType || 'N/A'}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-gray-500 text-xs font-medium">Transmission</p>
-                        <p className="text-gray-900 font-semibold text-sm mt-0.5 capitalize">{car.gearType || 'N/A'}</p>
-                      </div>
-                    </div>
+                  <div className="hidden md:flex items-center gap-4 text-xs text-gray-500 flex-1">
+                    <span>{car.engine || car.engineType || 'N/A'}</span>
+                    <span>{car.mileage ? `${(car.mileage / 1000).toFixed(0)}K km` : 'N/A'}</span>
+                    <span className="capitalize">{car.gearType || 'N/A'}</span>
+                    <span>{car.bodyType || 'N/A'}</span>
                   </div>
+
+                  <div className="shrink-0">
+                    <StatusBadge status={car.carStatus || 'new'} />
+                  </div>
+
+                  <p className="w-32 shrink-0 text-right font-bold text-blue-700 text-sm">
+                    {car.sellingPrice ? `SAR ${Number(car.sellingPrice).toLocaleString()}` :
+                     car.bookValue ? `SAR ${Number(car.bookValue).toLocaleString()}` : 'Price TBA'}
+                  </p>
                 </div>
               ))
             ) : (
-              <div className="col-span-2 py-16 text-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+              <div className="py-16 text-center bg-gradient-to-br from-gray-50 to-gray-100">
                 <div className="text-4xl mb-3">🚗</div>
                 <p className="text-gray-600 font-medium">No cars found matching your search</p>
                 <p className="text-gray-500 text-sm mt-1">Try adjusting your filters</p>
