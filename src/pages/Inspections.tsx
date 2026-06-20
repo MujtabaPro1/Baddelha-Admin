@@ -239,7 +239,7 @@ const Inspections = () => {
                     </h3>
                   </div>
                   <div className="text-[10px] font-semibold text-blue-900 mt-1 bg-blue-100 px-2 py-1 w-auto mb-2 rounded">
-                      Display ID: {inspection.displayId}
+                      {inspection.displayId}
                   </div>
                   <div className="mt-1 flex items-center text-sm text-gray-600">
                       <StatusBadge status={inspection.inspectionStatus} />
