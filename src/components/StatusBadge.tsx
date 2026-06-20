@@ -60,7 +60,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <span className={`badge ${getStatusStyles()}`}>
-      {label}
+      {label == 'Submit' ? 'Submitted' : label}
     </span>
   );
 };
