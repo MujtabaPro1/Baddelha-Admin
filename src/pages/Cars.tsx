@@ -244,7 +244,7 @@ const Cars = () => {
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Cars grid - Main section */}
-        <div className={carType === 'sold' ? 'lg:w-full' : 'lg:w-2/3'}>
+        <div className={carType === 'sold' ? 'lg:w-full' : 'lg:w-[60%]'}>
           {carType !== 'sold' && <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Available Cars</h2>
             <p className="text-sm text-gray-500 mt-1">{totalItems} vehicles in inventory</p>
@@ -370,7 +370,7 @@ const Cars = () => {
         </div>
 
         {/* Auction Cars - Sidebar */}
-        {carType !== 'sold' && <div className="lg:w-1/3">
+        {carType !== 'sold' && <div className="lg:w-[40%]">
           <div className="sticky top-6">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
