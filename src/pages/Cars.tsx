@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AuctionCountdown from '../components/AuctionCountdown';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, Filter, Plus, RefreshCw, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
@@ -380,65 +380,40 @@ const Cars = () => {
               <p className="text-sm text-gray-500 mt-1">{auctionCars?.length || 0} live bidding</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-amber-200 divide-y divide-amber-100 overflow-hidden">
               {auctionCars && auctionCars.length > 0 ? (
                 auctionCars.map((auction) => (
                   auction?.status == 'ENDED'  || auction?.car?.carStatus == 'unlisted'  ? null : (
                     <div
                       key={auction.id}
-                      className="group bg-white rounded-xl overflow-hidden border border-amber-200 hover:border-amber-300 transition-all duration-300 hover:shadow-lg cursor-pointer hover:shadow-amber-100/50"
+                      className="group flex items-center gap-4 p-3 hover:bg-amber-50 transition-colors cursor-pointer"
                       onClick={() => navigate(`/cars/details/${auction.carId}?auctionId=${auction.id}`)}
                     >
-                      <div className="relative h-32 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden">
-                        {auction.coverImage ? (
-                          <img
-                            src={auction.coverImage}
-                            alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        ) : (
-                          <img
-                            src="https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"
-                            alt={`${auction.modelYear} ${auction.make} ${auction.model}`}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-                        <div className="absolute top-3 right-3 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                      <div className="relative shrink-0">
+                        <img
+                          src={auction.coverImage || "https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"}
+                          alt={`${auction.car?.modelYear} ${auction.car?.make} ${auction.car?.model}`}
+                          className="w-16 h-16 rounded-lg object-cover bg-gray-100"
+                        />
+                        <div className="absolute -top-1 -right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
                           Live
                         </div>
                       </div>
 
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 text-sm group-hover:text-amber-600 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 group-hover:text-amber-600 transition-colors truncate text-sm">
                           {auction.car?.modelYear} {auction.car?.make} {auction.car?.model}
                         </h3>
-
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-lg font-bold text-transparent bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text">
-                            SAR {Number(auction.currentPrice || auction.startPrice).toLocaleString()}
-                          </p>
-                          <div className="flex items-center text-xs text-gray-500 mt-1">
-                            <Clock className="h-3.5 w-3.5 mr-1" />
-                            <span>{auction.timeLeft || 'Active'}</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 space-y-1.5 text-xs">
-                          <div className="flex justify-between items-center text-gray-600">
-                            <span>Starting:</span>
-                            <span className="font-semibold text-gray-900">SAR {Number(auction.startPrice).toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-gray-600">
-                            <span>Bids:</span>
-                            <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{auction.bidCount || 0}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-gray-600">
-                            <span>Ends:</span>
-                            <AuctionCountdown endTime={auction.endTime} />
-                          </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                          <span>{auction.bidCount || 0} bids</span>
+                          <span>•</span>
+                          <AuctionCountdown endTime={auction.endTime} />
                         </div>
                       </div>
+
+                      <p className="shrink-0 text-right font-bold text-amber-600 text-sm">
+                        SAR {Number(auction.currentPrice || auction.startPrice).toLocaleString()}
+                      </p>
                     </div>
                   )
                 ))
