@@ -284,7 +284,7 @@ const Cars = () => {
 
                   <div className="hidden md:flex items-center gap-4 text-xs text-gray-500 flex-1">
                     <span>{car.engine || car.engineType || 'N/A'}</span>
-                    <span>{car.mileage ? `${(car.mileage / 1000).toFixed(0)}K km` : 'N/A'}</span>
+                    <span>{car?.exactMileage ? `${(car.exactMileage / 1000).toFixed(0)}K km` : car?.mileage ? `${(car.mileage / 1000).toFixed(0)}K km`: 'N/A' }</span>
                     <span className="capitalize">{car.gearType || 'N/A'}</span>
                     <span>{car.bodyType || 'N/A'}</span>
                   </div>
