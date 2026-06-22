@@ -308,7 +308,7 @@ const CarsDetails = () => {
     { label: 'Make',      value: carDetails?.make,                             icon: <Car size={16} /> },
     { label: 'Model',     value: carDetails?.model,                            icon: <Car size={16} /> },
     { label: 'Year',      value: carDetails?.modelYear,                        icon: <Calendar size={16} /> },
-    { label: 'Mileage',   value: carDetails?.mileage ? `${carDetails.mileage.toLocaleString()} km` : 'N/A', icon: <Gauge size={16} /> },
+    { label: 'Mileage',   value: carDetails?.exactMileage ? `${Number(carDetails.exactMileage).toLocaleString()} km` :  carDetails?.mileage ? `${carDetails.mileage.toLocaleString()} km` : 'N/A', icon: <Gauge size={16} /> },
     { label: 'Body Type', value: carDetails?.bodyType || 'N/A',               icon: <Car size={16} /> },
     { label: 'Engine',    value: carDetails?.engine || carDetails?.engineType || 'N/A', icon: <Cog size={16} /> },
     { label: 'Gear Type', value: carDetails?.gearType || 'N/A',               icon: <Cog size={16} /> },
@@ -377,7 +377,7 @@ const CarsDetails = () => {
           {/* Quick stats strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
             {[
-              { label: 'Mileage',       value: carDetails?.mileage ? `${Number(carDetails.mileage).toLocaleString()} km` : '—' },
+              { label: 'Mileage',       value:  carDetails?.exactMileage ? `${Number(carDetails.exactMileage).toLocaleString()} km` : carDetails?.mileage ? `${Number(carDetails.mileage).toLocaleString()} km` : '—' },
               { label: 'Engine',        value: carDetails?.engine || carDetails?.engineType || '—' },
               { label: 'Gear',          value: carDetails?.gearType || '—' },
               { label: 'Inspector', value: carDetails?.Inspection?.[0]?.inspectorName || 'N/A'},
