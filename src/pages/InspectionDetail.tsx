@@ -295,14 +295,23 @@ const ViewInspectionPage = () => {
     if (!img.caption) return false;
     const captionLower = img.caption.toLowerCase();
     const isPrimary = primaryCaptions.includes(captionLower);
-    return !isPrimary && documentCaptions.some(doc => captionLower.includes(doc));
+    // Match document captions as complete words (bounded by start/end, underscore, or space)
+    const isDocument = documentCaptions.some(doc => {
+      const regex = new RegExp(`(^|[_\\s])${doc}([_\\s]|$)`, 'i');
+      return regex.test(captionLower);
+    });
+    return !isPrimary && isDocument;
   });
 
   const findingsImages = images.filter((img: any) => {
     if (!img.caption) return false;
     const captionLower = img.caption.toLowerCase();
     const isPrimary = primaryCaptions.includes(captionLower);
-    const isDocument = documentCaptions.some(doc => captionLower.includes(doc));
+    // Match document captions as complete words (bounded by start/end, underscore, or space)
+    const isDocument = documentCaptions.some(doc => {
+      const regex = new RegExp(`(^|[_\\s])${doc}([_\\s]|$)`, 'i');
+      return regex.test(captionLower);
+    });
     return !isPrimary && !isDocument;
   });
 
@@ -596,10 +605,15 @@ const ViewInspectionPage = () => {
                       return (
                         <div
                           key={idx}
-                          className="cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100"
+                          className="relative cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100 group"
                           onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
                         >
-                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" />
+                          <img src={img.url} alt={img.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                          {img.caption && (
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[10px] px-1.5 py-1 truncate text-center">
+                              {img.caption.replace(/_/g, ' ')}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
