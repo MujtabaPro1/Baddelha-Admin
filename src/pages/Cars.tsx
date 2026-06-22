@@ -220,11 +220,11 @@ const Cars = () => {
                 className="form-input pl-10 appearance-none"
               >
                 <option value="">All statuses</option>
-                <option value="new">New</option>
-                <option value="pending_inspection">Pending</option>
                 <option value="inspected">Inspected</option>
                 <option value="listed">Listed</option>
                 <option value="unlisted">Unlisted</option>
+                <option value="new">New</option>
+                <option value="pending_inspection">Pending</option>
                 <option value="sold">Sold</option>
                 <option value="hold">Hold</option>
                 <option value="returned">Returned</option>
