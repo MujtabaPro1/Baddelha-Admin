@@ -30,6 +30,7 @@ const Inspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [vinQuery, setVinQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
@@ -47,11 +48,11 @@ const Inspections = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, vinQuery]);
 
   useEffect(() => {
     fetchInspections();
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, vinQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -68,6 +69,9 @@ const Inspections = () => {
       }
       if(searchQuery){
         body['search'] = searchQuery;
+      }
+      if(vinQuery){
+        body['vin'] = vinQuery;
       }
       if(selectedStatus){
         body['inspectionStatus'] = selectedStatus;
@@ -185,6 +189,18 @@ const Inspections = () => {
             placeholder="Search inspections..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input pl-10"
+          />
+        </div>
+        <div className="relative sm:w-56">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by VIN..."
+            value={vinQuery}
+            onChange={(e) => setVinQuery(e.target.value)}
             className="form-input pl-10"
           />
         </div>
