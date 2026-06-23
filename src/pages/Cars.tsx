@@ -18,7 +18,7 @@ const Cars = () => {
   const [auctionCars, setAuctionCars] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
