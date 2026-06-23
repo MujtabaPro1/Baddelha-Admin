@@ -21,6 +21,10 @@ const Appointments = () => {
   const [searchQuery, setSearchQuery]: any = useState('');
   const [selectedStatus, setSelectedStatus]: any = useState<string>('');
   const [selectedPurpose, setSelectedPurpose]: any = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 20;
 
   // Fetch appointments data from API
   const fetchAppointments = async () => {
@@ -32,15 +36,27 @@ const Appointments = () => {
         // In a real scenario, we would make an actual API call like this:
         try {
 
-          const response = await axiosInstance.get('/1.0/book-appointment?status=' + selectedStatus + '&type=' + selectedPurpose);
-          const data = response.data.map((a: any)=>{
+          const filters: any = {};
+          if (selectedStatus) {
+            filters.status = selectedStatus;
+          }
+          const response = await axiosInstance.post('/1.0/book-appointment/search', {
+            search: searchQuery,
+            pagination: {
+              page: currentPage,
+              limit: itemsPerPage
+            },
+            filters,
+            sortOrder: 'desc'
+          });
+          const data = response?.data?.data?.map((a: any)=>{
             return {
               ...a,
               car: JSON.parse(a.carDetail),
             }
           });
-
-          console.log(data);
+          setTotalCount(response.data?.meta?.total || 0);
+          setTotalPages(response.data?.meta?.totalPages || 1);
           setAppointments(data);
         } catch (apiError) {
           console.error('API call would have failed:', apiError);
@@ -56,7 +72,7 @@ const Appointments = () => {
 
   useEffect(() => {
     fetchAppointments();
-  }, [selectedStatus]);
+  }, [currentPage, selectedStatus]);
 
 
 
@@ -101,13 +117,13 @@ const Appointments = () => {
             </div>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
               className="form-input pl-10 appearance-none"
             >
               <option value="">All statuses</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
         </div>
@@ -210,6 +226,50 @@ const Appointments = () => {
             {appointments.length === 0 && (
               <div className="py-12 text-center bg-white rounded-lg shadow-sm">
                 <p className="text-gray-500">No appointments found matching your criteria.</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalCount > 0 && (
+              <div className="bg-white rounded-lg shadow-sm p-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1.5 text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Next
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>
