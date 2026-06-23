@@ -19,6 +19,10 @@ const CallCenter = () => {
   const [error,setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 20;
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [activeCall, setActiveCall] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<{ [key: string]: string }>({});
@@ -65,7 +69,7 @@ const CallCenter = () => {
   useEffect(()=>{
     fetchAppointments();
     fetchBranches();
-  },[])
+  },[currentPage, selectedStatus])
 
   const fetchBranches = async () => {
     try {
@@ -217,9 +221,21 @@ const CallCenter = () => {
     try {
       // Make the actual API call
       try {
-        const response = await axiosInstance.get('/1.0/book-appointment');
+        const filters: any = {};
+        if (selectedStatus) {
+          filters.status = selectedStatus;
+        }
+        const response = await axiosInstance.post('/1.0/book-appointment/search', {
+          search: searchQuery,
+          pagination: {
+            page: currentPage,
+            limit: itemsPerPage
+          },
+          filters,
+          sortOrder: 'desc'
+        });
         
-        const data = response.data.map((a: any) => {
+        const data = response?.data?.data.map((a: any) => {
           return {
             ...a,
             car: JSON.parse(a.carDetail),
@@ -246,8 +262,11 @@ const CallCenter = () => {
             }
           };
         });
-
+        console.log(data);
         setAppointments(data);
+        const total = response.data?.meta?.total || response.data?.length || 0;
+        setTotalCount(total);
+        setTotalPages(Math.ceil(total / itemsPerPage) || 1);
       } catch (apiError) {
         console.error('API call failed:', apiError);
         throw apiError; // Re-throw to be caught by the outer try/catch
@@ -258,6 +277,11 @@ const CallCenter = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setCurrentPage(1);
   };
 
 
@@ -446,7 +470,7 @@ const CallCenter = () => {
           Create Appointment
         </button>
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="hidden grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -505,10 +529,67 @@ const CallCenter = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="hidden bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
-          <div className="flex flex-col lg:flex-row gap-3">
-        
+        {/* Status Filter Tabs */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => handleStatusChange('')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedStatus === '' 
+                  ? 'bg-slate-800 text-white' 
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => handleStatusChange('Scheduled')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedStatus === 'Scheduled' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+              }`}
+            >
+              Scheduled
+            </button>
+            <button
+              onClick={() => handleStatusChange('Confirmed')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedStatus === 'Confirmed' 
+                  ? 'bg-emerald-500 text-white' 
+                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+              }`}
+            >
+              Confirmed
+            </button>
+            <button
+              onClick={() => handleStatusChange('Cancelled')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedStatus === 'Cancelled' 
+                  ? 'bg-red-500 text-white' 
+                  : 'bg-red-50 text-red-600 hover:bg-red-100'
+              }`}
+            >
+              Cancelled
+            </button>
+            <button
+              onClick={() => handleStatusChange('No_Answer')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                selectedStatus === 'No_Answer' 
+                  ? 'bg-orange-500 text-white' 
+                  : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+              }`}
+            >
+              No Answer
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => fetchAppointments()}
+                className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                <RefreshCw className={`h-4 w-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -640,13 +721,63 @@ const CallCenter = () => {
           })}
         </div>
 
-        {filteredAppointments.length === 0 && (
+        {filteredAppointments.length === 0 && !loading && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-16 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="h-8 w-8 text-slate-400" />
             </div>
             <h3 className="text-lg font-semibold text-slate-800 mb-2">No appointments found</h3>
             <p className="text-slate-500 text-sm">Try adjusting your search or filters</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="py-12 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mt-6 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1.5 text-sm font-medium text-slate-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

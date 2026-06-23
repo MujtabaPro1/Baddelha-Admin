@@ -9,7 +9,7 @@ import { createMedia } from "../service/media";
 import { dataURLToBlob } from "../types/dataUrlToBlob";
 import { MinusCircle, Check, ChevronRight, ChevronLeft, Plus, Camera, X, ImageIcon } from "lucide-react";
 import axiosInstance from "../service/api";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { axiosErrorHandler } from "../types/utils";
 import PageHeader from "../components/PageHeader";
 import CarImage from "../images/img.png";
@@ -23,7 +23,6 @@ import CarBodySvgView from "../components/CarBodyView";
 
 const InspectionForm = () => {
   // Initialize the form state and action
-
   let mode = 'create';
   const [language, setLanguage] = useState<'en' | 'ar'>('en');
   const [loading, setLoading] = useState(false);
@@ -35,6 +34,10 @@ const InspectionForm = () => {
   const params = useParams();
   const [images, setImages] = useState<any>([]);
   const [error,setError] = useState(false);
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('isEdit') === 'true';
+
+  mode = isEditMode ? 'edit' : 'create';
   
   // Stepper state
   const [currentStep, setCurrentStep] = useState(0);
@@ -191,7 +194,7 @@ const InspectionForm = () => {
 
   useEffect(()=>{
      getInspectionData();
-     
+
      // Initialize all car parts with "original" condition
      const initialPartConditions: Record<string, string> = {};
      carParts.forEach(part => {
@@ -200,7 +203,7 @@ const InspectionForm = () => {
      setPartConditions(initialPartConditions);
 
 
-  },[]);
+  },[params.id, isEditMode]);
   
   // Update form values when defaultValues change
   useEffect(() => {
@@ -246,6 +249,22 @@ const InspectionForm = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const fetchInspectionWithImages = async () => {
+    try {
+      const response = await axiosInstance.get(`/1.0/inspection/find/${params.id}`);
+      if (response?.data?.images && Array.isArray(response.data.images)) {
+        setImages(response.data.images);
+      }
+      // Load existing car body condition data
+      if (response?.data?.carBodyConditionJson && typeof response.data.carBodyConditionJson === 'object') {
+        setPartConditions(response.data.carBodyConditionJson);
+        setCarBodyTab('view'); // Show view tab if data exists
+      }
+    } catch (ex: any) {
+      console.error('Error fetching inspection images:', ex);
+    }
+  };
+
   const getInspectionData = async () => {
     try {
       const inspection = await getInspectionSchema(params.id);
@@ -260,6 +279,14 @@ const InspectionForm = () => {
        console.log("inspection", inspection);
       inspection?.map((item:any)=>{
         console.log("item.name", item.name);
+        
+        // Handle Car Body Condition - extract value property
+        if (item.name === 'Car Body Condition' && item.value && typeof item.value === 'object') {
+          setPartConditions(item.value);
+          setCarBodyTab('view');
+          return;
+        }
+        
         if(item.name !== 'Car Media' && item.name !== 'Document Images' && item.name != 'Car Body Condition') {
           console.log("item", item);
           let val = item['fields'].reduce((acc: any, field: any) => {
@@ -269,14 +296,14 @@ const InspectionForm = () => {
             const isDropDown = field.fieldType === 'Drop Down';
             const hasNoValue = fieldValue === null || fieldValue === undefined || fieldValue == '';
             const hasOptions = field.options?.length > 0;
-            
+
             console.log('fieldName',field.fieldName);
-            
+
             if(field.fieldName === 'Airbag Deployed' || field.fieldName === 'Chassis') {
               console.log('Skipping',field.fieldName);
               return acc;
             }
-            
+
             if (isDropDown && hasNoValue && hasOptions) {
               fieldValue = field.options[0];
               console.log(`Setting default for ${field.fieldName} to: ${fieldValue}`);
@@ -290,15 +317,20 @@ const InspectionForm = () => {
             ...formValues,
             ...val,
           };
-    
+
         }
       })
 
-     
+
       console.log("inspection---",inspection);
       console.log("formValues with defaults---", formValues);
       setDefaultValues(formValues);
       setInitialData(inspection);
+
+      // Fetch inspection images if in edit mode
+      if (isEditMode) {
+        await fetchInspectionWithImages();
+      }
     } catch (ex: any) {
       console.error(ex);
       setError(true);
@@ -593,10 +625,11 @@ const InspectionForm = () => {
 
   const handleImageRemoveMedia = (field: any) => {
     if(confirm('Are you sure you want to delete?')) {
-      axiosInstance.get('/1.0/media/delete/' + field.id).then((res) => {
-                    window.location.reload();
+      const key = field.key || field.id;
+      axiosInstance.get('/1.0/media/delete/' + key).then((res) => {
+        window.location.reload();
       }).catch((err) => {
-        alert(err);
+        alert(err?.response?.data?.message || 'Failed to delete image');
       })
     }
   }
@@ -903,8 +936,8 @@ const InspectionForm = () => {
                           switch(condition) {
                             case 'original': conditionColor = '#4CAF50'; break;
                             case 'painted': conditionColor = '#2196F3'; break;
-                            case 'repainted': conditionColor = '#FFC107'; break;
-                            case 'damaged': conditionColor = '#F44336'; break;
+                            case 'repainted': conditionColor = '#fff0c3'; break;
+                            case 'damaged': conditionColor = '#ffb2b2'; break;
                           }
                           
                           return (
@@ -956,9 +989,11 @@ const InspectionForm = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                     {i.fields.map((field: any) => {
                       const hasImage = mediaFiles[field]?.selectedImage;
+                      const existingImage = isEditMode && images?.find((img: any) => img.caption?.toLowerCase() === field.toLowerCase());
+                      const showImage = hasImage || existingImage;
                       return (
                         <div 
-                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${hasImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'}`} 
+                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${showImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'} group`} 
                           key={field}
                         >
                           <div className="aspect-square overflow-hidden bg-gray-50">
@@ -967,11 +1002,11 @@ const InspectionForm = () => {
                               className="flex items-center justify-center w-full h-full cursor-pointer"
                             >
                               <img
-                                className={`w-full h-full object-cover ${!hasImage && 'opacity-60 p-2'}`}
+                                className={`w-full h-full object-cover ${!showImage && 'opacity-60 p-2'}`}
                                 alt={field}
-                                src={hasImage ? mediaFiles[field].selectedImage : CarImage}
+                                src={hasImage ? mediaFiles[field].selectedImage : existingImage ? existingImage.url : CarImage}
                               />
-                              {!hasImage && (
+                              {!showImage && (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                   <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">Add Image</span>
                                 </div>
@@ -1000,10 +1035,20 @@ const InspectionForm = () => {
                               </div>
                             )}
                           </div>
-                          {hasImage && (
+                          {showImage && (
                             <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md">
                               <Check size={12} color="white" />
                             </div>
+                          )}
+                          {existingImage && !hasImage && (
+                            <button
+                              type="button"
+                              className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleImageRemoveMedia(existingImage)}
+                              title={language === 'ar' ? 'حذف' : 'Delete'}
+                            >
+                              <MinusCircle size={12} />
+                            </button>
                           )}
                         </div>
                       );
@@ -1018,9 +1063,11 @@ const InspectionForm = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                     {i.fields.map((field: any) => {
                       const hasImage = mediaFiles[field]?.selectedImage;
+                      const existingImage = isEditMode && images?.find((img: any) => img.caption?.toLowerCase() === field.toLowerCase());
+                      const showImage = hasImage || existingImage;
                       return (
                         <div 
-                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${hasImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'}`} 
+                          className={`relative rounded-lg overflow-hidden shadow-sm transition-all duration-200 ${showImage ? 'ring-2 ring-blue-900' : 'border border-gray-200'} group`} 
                           key={field}
                         >
                           <div className="aspect-square overflow-hidden bg-gray-50">
@@ -1029,11 +1076,11 @@ const InspectionForm = () => {
                               className="flex items-center justify-center w-full h-full cursor-pointer"
                             >
                               <img
-                                className={`w-full h-full object-cover ${!hasImage && 'opacity-60 p-2'}`}
+                                className={`w-full h-full object-cover ${!showImage && 'opacity-60 p-2'}`}
                                 alt={field}
-                                src={hasImage ? mediaFiles[field].selectedImage : CarImage}
+                                src={hasImage ? mediaFiles[field].selectedImage : existingImage ? existingImage.url : CarImage}
                               />
-                              {!hasImage && (
+                              {!showImage && (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                   <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">Add Image</span>
                                 </div>
@@ -1062,10 +1109,20 @@ const InspectionForm = () => {
                               </div>
                             )}
                           </div>
-                          {hasImage && (
+                          {showImage && (
                             <div className="absolute top-2 right-2 bg-primary rounded-full p-1 shadow-md">
                               <Check size={12} color="white" />
                             </div>
+                          )}
+                          {existingImage && !hasImage && (
+                            <button
+                              type="button"
+                              className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleImageRemoveMedia(existingImage)}
+                              title={language === 'ar' ? 'حذف' : 'Delete'}
+                            >
+                              <MinusCircle size={12} />
+                            </button>
                           )}
                         </div>
                       );
@@ -1381,6 +1438,33 @@ const InspectionForm = () => {
                           </div>
                         )}
 
+                        {/* Finding images for this field */}
+                        {isEditMode && images && (() => {
+                          const fieldFindingImages = images.filter((img: any) => {
+                            if (!img.caption) return false;
+                            const regex = new RegExp(`^${_fieldName}_fail_\\d+$`, 'i');
+                            return regex.test(img.caption);
+                          });
+                          if (fieldFindingImages.length === 0) return null;
+                          return (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {fieldFindingImages.map((img: any, idx: number) => (
+                                <div key={img.id || idx} className="relative group w-16 h-16 rounded-lg overflow-hidden border-2 border-red-300 bg-red-50">
+                                  <img src={img.url} alt={img.caption} className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    className="absolute top-0.5 right-0.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleImageRemoveMedia(img)}
+                                    title={language === 'ar' ? 'حذف' : 'Delete'}
+                                  >
+                                    <MinusCircle size={10} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+
                       </div>
                     );
                   })}
@@ -1390,38 +1474,40 @@ const InspectionForm = () => {
         })}
 
 
-        {images && images?.length ?  <div className="flex flex-wrap  gap-5 mt-5 ">
-          { images.map((field: any) => {
-            return (
-                <div className="relative border-spacing-1 border-primary border-2 rounded" key={field}>
-                  <div className="overflow-hidden w-30  h-30 text-center">
-                    <label htmlFor={`${field}picker`}>
-                      <img
-                          style={{
-                            width: "100%",
-                            height: "auto",
-                          }}
-                          alt="image"
-                          src={field?.url ?? "/images/img.png"}
-                      />
-                    </label>
-                    <p className="text-[12px] absolute bottom-0 w-full">{field?.caption}</p>
-
+        {currentStep == 0 && isEditMode && images && images?.length > 0 && (
+          <div className="mt-8 mb-8">
+            <div className="w-full p-4 rounded-md bg-[#F6F9FC] font-bold mt-2 mb-4 text-[#000]">
+              {language === 'ar' ? 'جميع صور الفحص' : 'All Inspection Images'}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {images.map((image: any) => (
+                <div
+                  key={image.id}
+                  className="relative rounded-lg overflow-hidden shadow-md border-2 border-gray-200 hover:border-primary transition-colors group"
+                >
+                  <div className="aspect-square overflow-hidden bg-gray-50">
+                    <img
+                      src={image.url}
+                      alt={image.caption}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                      <button
-                          type="button"
-                          className="bg-white absolute -top-3 -right-3  border-2 rounded-full border-white"
-                          onClick={() => {
-                            handleImageRemoveMedia(field);
-                          }}
-                      >
-                        <MinusCircle size={20} color="red" />
-                      </button>
+                  <div className="bg-white p-2 absolute bottom-0 w-full bg-opacity-95">
+                    <p className="text-xs font-medium text-center truncate text-gray-700">{image.caption}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleImageRemoveMedia(image)}
+                    title={language === 'ar' ? 'حذف' : 'Delete'}
+                  >
+                    <MinusCircle size={16} />
+                  </button>
                 </div>
-            );
-          })}
-
-        </div>: <></>}
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Navigation and submit buttons */}
         {submitState && (

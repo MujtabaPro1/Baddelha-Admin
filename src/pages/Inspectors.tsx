@@ -29,11 +29,16 @@ const Inspectors = () => {
   const { user } = useAuth();
   const [inspectors, setInspectors] = useState<Inspector[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
+  const [inspectionCounts, setInspectionCounts] = useState<{pending: number, completed: number, incomplete: number}>({pending: 0, completed: 0, incomplete: 0});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 10;
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'inspectors' | 'inspections'>('inspectors');
-  const [inspectionSubTab, setInspectionSubTab] = useState<'scheduled' | 'completed' | 'cancelled'>('scheduled');
+  const [inspectionSubTab, setInspectionSubTab] = useState<'Pending' | 'Completed' | 'In_Complete'>('Pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearch, setMobileSearch] = useState('');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -56,9 +61,16 @@ const Inspectors = () => {
 
   useEffect(() => {
     if (activeTab === 'inspections') {
-      fetchInspections();
+      fetchInspections(inspectionSubTab, currentPage);
     }
-  }, [activeTab]);
+  }, [activeTab, inspectionSubTab, currentPage]);
+
+  useEffect(() => {
+    if (activeTab === 'inspections') {
+      fetchInspectionCounts();
+    }
+    setCurrentPage(1);
+  }, [activeTab, inspectionSubTab]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -92,15 +104,39 @@ const Inspectors = () => {
     }
   };
 
-  const fetchInspections = async () => {
+  const fetchInspections = async (status: string, page: number = 1) => {
     setInspectionsLoading(true);
     try {
-      const res = await axiosInstance.get('/1.0/inspection/find-all');
+      const res = await axiosInstance.post('/1.0/inspection/search',{
+        page,
+        limit: itemsPerPage,
+        inspectionStatus: status
+      });
       setInspections(res.data?.data || []);
+      const total = res.data?.totalCount || 0;
+      setTotalCount(total);
+      setTotalPages(Math.ceil(total / itemsPerPage) || 1);
     } catch (err) {
       console.error(err);
     } finally {
       setInspectionsLoading(false);
+    }
+  };
+
+  const fetchInspectionCounts = async () => {
+    try {
+      const [scheduled, completed, cancelled] = await Promise.all([
+        axiosInstance.post('/1.0/inspection/search', { page: 1, limit: 1, inspectionStatus: 'Pending' }),
+        axiosInstance.post('/1.0/inspection/search', { page: 1, limit: 1, inspectionStatus: 'Completed' }),
+        axiosInstance.post('/1.0/inspection/search', { page: 1, limit: 1, inspectionStatus: 'In_Complete' })
+      ]);
+      setInspectionCounts({
+        pending: scheduled.data?.totalCount || 0,
+        completed: completed.data?.totalCount || 0,
+        incomplete: cancelled.data?.totalCount || 0
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -149,15 +185,7 @@ const Inspectors = () => {
     setTimeout(() => setShowStatusModal(true), 0);
   };
 
-  const subTabStatuses: Record<typeof inspectionSubTab, string[]> = {
-    scheduled: ['scheduled', 'pending'],
-    completed: ['completed'],
-    cancelled: ['cancelled'],
-  };
-
   const filteredInspections = inspections.filter((insp: any) => {
-    const status = (insp.inspectionStatus || insp.status || '').toLowerCase();
-    if (!subTabStatuses[inspectionSubTab].includes(status)) return false;
     if (!mobileSearch.trim()) return true;
     const phone =
       insp?.BookAppointments?.[0]?.phone ||
@@ -178,6 +206,7 @@ const Inspectors = () => {
   const getInspectorBranch = (inspector: Inspector) => {
     return inspector.Inspector?.[0]?.Branch?.enName || 'Not assigned';
   };
+
 
   return (
     <div>
@@ -263,7 +292,7 @@ const Inspectors = () => {
                     <td>{inspector.phone}</td>
                     <td className="text-gray-600">{getInspectorBranch(inspector)}</td>
                     <td>
-                      <StatusBadge status={inspector?.status as StatusType || 'active'} />
+                      <StatusBadge status={(inspector?.status?.toLowerCase() || 'active') as any} />
                     </td>
                     <td>
                       {user?.role?.toLowerCase() === 'admin' && (
@@ -313,23 +342,23 @@ const Inspectors = () => {
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-6">
                 <button
-                  onClick={() => setInspectionSubTab('scheduled')}
+                  onClick={() => setInspectionSubTab('Pending')}
                   className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                    inspectionSubTab === 'scheduled'
+                    inspectionSubTab === 'Pending'
                       ? 'border-yellow-500 text-yellow-700'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   <Clock size={15} />
-                  Scheduled
+                  Pending
                   <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
-                    {inspections.filter(i => ['scheduled','pending'].includes((i.inspectionStatus || i.status || '').toLowerCase())).length}
+                    {inspectionCounts.pending}
                   </span>
                 </button>
                 <button
-                  onClick={() => setInspectionSubTab('completed')}
+                  onClick={() => setInspectionSubTab('Completed')}
                   className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                    inspectionSubTab === 'completed'
+                    inspectionSubTab === 'Completed'
                       ? 'border-green-600 text-green-700'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
@@ -337,28 +366,28 @@ const Inspectors = () => {
                   <CheckCircle size={15} />
                   Completed
                   <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
-                    {inspections.filter(i => (i.inspectionStatus || i.status || '').toLowerCase() === 'completed').length}
+                    {inspectionCounts.completed}
                   </span>
                 </button>
                 <button
-                  onClick={() => setInspectionSubTab('cancelled')}
+                  onClick={() => setInspectionSubTab('In_Complete')}
                   className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
-                    inspectionSubTab === 'cancelled'
+                    inspectionSubTab === 'In_Complete'
                       ? 'border-red-500 text-red-700'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   <XCircle size={15} />
-                  Cancelled
+                  Incomplete
                   <span className="ml-1 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">
-                    {inspections.filter(i => (i.inspectionStatus || i.status || '').toLowerCase() === 'cancelled').length}
+                    {inspectionCounts.incomplete}
                   </span>
                 </button>
               </nav>
             </div>
           </div>
 
-          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="hidden mb-6 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -372,7 +401,7 @@ const Inspectors = () => {
               />
             </div>
             <button
-              onClick={fetchInspections}
+              onClick={() => { fetchInspections(inspectionSubTab, currentPage); fetchInspectionCounts(); }}
               className="p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
             >
               <RefreshCw
@@ -387,7 +416,7 @@ const Inspectors = () => {
                 <tr>
                   <th>Ref</th>
                   <th>Car</th>
-                  <th>Mobile</th>
+                  <th>Customer</th>
                   <th>Inspector</th>
                   <th>Branch</th>
                   <th>Status</th>
@@ -405,10 +434,10 @@ const Inspectors = () => {
                     <td className="font-medium text-gray-900">
                       {insp.Car?.year} {insp.Car?.make} {insp.Car?.model}
                     </td>
-                    <td>{insp.BookAppointments?.[0]?.phone || insp.BookAppointment?.phone || '-'}</td>
+                    <td>{insp.BookAppointments?.[0]?.firstName || insp.BookAppointment?.firstName || '-'}</td>
                     <td>
-                      {insp.Inspector?.User
-                        ? `${insp.Inspector.User.firstName} ${insp.Inspector.User.lastName || ''}`
+                      {insp.Inspector?.user
+                        ? `${insp.Inspector.user.firstName} ${insp.Inspector.user.lastName || ''}`
                         : '-'}
                     </td>
                     <td>{insp.Branch?.enName || '-'}</td>
@@ -436,6 +465,48 @@ const Inspectors = () => {
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 px-4">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1.5 text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
