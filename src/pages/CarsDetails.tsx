@@ -134,6 +134,8 @@ const CarsDetails = () => {
   const [showAuctionModal, setShowAuctionModal]                     = useState<boolean>(false);
   const [auctionStartPrice, setAuctionStartPrice]                   = useState<number | null>(null);
   const [pushingToAuction, setPushingToAuction]                     = useState<boolean>(false);
+  const [viewerOpen, setViewerOpen]                                 = useState<boolean>(false);
+  const [viewerIndex, setViewerIndex]                               = useState<number>(0);
 
   useEffect(() => {
     if (carDetails?.sellingPrice)      setEditedPrice(Number(carDetails.sellingPrice));
@@ -858,12 +860,19 @@ const CarsDetails = () => {
                   {images?.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {images.map((img: any, i: number) => (
-                        <div key={i} className="relative group rounded-xl overflow-hidden aspect-video bg-gray-100">
+                        <div 
+                          key={i} 
+                          className="relative group rounded-xl overflow-hidden aspect-video bg-gray-100 cursor-pointer"
+                          onClick={() => { setViewerIndex(i); setViewerOpen(true); }}
+                        >
                           <img
                             src={img.url || img.path}
                             alt={img.caption || `Image ${i + 1}`}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <Eye size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                           {img.caption && (
                             <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs px-2 py-1 truncate">
                               {img.caption}
@@ -898,6 +907,64 @@ const CarsDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Viewer */}
+      {viewerOpen && images?.length > 0 && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+          onClick={() => setViewerOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setViewerOpen(false)}
+            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-colors z-10"
+          >
+            <X size={24} />
+          </button>
+
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 rounded-full text-white text-sm font-medium">
+            {viewerIndex + 1} / {images.length}
+          </div>
+
+          {/* Previous button */}
+          {images.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewerIndex(i => i === 0 ? images.length - 1 : i - 1); }}
+              className="absolute left-4 p-3 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+          )}
+
+          {/* Main image */}
+          <div 
+            className="max-w-[90vw] max-h-[85vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={images[viewerIndex]?.url || images[viewerIndex]?.path}
+              alt={images[viewerIndex]?.caption || `Image ${viewerIndex + 1}`}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+            />
+            {images[viewerIndex]?.caption && (
+              <div className="mt-3 px-4 py-2 bg-black/50 rounded-lg text-white text-sm">
+                {images[viewerIndex].caption}
+              </div>
+            )}
+          </div>
+
+          {/* Next button */}
+          {images.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setViewerIndex(i => i === images.length - 1 ? 0 : i + 1); }}
+              className="absolute right-4 p-3 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 };
