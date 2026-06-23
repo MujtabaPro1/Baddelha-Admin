@@ -396,10 +396,10 @@ const Inspectors = () => {
               </thead>
               <tbody>
                 {filteredInspections.map((insp: any) => (
-                  <tr key={insp.id} className="hover:bg-gray-50 animated-transition">
+                  <tr key={insp.displayId} className="hover:bg-gray-50 animated-transition">
                     <td>
                       <span className="text-xs font-semibold text-blue-900 bg-blue-50 px-2 py-1 rounded">
-                        #{insp.id}
+                        #{insp.displayId}
                       </span>
                     </td>
                     <td className="font-medium text-gray-900">

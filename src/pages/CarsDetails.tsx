@@ -131,6 +131,9 @@ const CarsDetails = () => {
   const [editedSellerAskingPrice, setEditedSellerAskingPrice] = useState<number | null>(null);
   const [updatingSellerAskingPrice, setUpdatingSellerAskingPrice] = useState<boolean>(false);
   const [showSellerAskingPriceModal, setShowSellerAskingPriceModal] = useState<boolean>(false);
+  const [showAuctionModal, setShowAuctionModal]                     = useState<boolean>(false);
+  const [auctionStartPrice, setAuctionStartPrice]                   = useState<number | null>(null);
+  const [pushingToAuction, setPushingToAuction]                     = useState<boolean>(false);
 
   useEffect(() => {
     if (carDetails?.sellingPrice)      setEditedPrice(Number(carDetails.sellingPrice));
@@ -217,14 +220,28 @@ const CarsDetails = () => {
     } catch (e: any) { alert(e?.response?.data?.message || 'Something went wrong'); }
   };
 
-  const markCarAsAuctionListed = async (carId: string) => {
+  const openAuctionModal = () => {
+    setAuctionStartPrice(Number(carDetails?.sellingPrice) || null);
+    setShowAuctionModal(true);
+  };
+
+  const submitAuction = async () => {
+    if (!carDetails?.id || !auctionStartPrice) return;
+    const minPrice = Number(carDetails?.sellingPrice) || 0;
+    if (auctionStartPrice < minPrice) {
+      toast.error(`Start price cannot be below selling price (SAR ${fmt(minPrice)})`);
+      return;
+    }
     try {
+      setPushingToAuction(true);
       await axiosInstance.post('/1.0/auction/push', {
-        carId, startPrice: Number(carDetails.sellingPrice), durationInMinutes: 30,
+        carId: carDetails.id, startPrice: auctionStartPrice, durationInMinutes: 30,
       });
-      alert('Successfully pushed car to auction');
+      toast.success('Successfully pushed car to auction');
+      setShowAuctionModal(false);
       setTimeout(() => { window.location.href = '/cars'; }, 1000);
-    } catch (e: any) { alert(e?.response?.data?.message || 'Something went wrong'); }
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Something went wrong'); }
+    finally { setPushingToAuction(false); }
   };
 
   const updateCarPrice = async () => {
@@ -348,6 +365,65 @@ const CarsDetails = () => {
           saving={false} coverImage={coverImage} car={carDetails}
         />
       )}
+      {showAuctionModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800">Push to Auction</h3>
+              <button onClick={() => setShowAuctionModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                {coverImage ? (
+                  <img src={coverImage} alt="car" className="w-16 h-16 object-cover rounded-lg" />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <Car size={24} className="text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold text-gray-800">{carDetails?.make} {carDetails?.model}</p>
+                  <p className="text-sm text-gray-500">{carDetails?.modelYear}</p>
+                </div>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-xs text-blue-600 font-medium">Minimum Start Price (Selling Price)</p>
+                <p className="text-lg font-bold text-blue-700">SAR {fmt(Number(carDetails?.sellingPrice) || 0)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Auction Start Price</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">SAR</span>
+                  <input
+                    type="number"
+                    className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                    value={auctionStartPrice || ''}
+                    onChange={e => setAuctionStartPrice(Number(e.target.value))}
+                    min={Number(carDetails?.sellingPrice) || 0}
+                  />
+                </div>
+                {auctionStartPrice && auctionStartPrice < (Number(carDetails?.sellingPrice) || 0) && (
+                  <p className="text-xs text-red-500 mt-1">Start price cannot be below selling price</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 pt-1">
+                <button onClick={() => setShowAuctionModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={submitAuction}
+                  disabled={pushingToAuction || !auctionStartPrice || auctionStartPrice < (Number(carDetails?.sellingPrice) || 0)}
+                  className="flex items-center gap-2 px-5 py-2 bg-amber-500 text-white text-sm font-medium rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  {pushingToAuction ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />Pushing…</> : 'Push to Auction'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-5">
         {/* ── Hero Card ────────────────────────────────────────────────────── */}
@@ -460,7 +536,7 @@ const CarsDetails = () => {
                 <button
                   onClick={() => {
                     if (!carDetails?.sellingPrice) { toast.error('Selling price must be set before pushing to auction'); return; }
-                    if (confirm('Push this car to auction?')) markCarAsAuctionListed(carDetails.id);
+                    openAuctionModal();
                   }}
                   disabled={!carDetails?.sellingPrice}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-400 text-amber-900 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
