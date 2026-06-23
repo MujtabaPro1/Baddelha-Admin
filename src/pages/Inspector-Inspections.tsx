@@ -442,29 +442,6 @@ const MyInspections = () => {
             />
           </div>
         </div>
-        <div className="sm:w-48 flex">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-5 w-5 text-gray-400" />
-            </div>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="form-input pl-10 appearance-none"
-            >
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-        </div>
-        <div className="sm:w-48 flex">
-          <button className="ml-2 p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
-            <RefreshCw className="h-5 w-5 text-gray-600" />
-          </button>
-        </div>
       </div> :  activeTab == 'available' ? <div className="mb-8 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 flex">
           <div className="relative flex-1">
