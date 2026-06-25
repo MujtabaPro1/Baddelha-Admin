@@ -93,6 +93,9 @@ const Leads = () => {
      if (subject === 'General Inquiry') {
       return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-blue-100 text-blue-800">{subject}</span>;
     }
+    else{
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-orange-100 text-orange-800">{subject}</span>;
+    }
     return subject;
   };
 

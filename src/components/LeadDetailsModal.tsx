@@ -22,13 +22,25 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
     });
   };
 
-  const renderSubject = (subject?: string) => {
+ 
+
+   const renderSubject = (subject?: string) => {
     if (!subject) return '-';
     if (subject === 'Buyer Query') {
-      return <span className="badge bg-amber-100 text-amber-800">{subject}</span>;
+      return <span className="flex justify-center items-center min-w-[80px] p-2 badge bg-amber-100 text-amber-800">{subject}</span>;
+    }
+    if (subject === 'Sales') {
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-green-100 text-green-800">{subject}</span>;
+    }
+     if (subject === 'General Inquiry') {
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-blue-100 text-blue-800">{subject}</span>;
+    }
+    else{
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-orange-100 text-orange-800">{subject}</span>;
     }
     return subject;
   };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
