@@ -22,6 +22,7 @@ const CallCenter = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [statistics, setStatistics] = useState({ scheduled: 0, confirmed: 0, cancelled: 0, completed: 0 });
   const itemsPerPage = 20;
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [activeCall, setActiveCall] = useState<string | null>(null);
@@ -56,20 +57,22 @@ const CallCenter = () => {
   const [editLoading, setEditLoading] = useState(false);
   const navigate = useNavigate();
 
-  const filteredAppointments = appointments.filter((appointment) => {
-    const searchStr = `${appointment.userDetails.name} ${appointment.userDetails.phone} ${appointment.carDetails.make} ${appointment.carDetails.model}`.toLowerCase();
-    const matchesSearch = searchStr.includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === '' || appointment.status === selectedStatus;
-    const matchesDate = selectedDate === '' || appointment.date === selectedDate;
-    
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const filteredAppointments = appointments;
 
+  useEffect(()=>{
+    fetchBranches();
+  },[])
 
   useEffect(()=>{
     fetchAppointments();
-    fetchBranches();
-  },[currentPage, selectedStatus])
+  },[currentPage, selectedStatus, selectedDate])
+
+  useEffect(()=>{
+    const timer = setTimeout(() => {
+      fetchAppointments();
+    }, 400);
+    return () => clearTimeout(timer);
+  },[searchQuery])
 
   const fetchBranches = async () => {
     try {
@@ -225,6 +228,9 @@ const CallCenter = () => {
         if (selectedStatus) {
           filters.status = selectedStatus;
         }
+        if (selectedDate) {
+          filters.appointmentDate = selectedDate;
+        }
         const response = await axiosInstance.post('/1.0/book-appointment/search', {
           search: searchQuery,
           pagination: {
@@ -267,6 +273,9 @@ const CallCenter = () => {
         const total = response.data?.meta?.total || response.data?.length || 0;
         setTotalCount(total);
         setTotalPages(Math.ceil(total / itemsPerPage) || 1);
+        if (response.data?.statistics) {
+          setStatistics(response.data.statistics);
+        }
       } catch (apiError) {
         console.error('API call failed:', apiError);
         throw apiError; // Re-throw to be caught by the outer try/catch
@@ -463,14 +472,8 @@ const CallCenter = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <button
-          onClick={() => setShowWalkInModal(true)}
-          className="bg-emerald-500 mb-4 mt-4 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
-        >
-          Create Appointment
-        </button>
         {/* Stats Cards */}
-        <div className="hidden grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -488,12 +491,12 @@ const CallCenter = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Scheduled</p>
-                <p className="text-3xl font-bold text-amber-600 mt-1">{appointments.filter((a: any) => a.status === 'Scheduled').length}</p>
+                <p className="text-3xl font-bold text-amber-600 mt-1">{statistics.scheduled}</p>
                 <p className="text-xs text-slate-500 mt-1">Pending calls</p>
               </div>
               <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -501,12 +504,12 @@ const CallCenter = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Confirmed</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-1">{appointments.filter((a: any) => a.status === 'Confirmed').length}</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">{statistics.confirmed}</p>
                 <p className="text-xs text-slate-500 mt-1">Ready to go</p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
@@ -514,18 +517,78 @@ const CallCenter = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Cancelled</p>
-                <p className="text-3xl font-bold text-red-500 mt-1">{appointments.filter((a: any) => a.status === 'Cancelled').length}</p>
+                <p className="text-3xl font-bold text-red-500 mt-1">{statistics.cancelled}</p>
                 <p className="text-xs text-slate-500 mt-1">Need follow-up</p>
               </div>
               <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
                 <XCircle className="h-6 w-6 text-red-500" />
               </div>
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Completed</p>
+                <p className="text-3xl font-bold text-indigo-600 mt-1">{statistics.completed}</p>
+                <p className="text-xs text-slate-500 mt-1">Closed out</p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Toolbar: search, date, create */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                placeholder="Search by name, phone, or car..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
+            </div>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(1); }}
+                className="pl-10 pr-3 py-2.5 bg-slate-50 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
+            </div>
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate('')}
+                className="text-xs font-medium text-slate-500 hover:text-slate-700 px-2"
+              >
+                Clear date
+              </button>
+            )}
+            <button
+              onClick={() => fetchAppointments()}
+              className="p-2.5 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setShowWalkInModal(true)}
+              className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-600 transition-colors shadow-sm shadow-emerald-500/30"
+            >
+              <Phone className="h-4 w-4" />
+              Create Appointment
+            </button>
           </div>
         </div>
 
@@ -535,8 +598,8 @@ const CallCenter = () => {
             <button
               onClick={() => handleStatusChange('')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedStatus === '' 
-                  ? 'bg-slate-800 text-white' 
+                selectedStatus === ''
+                  ? 'bg-slate-800 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -545,8 +608,8 @@ const CallCenter = () => {
             <button
               onClick={() => handleStatusChange('Scheduled')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedStatus === 'Scheduled' 
-                  ? 'bg-blue-500 text-white' 
+                selectedStatus === 'Scheduled'
+                  ? 'bg-blue-500 text-white'
                   : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
               }`}
             >
@@ -555,8 +618,8 @@ const CallCenter = () => {
             <button
               onClick={() => handleStatusChange('Confirmed')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedStatus === 'Confirmed' 
-                  ? 'bg-emerald-500 text-white' 
+                selectedStatus === 'Confirmed'
+                  ? 'bg-emerald-500 text-white'
                   : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
               }`}
             >
@@ -565,8 +628,8 @@ const CallCenter = () => {
             <button
               onClick={() => handleStatusChange('Cancelled')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedStatus === 'Cancelled' 
-                  ? 'bg-red-500 text-white' 
+                selectedStatus === 'Cancelled'
+                  ? 'bg-red-500 text-white'
                   : 'bg-red-50 text-red-600 hover:bg-red-100'
               }`}
             >
@@ -575,21 +638,13 @@ const CallCenter = () => {
             <button
               onClick={() => handleStatusChange('No_Answer')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedStatus === 'No_Answer' 
-                  ? 'bg-orange-500 text-white' 
+                selectedStatus === 'No_Answer'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
               }`}
             >
               No Answer
             </button>
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={() => fetchAppointments()}
-                className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-              >
-                <RefreshCw className={`h-4 w-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
           </div>
         </div>
 
@@ -677,14 +732,22 @@ const CallCenter = () => {
                     
                     {/* Actions */}
                     <div className="flex flex-row lg:flex-col gap-2 lg:min-w-[140px]">
-                      {/* Edit — always visible */}
-                      {statusLower != 'cancelled' && <button
-                        onClick={() => handleEditOpen(appointment)}
-                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all w-full"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </button>}
+                      {appointment.displayId && (
+                        <span className="text-xs text-slate-400 font-medium lg:text-right">
+                          #{appointment.displayId}
+                        </span>
+                      )}
+
+                      {/* Call for Scheduled */}
+                      {statusLower === 'scheduled' && (
+                        <button
+                          onClick={() => handleCall(appointment.id, appointment.phone)}
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-all w-full"
+                        >
+                          <PhoneCall className="h-4 w-4" />
+                          Call
+                        </button>
+                      )}
 
                       {/* Confirm for Scheduled */}
                       {statusLower === 'scheduled' && (
@@ -711,8 +774,16 @@ const CallCenter = () => {
                         </button>
                       )}
 
-                
-                  
+                      {/* Edit — always visible except cancelled */}
+                      {statusLower != 'cancelled' && (
+                        <button
+                          onClick={() => handleEditOpen(appointment)}
+                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all w-full"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -831,13 +902,6 @@ const CallCenter = () => {
                 >
                   <XCircle className="h-4 w-4" />
                   Cancel
-                </button>
-                <button
-                  onClick={() => endCall(showCallModal, 'no_answer')}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors"
-                >
-                  <Phone className="h-4 w-4" />
-                  No Answer
                 </button>
               </div>
             </div>
