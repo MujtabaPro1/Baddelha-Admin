@@ -284,7 +284,7 @@ const ViewInspectionPage = () => {
   const images = data?.images ?? [];
 
   // Primary car photos - specific angles only
-  const primaryCaptions = ["front", "left", "right", "back", "engine"];
+  const primaryCaptions = ["front", "left", "right", "back", "engine","dashboard","interior"];
   const documentCaptions = ["seller", "id", "license", "document", "registration", "insurance"];
 
   const primaryImages = images.filter((img: any) =>
