@@ -82,6 +82,20 @@ const Leads = () => {
     }
   };
 
+  const renderSubject = (subject?: string) => {
+    if (!subject) return '-';
+    if (subject === 'Buyer Query') {
+      return <span className="flex justify-center items-center min-w-[80px] p-2 badge bg-amber-100 text-amber-800">{subject}</span>;
+    }
+    if (subject === 'Sales') {
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-green-100 text-green-800">{subject}</span>;
+    }
+     if (subject === 'General Inquiry') {
+      return <span className="flex justify-center items-center  min-w-[80px] p-2 badge bg-blue-100 text-blue-800">{subject}</span>;
+    }
+    return subject;
+  };
+
   // Filter leads based on search query and status
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
@@ -121,7 +135,7 @@ const Leads = () => {
                 <td className="font-medium text-gray-900">{lead.fullName}</td>
                 <td>{lead.email}</td>
                 <td>{lead.phoneNumber || lead.phone || '-'}</td>
-                <td>{lead.subject || '-'}</td>
+                <td>{renderSubject(lead.subject)}</td>
                 <td>{formatDate(lead.createdAt)}</td>
                 <td>
                   <span className={`badge ${getStatusBadgeClass(lead.status)} capitalize`}>

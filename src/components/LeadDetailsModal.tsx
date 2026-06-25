@@ -22,6 +22,14 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
     });
   };
 
+  const renderSubject = (subject?: string) => {
+    if (!subject) return '-';
+    if (subject === 'Buyer Query') {
+      return <span className="badge bg-amber-100 text-amber-800">{subject}</span>;
+    }
+    return subject;
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -58,7 +66,7 @@ const LeadDetailsModal: React.FC<LeadDetailsModalProps> = ({ lead, isOpen, onClo
           
           <div>
             <h3 className="text-sm font-medium text-gray-500">Subject</h3>
-            <p className="text-base">{lead.subject || '-'}</p>
+            <p className="text-base">{renderSubject(lead.subject)}</p>
           </div>
           
           <div>
