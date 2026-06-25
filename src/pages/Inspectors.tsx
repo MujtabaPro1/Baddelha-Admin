@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, RefreshCw, Edit2, ChevronDown, X, Users, ClipboardCheck, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search, RefreshCw, Edit2, ChevronDown, X, Users, ClipboardCheck, Clock, CheckCircle, XCircle, Plus } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -50,6 +50,21 @@ const Inspectors = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [saving, setSaving] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const initialCreateForm = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    status: 'Active',
+    branchId: '',
+    working_start_hour: '',
+    working_end_hour: '',
+  };
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState(initialCreateForm);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchInspectors();
@@ -170,6 +185,35 @@ const Inspectors = () => {
     }
   };
 
+  const handleCreateInspector = async () => {
+    if (!createForm.firstName || !createForm.phone || !createForm.email || !createForm.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setCreating(true);
+    try {
+      await axiosInstance.post('/1.0/inspector/create', {
+        firstName: createForm.firstName,
+        lastName: createForm.lastName || undefined,
+        email: createForm.email,
+        phone: createForm.phone,
+        password: createForm.password,
+        status: createForm.status,
+        branchId: createForm.branchId ? Number(createForm.branchId) : undefined,
+        working_start_hour: createForm.working_start_hour || undefined,
+        working_end_hour: createForm.working_end_hour || undefined,
+      });
+      toast.success('Inspector created successfully');
+      setShowCreateModal(false);
+      setCreateForm(initialCreateForm);
+      fetchInspectors();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to create inspector');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const openBranchModal = (inspector: Inspector) => {
     setSelectedInspector(inspector);
     const currentBranchId = inspector.Inspector?.[0]?.branch_id?.toString() || '';
@@ -268,6 +312,15 @@ const Inspectors = () => {
             >
               <RefreshCw className={`h-5 w-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
             </button>
+            {user?.role?.toLowerCase() === 'admin' && (
+              <button
+                onClick={() => { setCreateForm(initialCreateForm); setShowCreateModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-medium rounded-md hover:bg-blue-800 transition-colors"
+              >
+                <Plus size={16} />
+                Add Inspector
+              </button>
+            )}
           </div>
 
           <div className="table-container" ref={dropdownRef}>
@@ -665,6 +718,155 @@ const Inspectors = () => {
                     </>
                   ) : (
                     'Update Status'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Inspector Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCreateModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Add Inspector</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.firstName}
+                    onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={createForm.lastName}
+                    onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.phone}
+                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={createForm.status}
+                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Blocked">Blocked</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                  <select
+                    value={createForm.branchId}
+                    onChange={(e) => setCreateForm({ ...createForm, branchId: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a branch</option>
+                    {branches.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.enName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Working Start Hour</label>
+                  <input
+                    type="time"
+                    value={createForm.working_start_hour}
+                    onChange={(e) => setCreateForm({ ...createForm, working_start_hour: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Working End Hour</label>
+                  <input
+                    type="time"
+                    value={createForm.working_end_hour}
+                    onChange={(e) => setCreateForm({ ...createForm, working_end_hour: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateInspector}
+                  disabled={creating}
+                  className="flex items-center gap-2 px-5 py-2 bg-primary text-white font-medium rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                >
+                  {creating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Inspector'
                   )}
                 </button>
               </div>
