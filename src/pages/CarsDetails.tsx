@@ -131,6 +131,9 @@ const CarsDetails = () => {
   const [editedSellerAskingPrice, setEditedSellerAskingPrice] = useState<number | null>(null);
   const [updatingSellerAskingPrice, setUpdatingSellerAskingPrice] = useState<boolean>(false);
   const [showSellerAskingPriceModal, setShowSellerAskingPriceModal] = useState<boolean>(false);
+  const [editedRetailValue, setEditedRetailValue]           = useState<number | null>(null);
+  const [updatingRetailValue, setUpdatingRetailValue]       = useState<boolean>(false);
+  const [showRetailValueModal, setShowRetailValueModal]     = useState<boolean>(false);
   const [showAuctionModal, setShowAuctionModal]                     = useState<boolean>(false);
   const [auctionStartPrice, setAuctionStartPrice]                   = useState<number | null>(null);
   const [pushingToAuction, setPushingToAuction]                     = useState<boolean>(false);
@@ -140,6 +143,7 @@ const CarsDetails = () => {
   useEffect(() => {
     if (carDetails?.sellingPrice)      setEditedPrice(Number(carDetails.sellingPrice));
     if (carDetails?.sellerAskingPrice) setEditedSellerAskingPrice(Number(carDetails.sellerAskingPrice));
+    if (carDetails?.retailValue)       setEditedRetailValue(Number(carDetails.retailValue));
   }, [carDetails]);
 
   useEffect(() => {
@@ -272,6 +276,19 @@ const CarsDetails = () => {
     finally { setUpdatingSellerAskingPrice(false); }
   };
 
+  const updateRetailValue = async () => {
+    if (!carDetails?.id || !editedRetailValue) return;
+    try {
+      setUpdatingRetailValue(true);
+      await axiosInstance.put('/1.0/car/update/' + carDetails.id, { retailValue: editedRetailValue.toString() });
+      toast.success('Internal value updated successfully');
+      setCarDetails({ ...carDetails, retailValue: editedRetailValue });
+      setShowRetailValueModal(false);
+      fetchCarDetails();
+    } catch (e: any) { toast.error(e?.message || 'Failed to update internal value'); }
+    finally { setUpdatingRetailValue(false); }
+  };
+
   const markCarStatus = async (carId: string, status: string) => {
     try {
       await axiosInstance.put('/1.0/car/update/' + carId, { carStatus: status });
@@ -351,6 +368,14 @@ const CarsDetails = () => {
           value={editedSellerAskingPrice} onChange={setEditedSellerAskingPrice}
           onSave={updateSellerAskingPrice} onClose={() => setShowSellerAskingPriceModal(false)}
           saving={updatingSellerAskingPrice} coverImage={coverImage} car={carDetails}
+        />
+      )}
+      {showRetailValueModal && (
+        <PriceModal
+          title="Edit Internal Value" label="Internal Value (SAR)"
+          value={editedRetailValue} onChange={setEditedRetailValue}
+          onSave={updateRetailValue} onClose={() => setShowRetailValueModal(false)}
+          saving={updatingRetailValue} coverImage={coverImage} car={carDetails}
         />
       )}
       {showRevealPriceModal && (
@@ -664,6 +689,22 @@ const CarsDetails = () => {
                         <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Seller Asking Price</p>
                         <p className="text-sm font-semibold text-gray-800">
                           {carDetails.sellerAskingPrice ? `SAR ${Number(carDetails.sellerAskingPrice).toLocaleString()}` : 'Not set'}
+                        </p>
+                      </div>
+                      <div className="bg-emerald-50 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-emerald-500 uppercase tracking-wide">Internal Value</p>
+                          {isAdmin && (
+                            <button
+                              onClick={() => { setEditedRetailValue(Number(carDetails.retailValue) || 0); setShowRetailValueModal(true); }}
+                              className="p-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 transition-colors"
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-emerald-700">
+                          {carDetails.retailValue ? `SAR ${Number(carDetails.retailValue).toLocaleString()}` : 'Not set'}
                         </p>
                       </div>
                     </div>
