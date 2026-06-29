@@ -44,6 +44,7 @@ import ContactDetail from './pages/ContactDetail';
 import Dealers from './pages/Dealers';
 import Sellers from './pages/Sellers';
 import CreateCar from './pages/CreateCar';
+import Qa from './pages/Qa';
 // Add route: <Route path="/cars/create" element={<CreateCar />} />
 
 
@@ -188,6 +189,11 @@ function App() {
             <Route path="my-inspections" element={<MyInspections />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />
+            <Route path="qa" element={
+              <AdminRoute>
+                <Qa />
+              </AdminRoute>
+            } />
             <Route path="inspection-report/:id" element={<InspectionReport />} />
             <Route path="customer-checkin/:id" element={<CustomerCheckIn />} />
 

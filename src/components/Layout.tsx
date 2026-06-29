@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  LayoutDashboard, Users, Car, Calendar, 
+  LayoutDashboard, Users, Car, Calendar,
   LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
   Clock, FileText,
-  Building, Shield, MessageSquare, Mail
+  Building, Shield, MessageSquare, Mail, ShieldCheck
 } from 'lucide-react';
 
 const Layout = () => {
@@ -60,6 +60,7 @@ const Layout = () => {
       // { name: 'Valuations', href: '/valuations', icon: BadgeDollarSign },
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
       { name: 'Inspectors', href: '/inspectors', icon: Users },
+      { name: 'QA', href: '/qa', icon: ShieldCheck },
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
