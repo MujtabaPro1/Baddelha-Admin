@@ -4,7 +4,7 @@ import ImageGallery from "react-image-gallery";
 import { toast } from "react-toastify";
 import { findInspection, findInspectionV2 } from "../service/inspection";
 import axiosInstance from "../service/api";
-import { Check, File, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, File, X, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { useParams } from "react-router-dom";
 import CarBodySvgView from "../components/CarBodyView";
 import LanguageSelectionModal from "../components/LanguageSelectionModal";
@@ -25,21 +25,22 @@ interface InspectionData {
 }
 
 // Helper to render value with appropriate styling
-const renderFieldValue = (displayValue: any) => {
+const renderFieldValue = (fieldName: string, displayValue: any) => {
+  console.log('renderFieldValue',fieldName);
   if (displayValue === false) {
     return <span className="text-gray-300">N/A</span>;
-  } else if (displayValue === true || displayValue === "Yes" || displayValue === "yes") {
+  } else if (displayValue === true || displayValue === "Yes" || displayValue === "yes" || (fieldName == 'Airbag Deployed' && displayValue == 'No')) {
     return (
       <span className="inline-flex items-center gap-1.5">
         <Check size={16} className="text-green-600" />
         {typeof displayValue === "string" && <span>{displayValue}</span>}
       </span>
     );
-  } else if (displayValue === "No" || displayValue === "no") {
+  } else if (displayValue === "No" || displayValue === "no" || (fieldName == 'Airbag Deployed' && displayValue == 'Yes')) {
     return (
       <span className="inline-flex items-center gap-1.5">
         <X size={16} className="text-red-600" />
-        <span>{displayValue}</span>
+        <span className="text-red-500">{displayValue}</span>
       </span>
     );
   } else if (displayValue === "Pass" || displayValue === "pass") {
@@ -49,11 +50,20 @@ const renderFieldValue = (displayValue: any) => {
         <span>{displayValue}</span>
       </span>
     );
-  } else if (displayValue === "Leak" || displayValue === "leak" || displayValue === "Fail" || displayValue === "fail") {
+  }
+  else if(displayValue === 'Damaged') {
+ return (
+      <span className="inline-flex items-center gap-1.5">
+        <Info size={16} className="text-orange-600 rounded-full p-0.5" />
+        <span className="text-orange-500">{displayValue}</span>
+      </span>
+    )
+  }
+  else if (displayValue === "Leak" || displayValue === "leak" || displayValue === "Fail" || displayValue === "fail") {
     return (
       <span className="inline-flex items-center gap-1.5">
         <X size={16} className="text-red-600 bg-red-100 rounded-full p-0.5" />
-        <span>{displayValue}</span>
+        <span className="text-red-500">{displayValue}</span>
       </span>
     );
   } else if (displayValue === "" || displayValue === null || displayValue === undefined) {
@@ -86,7 +96,7 @@ const SectionBlock = ({ title, items }: { title: string; items: [string, any][] 
               <div key={key} className="px-4 py-3 bg-white">
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{key.replace(/_/g, " ")}</p>
                 <p className="text-sm font-medium text-gray-800 break-words">
-                  {renderFieldValue(displayValue)}
+                  {renderFieldValue(key.replace(/_/g, " "),displayValue)}
                 </p>
               </div>
             );
@@ -115,7 +125,7 @@ const SectionBlockV2 = ({ title, fields }: { title: string; fields: { label: str
             <div key={idx} className="px-4 py-3 bg-white">
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{field.label}</p>
               <p className="text-sm font-medium text-gray-800 break-words">
-                {renderFieldValue(field.value)}
+                {renderFieldValue(field.label,field.value)}
               </p>
             </div>
           ))}
