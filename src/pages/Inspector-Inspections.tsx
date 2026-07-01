@@ -555,6 +555,7 @@ const MyInspections = () => {
             }
           })
           .map((inspection: any, index: number) => (
+            console.log(inspection),
           <div 
             key={inspection.uid || inspection.id} 
             className="card p-6 block hover:shadow-md animated-transition"
@@ -591,6 +592,12 @@ const MyInspections = () => {
                       <span>{inspection?.phone}</span>
                     </div>
                   )}
+                  {activeTab === 'available' && (
+                    <div className="mt-1 flex items-center text-sm text-gray-600">
+                      <User className="h-4 w-4 mr-1" />
+                      <span>{inspection?.BookAppointments?.[0]?.firstName}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -604,6 +611,11 @@ const MyInspections = () => {
                     }
                   </span>
                 </div>
+                {activeTab === 'available' && (
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span className="truncate max-w-48 font-bold">{inspection.displayId}</span>
+                  </div>
+                )}
                 {activeTab === 'appointments' && (
                   <div className="flex items-center text-sm text-gray-700">
                     <MapPin className="h-4 w-4 text-gray-500 mr-1" />

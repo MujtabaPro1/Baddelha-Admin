@@ -31,7 +31,7 @@ const Inspections = () => {
   const [inspections, setInspections]: any = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [vinQuery, setVinQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('Submit');
   const [selectedPriority, setSelectedPriority] = useState<string>('');
   const [loading, setLoading]: any = useState<boolean>(true);
   const [error, setError]: any = useState<string | null>(null);

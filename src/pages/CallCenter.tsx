@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import {
   Phone, PhoneCall, Calendar, Clock, MapPin,
   Car as CarIcon, Search, RefreshCw, CheckCircle,
-  XCircle, AlertCircle, LogOut, Pencil
+  XCircle, AlertCircle, LogOut, Pencil,
+  InfoIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -297,7 +298,7 @@ const CallCenter = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     try {
-      return format(new Date(dateString), 'MMM d, yyyy');
+      return format(new Date(dateString), 'MMM d, yyyy hh:mm:ss a');
     } catch {
       return dateString;
     }
@@ -328,9 +329,9 @@ const CallCenter = () => {
     setCallNotes({});
     // Save call record logic here
 
-    if(outcome == 'confirmed' || outcome == 'cancelled'){
+   // if(outcome == 'confirmed' || outcome == 'cancelled'){
       ///api/1.0/book-appointment/:id/update-status/Confirmed
-    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/${outcome == 'confirmed' ? 'Confirmed' : 'Cancelled'}`).then((res)=>{
+    axiosInstance.post(`/1.0/book-appointment/${appointmentId}/update-status/${outcome}`).then((res)=>{
       console.log(res);
       alert('Appointment status updated successfully');
       fetchAppointments();
@@ -338,7 +339,7 @@ const CallCenter = () => {
       console.log(err);
       alert('Failed to update appointment status');
     });
-    }
+   // }
   };
 
 
@@ -346,7 +347,6 @@ const CallCenter = () => {
 
     // Save call record logic here
 
-    ///api/1.0/book-appointment/:id/update-status/Confirmed
     axiosInstance.post(`/1.0/book-appointment/${appointmentId}/confirm`).then((res)=>{
       console.log(res);
       alert('Appointment status updated successfully');
@@ -701,13 +701,13 @@ const CallCenter = () => {
                           <span className="text-slate-700 font-medium">{appointment.phone}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Calendar className="h-4 w-4 text-slate-500" />
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Calendar className="h-4 w-4 text-blue-600" />
                           </div>
-                          <div>
-                            <span className="text-slate-700">Appointment: {formatDate(appointment.appointmentDate)}</span>
-                            <span className="text-slate-400 mx-1">•</span>
-                            <span className="text-blue-600 font-medium">{formatTime(appointment.appointmentTime)}</span>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-500 font-medium">Appointment</span>
+                            <span className="text-slate-800 font-semibold">{formatDate(appointment.appointmentDate)}</span>
+                            <span className="text-slate-600 text-xs">{formatTime(appointment.appointmentTime)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
@@ -881,29 +881,35 @@ const CallCenter = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <button
-                  onClick={() => endCall(showCallModal, 'confirmed')}
+                  onClick={() => reConfirmAppointment(showCallModal)}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition-colors"
                 >
                   <CheckCircle className="h-4 w-4" />
                   Confirmed
                 </button>
-                <button
-                  onClick={() => handleReschedule(showCallModal)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors"
+                {/* <button
+                  onClick={() =>{
+                     if(confirm('Are you sure you want to mark this call as no answer?')){
+                        endCall(showCallModal, 'no_answer');
+                     }
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-xl font-semibold text-sm hover:bg-orange-600 transition-colors"
                 >
-                  <Calendar className="h-4 w-4" />
-                  Reschedule
-                </button>
-                <button
-                  onClick={() => endCall(showCallModal, 'cancelled')}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-300 transition-colors"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Cancel
-                </button>
+                  <InfoIcon className="h-4 w-4" />
+                  No Answer
+                </button> */}
               </div>
+              <button
+                onClick={() =>{
+                  setShowCallModal(null);
+                }}
+                className="flex w-full mt-4 items-center justify-center gap-2 px-4 py-3 bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-300 transition-colors"
+              >
+                <XCircle className="h-4 w-4" />
+                Cancel
+              </button>
             </div>
           </div>
         </div>

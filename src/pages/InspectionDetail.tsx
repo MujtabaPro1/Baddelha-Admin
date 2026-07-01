@@ -39,7 +39,7 @@ const renderFieldValue = (fieldName: string, displayValue: any) => {
   } else if (displayValue === "No" || displayValue === "no" || (fieldName == 'Airbag Deployed' && displayValue == 'Yes')) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <X size={16} className="text-red-600" />
+        <Info size={16} className="text-red-600" />
         <span className="text-red-500">{displayValue}</span>
       </span>
     );
@@ -62,7 +62,7 @@ const renderFieldValue = (fieldName: string, displayValue: any) => {
   else if (displayValue === "Leak" || displayValue === "leak" || displayValue === "Fail" || displayValue === "fail") {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <X size={16} className="text-red-600 bg-red-100 rounded-full p-0.5" />
+        <Info size={16} className="text-red-600  rounded-full p-0.5" />
         <span className="text-red-500">{displayValue}</span>
       </span>
     );
