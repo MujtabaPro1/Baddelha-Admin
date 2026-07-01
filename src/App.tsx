@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from 'react-hot-toast';
 
 // Pages
@@ -112,8 +113,9 @@ function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <Router>
-        <Toaster position="top-right" />
+        <NotificationProvider>
+          <Router>
+          <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
 
@@ -314,7 +316,8 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </Router>
+          </Router>
+        </NotificationProvider>
       </LanguageProvider>
     </AuthProvider>
   );

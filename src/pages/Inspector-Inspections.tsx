@@ -14,6 +14,8 @@ import {
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
 import WalkInAppointmentModal from '../components/WalkInAppointmentModal';
+import NotificationTaskbar from '../components/NotificationTaskbar';
+import NotificationDebugPanel from '../components/NotificationDebugPanel';
 import { toast } from 'react-hot-toast';
 
 
@@ -366,6 +368,12 @@ const MyInspections = () => {
           </button>
         }
       />
+      
+      {/* Notification Debug Panel */}
+      <NotificationDebugPanel />
+      
+      {/* Notification Taskbar */}
+      <NotificationTaskbar />
       
       {/* Tabs */}
       <div className="mb-6">
