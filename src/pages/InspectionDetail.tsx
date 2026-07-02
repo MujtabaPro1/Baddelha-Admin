@@ -157,6 +157,7 @@ const ViewInspectionPage = () => {
   const [disqualifyLoading, setDisqualifyLoading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [itemIndex, setStartIndex] = useState(0);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [reportLoader, setReportLoader] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const { language, setLanguage } = useLanguage();
@@ -415,10 +416,11 @@ const ViewInspectionPage = () => {
               onErrorImageURL="/images/loader.webp"
               showFullscreenButton={false}
               lazyLoad={false}
-              items={images.map((item: any) => ({
+              items={galleryImages.map((item: any) => ({
                 ...item,
                 original: item.url,
                 thumbnail: item.url,
+                description: item.caption ? item.caption.replace(/_/g, ' ') : undefined,
               }))}
             />
           </div>
@@ -466,12 +468,11 @@ const ViewInspectionPage = () => {
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Car Photos</h2>
               <div className="grid grid-cols-5 gap-2">
                 {primaryImages.map((img: any, idx: number) => {
-                  const actualIndex = images.findIndex((i: any) => i.url === img.url);
                   return (
                     <div
                       key={idx}
                       className="relative cursor-pointer rounded-lg overflow-hidden group aspect-video bg-gray-100"
-                      onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
+                      onClick={() => { setGalleryImages(primaryImages); setStartIndex(idx); setShowGallery(true); }}
                     >
                       <img
                         src={img.url}
@@ -496,12 +497,11 @@ const ViewInspectionPage = () => {
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Document Images</h2>
               <div className="grid grid-cols-4 gap-2">
                 {documentImages.map((img: any, idx: number) => {
-                  const actualIndex = images.findIndex((i: any) => i.url === img.url);
                   return (
                     <div
                       key={idx}
                       className="relative cursor-pointer rounded-lg overflow-hidden group aspect-square bg-gray-100"
-                      onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
+                      onClick={() => { setGalleryImages(documentImages); setStartIndex(idx); setShowGallery(true); }}
                     >
                       <img
                         src={img.url}
@@ -611,12 +611,11 @@ const ViewInspectionPage = () => {
                   <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Findings</h2>
                   <div className="grid grid-cols-3 gap-2">
                     {findingsImages.map((img: any, idx: number) => {
-                      const actualIndex = images.findIndex((i: any) => i.url === img.url);
                       return (
                         <div
                           key={idx}
                           className="relative cursor-pointer rounded-lg overflow-hidden aspect-square bg-gray-100 group"
-                          onClick={() => { setStartIndex(actualIndex); setShowGallery(true); }}
+                          onClick={() => { setGalleryImages(findingsImages); setStartIndex(idx); setShowGallery(true); }}
                         >
                           <img src={img.url} alt={img.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
                           {img.caption && (
