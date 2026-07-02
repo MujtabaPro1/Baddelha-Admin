@@ -186,6 +186,28 @@ const Cars = () => {
         }
       />
 
+      {/* Quick status tabs */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { label: 'All', value: '' },
+          { label: 'Inspected', value: 'inspected' },
+          { label: 'Unlisted', value: 'unlisted' },
+          { label: 'Listed', value: 'listed' },
+        ].map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setSelectedStatus(tab.value)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              selectedStatus === tab.value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Filters and search */}
       <div className="mb-8 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
