@@ -4,7 +4,7 @@ import {
   Phone, PhoneCall, Calendar, Clock, MapPin,
   Car as CarIcon, Search, RefreshCw, CheckCircle,
   XCircle, AlertCircle, LogOut, Pencil,
-  InfoIcon
+  InfoIcon, ClipboardList, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -56,12 +56,16 @@ const CallCenter = () => {
   });
   const [editBranchTimings, setEditBranchTimings] = useState<any[]>([]);
   const [editLoading, setEditLoading] = useState(false);
+  const [pendingInspections, setPendingInspections] = useState<any[]>([]);
+  const [pendingInspectionsLoading, setPendingInspectionsLoading] = useState(false);
+  const [isInspectionsPanelOpen, setIsInspectionsPanelOpen] = useState(false);
   const navigate = useNavigate();
 
   const filteredAppointments = appointments;
 
   useEffect(()=>{
     fetchBranches();
+    fetchPendingInspections();
   },[])
 
   useEffect(()=>{
@@ -289,6 +293,27 @@ const CallCenter = () => {
     }
   };
 
+  const fetchPendingInspections = async () => {
+    setPendingInspectionsLoading(true);
+    try {
+      const response = await axiosInstance.post('/1.0/inspection/search', {
+        page: 1,
+        limit: 50,
+        inspectionStatus: 'Pending'
+      });
+      const data = response?.data?.data?.map((a: any) => ({
+        ...a,
+        car: a?.Car,
+        branchName: a?.BookAppointments?.[0]?.Branch?.enName || a?.Car?.Branch?.enName || 'N/A'
+      })) || [];
+      setPendingInspections(data);
+    } catch (err) {
+      console.error('Error fetching pending inspections:', err);
+    } finally {
+      setPendingInspectionsLoading(false);
+    }
+  };
+
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setCurrentPage(1);
@@ -471,7 +496,7 @@ const CallCenter = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
@@ -1208,6 +1233,84 @@ const CallCenter = () => {
           fetchAppointments();
         }}
       />
+
+      {/* Pending Inspections Taskbar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <button
+          onClick={() => setIsInspectionsPanelOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center">
+              <ClipboardList className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-800">Pending Inspections</p>
+              <p className="text-xs text-slate-500">
+                {pendingInspectionsLoading ? 'Loading...' : `${pendingInspections.length} awaiting inspection`}
+              </p>
+            </div>
+            {pendingInspections.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold">
+                {pendingInspections.length}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              role="button"
+              onClick={(e) => { e.stopPropagation(); fetchPendingInspections(); }}
+              className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 text-slate-600 ${pendingInspectionsLoading ? 'animate-spin' : ''}`} />
+            </span>
+            {isInspectionsPanelOpen ? (
+              <ChevronDown className="h-5 w-5 text-slate-500" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-slate-500" />
+            )}
+          </div>
+        </button>
+
+        {isInspectionsPanelOpen && (
+          <div className="border-t border-slate-100 max-h-[45vh] overflow-y-auto px-4 sm:px-6 lg:px-8 py-4">
+            {pendingInspections.length === 0 && !pendingInspectionsLoading && (
+              <div className="text-center py-8 text-sm text-slate-500">
+                No pending inspections right now.
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {pendingInspections.map((inspection: any) => (
+                <div
+                  key={inspection.uid || inspection.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50"
+                >
+                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-100">
+                    <CarIcon className="h-5 w-5 text-slate-500" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                      {inspection.car?.year} {inspection.car?.make} {inspection.car?.model}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">{inspection.branchName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {inspection.displayId && (
+                        <span className="text-[10px] font-semibold text-blue-900 bg-blue-100 px-2 py-0.5 rounded">
+                          {inspection.displayId}
+                        </span>
+                      )}
+                      {inspection.createdAt && (
+                        <span className="text-[10px] text-slate-400">{formatDate(inspection.createdAt)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
     </div>
 
