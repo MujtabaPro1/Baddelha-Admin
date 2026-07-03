@@ -7,7 +7,8 @@ type StatusType =
   | 'approved' | 'confirmed' | 'rejected'
   | 'in_complete' | 'in_progress'
   | 'new' | 'pending_inspection' | 'inspected' | 'listed' | 'unlisted'
-  | 'hold' | 'returned' | 'bid_won' | 'closed';
+  | 'hold' | 'returned' | 'bid_won' | 'closed'
+  | 'accepted' | 'rejectedbyseller' | 'discarded';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -23,6 +24,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'confirmed':
       case 'listed':
       case 'bid_won':
+      case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'inactive':
       case 'cancelled':
@@ -30,6 +32,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'in_complete':
       case 'edit':
       case 'returned':
+      case 'rejectedbyseller':
+      case 'discarded':
         return 'bg-red-100 text-red-800';
       case 'pending':
       case 'scheduled':
@@ -56,6 +60,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   const label = status
     .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (

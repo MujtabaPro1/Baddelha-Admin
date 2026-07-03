@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { requestNotificationPermission } from '../service/firebase';
 import { showToast } from '../components/NotificationToastContainer';
+import { updateFcmToken } from '../service/user';
 
 export const useFirebaseNotifications = () => {
   const { addNotification } = useNotifications();
@@ -21,8 +22,11 @@ export const useFirebaseNotifications = () => {
           console.log('FCM token issued:', token);
           localStorage.setItem('fcm_token', token);
           localStorage.setItem('notification_permission', 'granted');
-          // TODO: Send to backend when API is ready
-          // await axiosInstance.post('/1.0/user/fcm-token', { token });
+          try {
+            await updateFcmToken(token);
+          } catch (err) {
+            console.error('Error syncing FCM token to backend:', err);
+          }
         } else {
           localStorage.removeItem('fcm_token');
           localStorage.setItem(

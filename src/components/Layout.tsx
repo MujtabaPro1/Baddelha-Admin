@@ -5,12 +5,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 import { requestNotificationPermission } from '../service/firebase';
+import { updateFcmToken } from '../service/user';
 import NotificationToastContainer from './NotificationToastContainer';
 import {
   LayoutDashboard, Users, Car, Calendar,
   LogOut, Menu, X, Bell, BellOff, ChevronDown, ClipboardCheck, CarIcon,
   Clock, FileText,
-  Building, Shield, MessageSquare, Mail, ShieldCheck, AlertTriangle
+  Building, Shield, MessageSquare, Mail, ShieldCheck, AlertTriangle, Tag
 } from 'lucide-react';
 
 type NotifPermission = 'granted' | 'denied' | 'default' | 'unsupported';
@@ -49,6 +50,11 @@ const Layout = () => {
       setNotifPermission(Notification.permission as NotifPermission);
       if (token) {
         localStorage.setItem('fcm_token', token);
+        try {
+          await updateFcmToken(token);
+        } catch (err) {
+          console.error('Error syncing FCM token to backend:', err);
+        }
       }
     } finally {
       setEnabling(false);
@@ -71,6 +77,7 @@ const Layout = () => {
     if (user?.role === 'inspector') {
       return [
         { name: 'Inspections', href: '/my-inspections', icon: ClipboardCheck },
+        { name: 'My Offers', href: '/my-offers', icon: Tag },
       ];
     }
 
@@ -78,6 +85,7 @@ const Layout = () => {
       return [
         { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
         { name: 'Cars', href: '/cars', icon: Calendar },
+        { name: 'Price Negotiation', href: '/price-reveal', icon: Tag },
       ];
     }
 
@@ -111,6 +119,7 @@ const Layout = () => {
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
       { name: 'Inspectors', href: '/inspectors', icon: Users },
       { name: 'QA', href: '/qa', icon: ShieldCheck },
+      { name: 'Price Negotiation', href: '/price-reveal', icon: Tag },
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },

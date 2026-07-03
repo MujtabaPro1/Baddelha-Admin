@@ -46,6 +46,8 @@ import Dealers from './pages/Dealers';
 import Sellers from './pages/Sellers';
 import CreateCar from './pages/CreateCar';
 import Qa from './pages/Qa';
+import PriceReveal from './pages/PriceReveal';
+import InspectorOffers from './pages/InspectorOffers';
 // Add route: <Route path="/cars/create" element={<CreateCar />} />
 
 
@@ -189,6 +191,8 @@ function App() {
             <Route path="cars/details/:id" element={<CarsDetails/>}/>
             <Route path="supervisor-inspections" element={<SupervisorInspections />} />
             <Route path="my-inspections" element={<MyInspections />} />
+            <Route path="my-offers" element={<InspectorOffers />} />
+            <Route path="price-reveal" element={<PriceReveal />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />
             <Route path="qa" element={

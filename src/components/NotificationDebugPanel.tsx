@@ -92,7 +92,7 @@ const NotificationDebugPanel: React.FC = () => {
       <div className="mt-3 pt-3 border-t border-blue-200">
         <p className="text-xs text-blue-700">
           <strong>For Backend:</strong> Use this token to send push notifications to this device.
-          Save it via API: <code className="bg-blue-100 px-1 py-0.5 rounded">POST /1.0/user/fcm-token</code>
+          Synced automatically via <code className="bg-blue-100 px-1 py-0.5 rounded">POST /1.0/user/update-fcm-token</code>
         </p>
       </div>
     </div>
