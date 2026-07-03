@@ -595,7 +595,7 @@ const MyInspections = () => {
                   {activeTab === 'available' && (
                     <div className="mt-1 flex items-center text-sm text-gray-600">
                       <User className="h-4 w-4 mr-1" />
-                      <span>{inspection?.BookAppointments?.[0]?.firstName}</span>
+                      <span>{inspection?.BookAppointments?.[0]?.firstName} {inspection?.BookAppointments?.[0]?.lastName}</span>
                     </div>
                   )}
                 </div>

@@ -1293,6 +1293,12 @@ const CallCenter = () => {
                     <p className="text-sm font-semibold text-slate-800 truncate">
                       {inspection.car?.year} {inspection.car?.make} {inspection.car?.model}
                     </p>
+                     <p className="text-sm font-semibold text-slate-800 truncate">
+                      {inspection.BookAppointments?.[0]?.firstName} {inspection.BookAppointments?.[0]?.lastName}
+                    </p>
+                     <a href={`tel:${inspection.BookAppointments?.[0]?.phone}`} className="text-sm font-semibold text-blue-900 underline truncate">
+                      {inspection.BookAppointments?.[0]?.phone}
+                    </a>
                     <p className="text-xs text-slate-500 truncate">{inspection.branchName}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {inspection.displayId && (
