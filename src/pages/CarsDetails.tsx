@@ -938,7 +938,7 @@ const CarsDetails = () => {
             {isAdmin && (
               <button
                 onClick={() => setShowRevealPriceModal(true)}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B7E] text-white text-sm font-semibold hover:bg-[#002d61] transition-colors shadow-sm"
+                className="hidden w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B7E] text-white text-sm font-semibold hover:bg-[#002d61] transition-colors shadow-sm"
               >
                 <Eye size={16} /> Reveal Price
               </button>
