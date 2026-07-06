@@ -736,8 +736,8 @@ const InspectionForm = () => {
     };
 
   const isFailSelected = (fieldName: string, isMulti: boolean): boolean => {
+        console.log(fieldName);
     const val = watch(fieldName as any);
-    console.log(val);
     const failValues = ['Damaged', 'Leak', 'Scratches', 'Dents', 'Repainted'];
     if (isMulti) {
       return Array.isArray(val) && val.some((v: any) => failValues.includes(v));
@@ -1132,7 +1132,7 @@ const InspectionForm = () => {
               )}
 
 
-              <div className="grid grid-cols-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {i.name !== "Document Images" &&
                   i.name !== "Car Media" &&
                   i?.fields?.map((field: any) => {
