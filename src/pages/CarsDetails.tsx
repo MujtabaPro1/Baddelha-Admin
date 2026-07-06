@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../service/api';
+import { findInspectionV2 } from '../service/inspection';
 import { toast } from 'react-toastify';
 import {
   Check, X, Clock, ArrowUp, Clock10, DollarSign,
   Trophy, Car, Gauge, Cog, Calendar,
   Tag, Pencil, Eye, Ban, Package, RotateCcw, Bookmark,
+  Info, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
@@ -26,6 +28,122 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string }> = 
   pending:           { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
   pending_inspection:{ bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
   rejected:          { bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-500'    },
+};
+
+// Helper to render inspection field value with appropriate styling
+const renderFieldValue = (fieldName: string, displayValue: any) => {
+  if (displayValue === false) {
+    return <span className="text-gray-300">N/A</span>;
+  } else if (displayValue === true || displayValue === "Yes" || displayValue === "yes" || (fieldName === 'Airbag Deployed' && displayValue === 'No')) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Check size={16} className="text-green-600" />
+        {typeof displayValue === "string" && <span>{displayValue}</span>}
+      </span>
+    );
+  } else if (displayValue === "No" || displayValue === "no" || (fieldName === 'Airbag Deployed' && displayValue === 'Yes')) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Info size={16} className="text-red-600" />
+        <span className="text-red-500">{displayValue}</span>
+      </span>
+    );
+  } else if (displayValue === "Pass" || displayValue === "pass") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Check size={16} className="text-green-600 bg-green-100 rounded-full p-0.5" />
+        <span>{displayValue}</span>
+      </span>
+    );
+  } else if (displayValue === 'Damaged') {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Info size={16} className="text-orange-600 rounded-full p-0.5" />
+        <span className="text-orange-500">{displayValue}</span>
+      </span>
+    );
+  } else if (displayValue === "Leak" || displayValue === "leak" || displayValue === "Fail" || displayValue === "fail") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <Info size={16} className="text-red-600 rounded-full p-0.5" />
+        <span className="text-red-500">{displayValue}</span>
+      </span>
+    );
+  } else if (displayValue === "" || displayValue === null || displayValue === undefined) {
+    return "N/A";
+  } else {
+    return displayValue;
+  }
+};
+
+// V1 Format Section Block
+const SectionBlock = ({ title, items }: { title: string; items: [string, any][] }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className="mb-4 border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100 text-left"
+      >
+        <span className="font-semibold text-gray-700 text-sm uppercase tracking-wide">{title}</span>
+        {collapsed ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronUp size={16} className="text-gray-400" />}
+      </button>
+      {!collapsed && (
+        <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y divide-gray-50">
+          {items.map(([key, val]) => {
+            const displayValue = typeof val === "object" && val?.length ? val[0].value
+              : typeof val === "object" && !val?.length ? val?.value
+              : val;
+            return (
+              <div key={key} className="px-4 py-3 bg-white">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{key.replace(/_/g, " ")}</p>
+                <p className="text-sm font-medium text-gray-800 break-words">
+                  {renderFieldValue(key.replace(/_/g, " "), displayValue)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// V2 Format Section Block - for new inspection format with label/fields structure
+const SectionBlockV2 = ({ title, fields }: { title: string; fields: { label: string; value: any }[] }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className="mb-4 border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100 text-left"
+      >
+        <span className="font-semibold text-gray-700 text-sm uppercase tracking-wide">{title}</span>
+        {collapsed ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronUp size={16} className="text-gray-400" />}
+      </button>
+      {!collapsed && (
+        <div className="grid grid-cols-2 md:grid-cols-3 divide-x divide-y divide-gray-50">
+          {fields.map((field, idx) => (
+            <div key={idx} className="px-4 py-3 bg-white">
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{field.label}</p>
+              <p className="text-sm font-medium text-gray-800 break-words">
+                {renderFieldValue(field.label, field.value)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Detect if inspection data is v2 format (has label and fields structure)
+const isV2Format = (data: any): boolean => {
+  if (!data || typeof data !== 'object') return false;
+  const keys = Object.keys(data).filter(k => k !== 'extraData');
+  if (keys.length === 0) return false;
+  const firstSection = data[keys[0]];
+  return firstSection && typeof firstSection === 'object' && 'label' in firstSection && 'fields' in firstSection;
 };
 
 const StatusPill = ({ status }: { status: string }) => {
@@ -185,8 +303,31 @@ const CarsDetails = () => {
     try {
       const resp = await axiosInstance.get('/1.0/car/find/' + params.id);
       setCarDetails(resp.data.car);
-      setInspectionDetails(resp.data.car?.Inspection?.[0]);
-      setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
+      
+      // Fetch full inspection details using findInspectionV2
+      const inspectionId = resp.data.car?.Inspection?.[0]?.id;
+      if (inspectionId) {
+        try {
+          const inspectionData = await findInspectionV2(inspectionId, 'en');
+          console.log(inspectionData);
+          if (inspectionData && !inspectionData.error) {
+            setInspectionDetails(inspectionData?.inspection);
+            setInspectionSchema(inspectionData?.inspection?.inspectionJson);
+          } else {
+            // Fallback to original data if V2 fails
+            setInspectionDetails(resp.data.car?.Inspection?.[0]);
+            setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
+          }
+        } catch {
+          // Fallback to original data if V2 fails
+          setInspectionDetails(resp.data.car?.Inspection?.[0]);
+          setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
+        }
+      } else {
+        setInspectionDetails(resp.data.car?.Inspection?.[0]);
+        setInspectionSchema(resp.data.car?.Inspection?.[0]?.inspectionJson);
+      }
+      
       setCoverImage(resp?.data?.carImages?.[0]?.url);
       if (!searchParams.get('auctionId')) setBids(resp.data.car?.Bid);
       if (resp.data?.images) setImages(resp.data.images);
@@ -732,39 +873,53 @@ const CarsDetails = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#003B7E]" />
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Inspection Fields</p>
-                        {inspectionDetails ? (
-                          <div className="divide-y divide-gray-50 border border-gray-100 rounded-xl overflow-hidden">
-                            {Object.keys(inspectionDetails.inspectionJson)
-                              .filter(k => k !== 'overview')
-                              .map(k => (
-                                <div key={k} className="flex items-center justify-between px-4 py-2.5 bg-white hover:bg-gray-50">
-                                  <span className="text-sm text-gray-500 capitalize">{k.replace(/_/g, ' ')}</span>
-                                  <span className="text-sm font-medium text-gray-800">
-                                    {typeof inspectionDetails.inspectionJson[k] === 'object' && inspectionDetails.inspectionJson[k]?.length
-                                      ? inspectionDetails.inspectionJson[k][0].value
-                                      : typeof inspectionDetails.inspectionJson[k] === 'object' && !inspectionDetails.inspectionJson[k]?.length
-                                        ? inspectionDetails.inspectionJson[k]?.value
-                                        : inspectionDetails.inspectionJson[k] === '' ? 'N/A'
-                                        : inspectionDetails.inspectionJson[k]}
-                                  </span>
-                                </div>
-                              ))}
-                          </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                      {/* Inspection Data */}
+                      <div className="xl:col-span-2 space-y-2">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Inspection Details</p>
+                        {inspectionSchema ? (
+                          isV2Format(inspectionSchema) ? (
+                            // V2 Format rendering
+                            Object.entries(inspectionSchema)
+                              .filter(([k]) => k !== 'extraData')
+                              .map(([key, section]: [string, any]) => (
+                                <SectionBlockV2
+                                  key={key}
+                                  title={section.label || key}
+                                  fields={section.fields || []}
+                                />
+                              ))
+                          ) : (
+                            // V1 Format rendering
+                            Object.entries(inspectionSchema)
+                              .filter(([k]) => k !== 'overview' && k !== 'extraData')
+                              .map(([sectionKey, sectionData]: [string, any]) => (
+                                <SectionBlock
+                                  key={sectionKey}
+                                  title={sectionKey.replace(/_/g, ' ')}
+                                  items={
+                                    typeof sectionData === 'object' && !Array.isArray(sectionData)
+                                      ? Object.entries(sectionData)
+                                      : []
+                                  }
+                                />
+                              ))
+                          )
                         ) : (
                           <p className="text-center text-gray-400 py-8 text-sm">Loading inspection preview…</p>
                         )}
                       </div>
 
+                      {/* Photos & Body Condition */}
                       <div className="space-y-5">
                         <div>
                           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Photos</p>
                           <div className="grid grid-cols-3 gap-2">
                             {images?.map((img: any, i: number) => (
-                              <div key={i} className="rounded-lg overflow-hidden aspect-square bg-gray-100">
-                                <img src={img.url} alt={img.caption} className="w-full h-full object-cover" />
+                              <div key={i} className="rounded-lg overflow-hidden aspect-square bg-gray-100 cursor-pointer group"
+                                onClick={() => { setViewerIndex(i); setViewerOpen(true); }}
+                              >
+                                <img src={img.url} alt={img.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
                               </div>
                             ))}
                           </div>
