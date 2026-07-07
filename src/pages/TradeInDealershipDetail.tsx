@@ -69,6 +69,7 @@ const TradeInDealershipDetail = () => {
 
           //https://stg-service.bddelha.com/api/1.0/dealership-car/find-all?dealershipId=00704a9f-8f85-4800-bc09-76f90555d7d4
           const carResponse = await axiosInstance.get(`/1.0/dealership-car/find-all?dealershipId=${id}`);
+          console.log("carResponse", carResponse);
           if (carResponse.data?.data) {
             setCars(carResponse.data?.data);
           }
@@ -173,8 +174,8 @@ const TradeInDealershipDetail = () => {
           const imageFormData = new FormData();
           imageFormData.append('file', formData.image);
           imageFormData.append('imageableId', carId);
-          imageFormData.append('imageableType', 'DealershipCar'); // Assuming 'Car' is the correct type
-          imageFormData.append('fileCaption', 'logo');
+          imageFormData.append('imageableType', 'Dealership'); // Assuming 'Car' is the correct type
+          imageFormData.append('fileCaption', 'Cover');
           
           // Upload the image
           await axiosInstance.post('/1.0/media/upload', imageFormData, {

@@ -564,7 +564,7 @@ const MyInspections = () => {
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mb-4 md:mb-0">
                 <div className="mb-4 md:mb-0 md:mr-2">
                   <img
-                    src={'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZD95oZGb_ZQ878HfJtb_LSfxO3tk5Eus0eG79chwbHf3t6lhfDBOyL7s0pedxMx6H2qY&usqp=CAU'}
+                    src={inspection?.coverImage ? 'https://service.baddelha.com.sa/api/1.0/media/' + inspection?.coverImage?.filePath : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZD95oZGb_ZQ878HfJtb_LSfxO3tk5Eus0eG79chwbHf3t6lhfDBOyL7s0pedxMx6H2qY&usqp=CAU'}
                     alt={`carImage`}
                     className="h-16 w-24 object-cover rounded-md"
                   />
