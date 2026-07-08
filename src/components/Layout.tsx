@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
-import { 
+import { useNotifications } from '../contexts/NotificationContext';
+import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
+import { requestNotificationPermission } from '../service/firebase';
+import { updateFcmToken } from '../service/user';
+import NotificationToastContainer from './NotificationToastContainer';
+import {
   LayoutDashboard, Users, Car, Calendar,
-  LogOut, Menu, X, Bell, ChevronDown, ClipboardCheck, CarIcon,
+  LogOut, Menu, X, Bell, BellOff, ChevronDown, ClipboardCheck, CarIcon,
   Clock, FileText,
-  Building, Shield, MessageSquare, Mail, ShieldCheck
+  Building, Shield, MessageSquare, Mail, ShieldCheck, AlertTriangle, Tag
 } from 'lucide-react';
+
+type NotifPermission = 'granted' | 'denied' | 'default' | 'unsupported';
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -14,6 +22,54 @@ const Layout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotifPermission>(
+    typeof Notification === 'undefined' ? 'unsupported' : (Notification.permission as NotifPermission)
+  );
+
+  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const recentNotifications = notifications.slice(0, 5);
+
+  // Initialize Firebase notifications
+  useFirebaseNotifications();
+
+  // Keep permission state fresh (e.g. user changes it via browser site settings)
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return;
+    const interval = setInterval(() => {
+      setNotifPermission(Notification.permission as NotifPermission);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    setEnabling(true);
+    try {
+      const token = await requestNotificationPermission();
+      setNotifPermission(Notification.permission as NotifPermission);
+      if (token) {
+        localStorage.setItem('fcm_token', token);
+        try {
+          await updateFcmToken(token);
+        } catch (err) {
+          console.error('Error syncing FCM token to backend:', err);
+        }
+      }
+    } finally {
+      setEnabling(false);
+    }
+  };
+
+  const handleNotificationItemClick = (notification: typeof recentNotifications[number]) => {
+    markAsRead(notification.id);
+    setBellOpen(false);
+    if (notification.link) {
+      navigate(notification.link);
+    } else {
+      navigate('/notifications');
+    }
+  };
 
   // Different navigation based on user role
   const getNavigation = () => {
@@ -21,6 +77,7 @@ const Layout = () => {
     if (user?.role === 'inspector') {
       return [
         { name: 'Inspections', href: '/my-inspections', icon: ClipboardCheck },
+        { name: 'My Offers', href: '/my-offers', icon: Tag },
       ];
     }
 
@@ -28,6 +85,7 @@ const Layout = () => {
       return [
         { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
         { name: 'Cars', href: '/cars', icon: Calendar },
+        { name: 'Price Negotiation', href: '/price-reveal', icon: Tag },
       ];
     }
 
@@ -61,6 +119,7 @@ const Layout = () => {
       { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
       { name: 'Inspectors', href: '/inspectors', icon: Users },
       { name: 'QA', href: '/qa', icon: ShieldCheck },
+      { name: 'Price Negotiation', href: '/price-reveal', icon: Tag },
       { name: 'Roles & Permissions', href: '/roles-permission', icon: ClipboardCheck },
       { name: 'Make and Model', href: '/make-and-model', icon: CarIcon },
       { name: 'Branch Timing', href: '/branch-timing', icon: Clock },
@@ -88,7 +147,9 @@ const Layout = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <>
+      <NotificationToastContainer />
+      <div className="h-screen flex overflow-hidden bg-gray-100">
       {/* Mobile sidebar */}
       <div 
         className={`fixed inset-0 z-40 flex lg:hidden ${sidebarOpen ? 'visible' : 'invisible'}`}
@@ -224,12 +285,114 @@ const Layout = () => {
               </h2>
             </div>
             <div className="ml-4 flex items-center md:ml-6">
-              {user?.role === 'admin' && <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <span className="sr-only">View notifications</span>
-                <Bell
-                  onClick={() => navigate('/notifications')}
-                  className="h-6 w-6" aria-hidden="true" />
-              </button>}
+              {user && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setBellOpen(!bellOpen)}
+                    className="relative p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <span className="sr-only">View notifications</span>
+                    {notifPermission === 'granted' ? (
+                      <Bell className="h-6 w-6" aria-hidden="true" />
+                    ) : (
+                      <BellOff className="h-6 w-6 text-amber-500" aria-hidden="true" />
+                    )}
+
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                    {unreadCount === 0 && notifPermission !== 'granted' && (
+                      <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-amber-500 rounded-full ring-2 ring-white" />
+                    )}
+                  </button>
+
+                  {bellOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setBellOpen(false)} />
+                      <div
+                        className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-20 overflow-hidden"
+                      >
+                      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>
+                        <button
+                          onClick={() => { setBellOpen(false); navigate('/notifications'); }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View all
+                        </button>
+                      </div>
+
+                      {notifPermission !== 'granted' && (
+                        <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            {notifPermission === 'denied' ? (
+                              <>
+                                <p className="text-xs font-medium text-amber-800">
+                                  Notifications are blocked
+                                </p>
+                                <p className="text-xs text-amber-700 mt-0.5">
+                                  You won't see new alerts pop up. Enable notifications for this site in your browser's address bar/settings, then reload.
+                                </p>
+                              </>
+                            ) : notifPermission === 'unsupported' ? (
+                              <p className="text-xs text-amber-700">
+                                This browser doesn't support push notifications.
+                              </p>
+                            ) : (
+                              <>
+                                <p className="text-xs font-medium text-amber-800">
+                                  Notifications are off
+                                </p>
+                                <p className="text-xs text-amber-700 mt-0.5 mb-2">
+                                  Turn them on to get notified about new inspections and appointments in real time.
+                                </p>
+                                <button
+                                  onClick={handleEnableNotifications}
+                                  disabled={enabling}
+                                  className="text-xs px-2.5 py-1 bg-amber-600 text-white rounded-md hover:bg-amber-700 disabled:opacity-60"
+                                >
+                                  {enabling ? 'Enabling...' : 'Enable notifications'}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                        {recentNotifications.length === 0 ? (
+                          <p className="px-4 py-6 text-center text-xs text-gray-400">
+                            No notifications yet
+                          </p>
+                        ) : (
+                          recentNotifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => handleNotificationItemClick(notification)}
+                              className={`px-4 py-2.5 cursor-pointer ${
+                                notification.read ? 'hover:bg-gray-50' : 'bg-blue-50/60 hover:bg-blue-50'
+                              }`}
+                            >
+                              <p className={`text-sm ${notification.read ? 'text-gray-600' : 'text-gray-800 font-medium'}`}>
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{notification.body}</p>
+                              <p className="text-[10px] text-gray-400 mt-1">
+                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Profile dropdown */}
               <div className="ml-3 relative">
@@ -270,6 +433,7 @@ const Layout = () => {
         </main>
       </div>
     </div>
+    </>
   );
 };
 

@@ -15,6 +15,8 @@ import {
 import { InspectionRequest, User as UserInterface, Car } from '../types';
 import axiosInstance from '../service/api';
 import { useNavigate } from 'react-router-dom';
+import NotificationTaskbar from '../components/NotificationTaskbar';
+import NotificationDebugPanel from '../components/NotificationDebugPanel';
 
 
 
@@ -177,6 +179,11 @@ const Inspections = () => {
         }
       />
     
+      {/* Notification Debug Panel */}
+      <NotificationDebugPanel />
+      
+      {/* Notification Taskbar */}
+      <NotificationTaskbar />
       
       {/* Filters and search */}
       <div className="mb-8 flex flex-col sm:flex-row gap-4">

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Toaster } from 'react-hot-toast';
 
 // Pages
@@ -45,6 +46,8 @@ import Dealers from './pages/Dealers';
 import Sellers from './pages/Sellers';
 import CreateCar from './pages/CreateCar';
 import Qa from './pages/Qa';
+import PriceReveal from './pages/PriceReveal';
+import InspectorOffers from './pages/InspectorOffers';
 // Add route: <Route path="/cars/create" element={<CreateCar />} />
 
 
@@ -112,8 +115,9 @@ function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <Router>
-        <Toaster position="top-right" />
+        <NotificationProvider>
+          <Router>
+          <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
 
@@ -187,6 +191,8 @@ function App() {
             <Route path="cars/details/:id" element={<CarsDetails/>}/>
             <Route path="supervisor-inspections" element={<SupervisorInspections />} />
             <Route path="my-inspections" element={<MyInspections />} />
+            <Route path="my-offers" element={<InspectorOffers />} />
+            <Route path="price-reveal" element={<PriceReveal />} />
             <Route path="inspections/:id" element={<InspectionDetail />} />
             <Route path="inspectors" element={<Inspectors />} />
             <Route path="qa" element={
@@ -314,7 +320,8 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </Router>
+          </Router>
+        </NotificationProvider>
       </LanguageProvider>
     </AuthProvider>
   );
