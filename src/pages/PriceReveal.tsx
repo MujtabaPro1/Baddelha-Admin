@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, RefreshCw, Plus, X, ChevronDown, Edit2, Flag, Eye, Car as CarIcon } from 'lucide-react';
+import { Search, RefreshCw, Plus, X, ChevronDown, Edit2, Flag, Eye } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -270,9 +270,22 @@ const PriceRevealPage = () => {
               return (
                 <tr key={reveal.id} className="hover:bg-gray-50 animated-transition">
                   <td className="font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <CarIcon size={14} className="text-gray-400" />
-                      {carLabel(car)}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={reveal?.carFrontImage ? 'https://service.baddelha.com.sa' + '/api/1.0/media/' + reveal.carFrontImage : "https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"}
+                        alt={carLabel(car)}
+                        className="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0"
+                      />
+                      <div>
+                        <div className="font-semibold text-gray-900">{carLabel(car)}</div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                          <span>ID: {car?.id?.slice(0, 8)}</span>
+                          {car?.engine || car?.engineType ? <span>• {car.engine || car.engineType}</span> : null}
+                          {car?.exactMileage || car?.mileage ? (
+                            <span>• {car.exactMileage ? `${(car.exactMileage / 1000).toFixed(0)}K km` : `${(car.mileage / 1000).toFixed(0)}K km`}</span>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td>{fmtPrice(reveal.price)}</td>
