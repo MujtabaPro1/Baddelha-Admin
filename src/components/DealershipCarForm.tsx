@@ -123,8 +123,8 @@ const DealershipCarForm = ({
   };
 
   // Generate year options for the dropdown
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 30 }, (_, i) => currentYear - i);
+  const yearOptions = Array.from({ length: 21 }, (_, i) => (new Date().getFullYear() + 1 - i).toString());
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

@@ -4,6 +4,11 @@ import { ArrowLeft, Phone, Mail, MapPin, Plus, Edit, Trash2, RefreshCw } from 'l
 import axios from 'axios';
 import axiosInstance from '../service/api';
 
+
+const numberWithComma = (num: number) => {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 // Define interfaces for API responses
 interface DealershipResponse {
   id: string;
@@ -32,8 +37,9 @@ interface Car {
   year: string;
   exactModel: string;
   sellingPrice: number;
-  status: 'available' | 'pending' | 'sold';
+  status: 'available' | 'pending' | 'sold' | 'unlisted';
   imageUrl: string;
+  images?: { url: string }[];
   dealershipId: string;
   createdAt: string;
 }
@@ -57,6 +63,10 @@ const TradeInDealershipDetail = () => {
   const [showDealershipForm, setShowDealershipForm] = useState(false);
   const [showCarForm, setShowCarForm] = useState(false);
   const [editingDealership, setEditingDealership] = useState(false);
+  const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [carToDeactivate, setCarToDeactivate] = useState<Car | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
     // Fetch dealership details from API
@@ -120,7 +130,7 @@ const TradeInDealershipDetail = () => {
     if (dealership) {
       try {
         // In a real implementation, you might need to handle file uploads separately
-        const response = await axios.put(`http://localhost:3000/api/1.0/dealership/update`, {
+        const response = await axios.patch(`1.0/dealership/update`, {
           id: dealership.id,
           name: formData.name,
           email: formData.email,
@@ -141,7 +151,41 @@ const TradeInDealershipDetail = () => {
   
   // Car form handlers
   const handleAddCar = () => {
+    setEditingCar(null);
     setShowCarForm(true);
+  };
+
+  const handleEditCar = (car: Car) => {
+    setEditingCar(car);
+    setShowCarForm(true);
+  };
+
+  const handleDeactivateClick = (car: Car) => {
+    setCarToDeactivate(car);
+    setShowDeactivateModal(true);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!carToDeactivate) return;
+    
+    setDeactivating(true);
+    try {
+      await axiosInstance.put(`/1.0/dealership-car/update/${carToDeactivate.id}`, {
+        status: 'Unlisted'
+      });
+      
+      // Update local state
+      setCars(cars.map(c => 
+        c.id === carToDeactivate.id ? { ...c, status: 'unlisted' as const } : c
+      ));
+      
+      setShowDeactivateModal(false);
+      setCarToDeactivate(null);
+    } catch (error) {
+      console.error('Error deactivating car:', error);
+    } finally {
+      setDeactivating(false);
+    }
   };
   
   const handleCarFormSubmit = async (formData: {
@@ -156,69 +200,82 @@ const TradeInDealershipDetail = () => {
       try {
         setLoading(true);
         
-        // Step 1: Create the car using the dealership-car API endpoint
-        const carResponse = await axiosInstance.post(`/1.0/dealership-car/${dealership.id}/create`, {
-          make: formData.make,
-          model: formData.model,
-          year: parseInt(formData.year), // Convert to number as required by API
-          exactModel: formData.exactModel,
-          sellingPrice: formData.price, // API expects sellingPrice
-          dealershipId: dealership.id
-        });
-        
-        // Step 2: If car creation was successful and we have an image, upload it
-        if (carResponse.data && formData.image) {
-          const carId = carResponse.data.id; // Assuming the API returns the created car with an ID
-          
-          // Create FormData for image upload
-          const imageFormData = new FormData();
-          imageFormData.append('file', formData.image);
-          imageFormData.append('imageableId', carId);
-          imageFormData.append('imageableType', 'Dealership'); // Assuming 'Car' is the correct type
-          imageFormData.append('fileCaption', 'Cover');
-          
-          // Upload the image
-          await axiosInstance.post('/1.0/media/upload', imageFormData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+        if (editingCar) {
+          // UPDATE existing car
+          await axiosInstance.put(`/1.0/dealership-car/update/${editingCar.id}`, {
+            make: formData.make,
+            model: formData.model,
+            year: parseInt(formData.year),
+            exactModel: formData.exactModel,
+            sellingPrice: formData.price,
           });
+          
+          // Handle image upload if new image provided
+          if (formData.image) {
+            const imageFormData = new FormData();
+            imageFormData.append('file', formData.image);
+            imageFormData.append('imageableId', editingCar.id);
+            imageFormData.append('imageableType', 'Dealership');
+            imageFormData.append('fileCaption', 'Cover');
+            
+            await axiosInstance.post('/1.0/media/upload', imageFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+          
+          // Update local state
+          setCars(cars.map(c => 
+            c.id === editingCar.id 
+              ? { ...c, make: formData.make, model: formData.model, year: formData.year, exactModel: formData.exactModel, sellingPrice: formData.price }
+              : c
+          ));
+          
+        } else {
+          // CREATE new car
+          const carResponse = await axiosInstance.post(`/1.0/dealership-car/${dealership.id}/create`, {
+            make: formData.make,
+            model: formData.model,
+            year: parseInt(formData.year),
+            exactModel: formData.exactModel,
+            sellingPrice: formData.price,
+            dealershipId: dealership.id
+          });
+          
+          if (carResponse.data && formData.image) {
+            const carId = carResponse.data.id;
+            const imageFormData = new FormData();
+            imageFormData.append('file', formData.image);
+            imageFormData.append('imageableId', carId);
+            imageFormData.append('imageableType', 'Dealership');
+            imageFormData.append('fileCaption', 'Cover');
+            
+            await axiosInstance.post('/1.0/media/upload', imageFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+          
+          // Refresh cars list
+          const carRefresh = await axiosInstance.get(`/1.0/dealership-car/find-all?dealershipId=${id}`);
+          if (carRefresh.data?.data) {
+            setCars(carRefresh.data.data);
+          }
         }
         
-        // Step 3: Refresh the dealership data to get updated stats
+        // Refresh dealership stats
         const refreshResponse = await axiosInstance.get(`/1.0/dealership/find/${id}`);
         if (refreshResponse.data) {
           setDealership(refreshResponse.data);
         }
         
-        // Step 4: Fetch the updated list of cars for this dealership
-        // For now, we'll add the new car to the existing list
-        // In a real implementation, you would fetch the updated list from the API
-        const newCar: Car = {
-          id: carResponse.data.id || `new-${Date.now()}`,
-          make: formData.make,
-          model: formData.model,
-          year: formData.year,
-          exactModel: formData.exactModel,
-          price: formData.price,
-          status: 'available',
-          imageUrl: formData.image ? 'pending-url' : 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?ixlib=rb-4.0.3',
-          dealershipId: dealership.id,
-          listedDate: new Date().toISOString(),
-        };
-        
-        setCars([newCar, ...cars]);
-        
       } catch (error) {
-        console.error('Error adding car:', error);
-        // Set error state
-        setError('Failed to add car. Please try again.');
+        console.error('Error saving car:', error);
+        setError('Failed to save car. Please try again.');
       } finally {
         setLoading(false);
         setShowCarForm(false);
+        setEditingCar(null);
       }
     } else {
-      // Set error state
       setError('Dealership information is missing. Please refresh the page.');
       setShowCarForm(false);
     }
@@ -228,6 +285,7 @@ const TradeInDealershipDetail = () => {
     setShowDealershipForm(false);
     setShowCarForm(false);
     setEditingDealership(false);
+    setEditingCar(null);
   };
 
   const filteredCars = cars.filter(car => {
@@ -281,7 +339,46 @@ const TradeInDealershipDetail = () => {
           onSubmit={handleCarFormSubmit}
           onCancel={handleCancelForm}
           dealershipId={dealership.id}
+          initialData={editingCar ? {
+            make: editingCar.make,
+            model: editingCar.model,
+            year: editingCar.year,
+            exactModel: editingCar.exactModel,
+            price: editingCar.sellingPrice,
+            imageUrl: editingCar.imageUrl,
+          } : undefined}
+          isEdit={!!editingCar}
         />
+      )}
+
+      {/* Deactivate Confirmation Modal */}
+      {showDeactivateModal && carToDeactivate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Deactivate Car Listing</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to deactivate the listing for{' '}
+              <span className="font-medium">{carToDeactivate.year} {carToDeactivate.make} {carToDeactivate.model}</span>?
+              This will change the status to "Unlisted".
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setShowDeactivateModal(false); setCarToDeactivate(null); }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                disabled={deactivating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeactivate}
+                disabled={deactivating}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {deactivating ? 'Deactivating...' : 'Deactivate'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {/* Header with back button */}
       <div className="flex items-center justify-between mb-6">
@@ -479,35 +576,53 @@ const TradeInDealershipDetail = () => {
           {filteredCars.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCars.map((car) => (
-                <div key={car.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300">
-                  <div className="h-48 bg-gray-200 overflow-hidden">
+                <div key={car.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
+                  {/* Image with Edit/Remove overlay */}
+                  <div className="relative h-44 bg-gray-100 overflow-hidden group">
                     <img 
-                      src={car?.images?.length ? car.images?.[0]?.url : 'data:image/jpeg;base64,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'}
+                      src={car?.images?.length ? car.images?.[0]?.url : '/placeholder-car.jpg'}
                       alt={`${car?.year} ${car?.make} ${car?.model}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
+                    {/* Edit & Remove Buttons */}
+                    <div className="absolute top-3 right-3 flex gap-1.5">
+                      <button 
+                        onClick={() => handleEditCar(car)}
+                        className="flex items-center gap-1 bg-white/95 backdrop-blur-sm text-gray-700 text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-sm hover:bg-white hover:shadow-md transition-all"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeactivateClick(car)}
+                        className="flex items-center gap-1 bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-sm hover:bg-red-600 hover:shadow-md transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remove
+                      </button>
+                    </div>
                   </div>
+                  
+                  {/* Card Content */}
                   <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-medium text-gray-900">
+                    <div className="flex justify-between items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
                         {car?.year} {car?.make} {car?.model}
                       </h3>
                       <StatusBadge status={car?.status || 'available'} />
                     </div>
-                    <p className="mt-2 text-xl font-bold text-blue-800">
-                      SAR {car?.sellingPrice?.toLocaleString()}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Listed on {new Date(car?.createdAt).toLocaleDateString()}
-                    </p>
-                    {/* <div className="mt-4 flex justify-end space-x-2">
-                      <button className="p-2 text-blue-900 hover:bg-blue-50 rounded-md">
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-md">
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div> */}
+                    
+                    <div className="mt-3 flex items-end justify-between">
+                      <div>
+                        <p className="text-lg font-bold text-red-500">
+                          SAR {numberWithComma(car?.sellingPrice?.toLocaleString())}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">VAT inclusive</p>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Listed on {new Date(car?.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
