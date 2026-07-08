@@ -78,7 +78,7 @@ const PriceRevealPage = () => {
     const t = setTimeout(async () => {
       try {
         const resp = await axiosInstance.get('/1.0/car/find-all', {
-          params: { search: carSearch, page: 1, limit: 10, status: 'inspected' },
+          params: { search: carSearch },
         });
         setCarResults(resp.data?.data || []);
       } catch (err) {
