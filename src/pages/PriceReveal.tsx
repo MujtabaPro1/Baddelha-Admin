@@ -454,10 +454,28 @@ const PriceRevealPage = () => {
                             <button
                               key={car.id}
                               onClick={() => { setSelectedCar(car); setCarSearch(''); setCarResults([]); }}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                              className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-3"
                             >
-                              <div className="font-medium text-gray-800">{carLabel(car)}</div>
-                              <div className="text-xs text-gray-400">ID: {car.id?.slice(0, 8)}</div>
+                              <img
+                                src={car.coverImage || "https://www.shutterstock.com/image-illustration/silver-silk-covered-car-concept-600w-1037886004.jpg"}
+                                alt={carLabel(car)}
+                                className="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-gray-800 truncate">{carLabel(car)}</div>
+                                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                                  <span>ID: {car.id?.slice(0, 8)}</span>
+                                  {car.engine || car.engineType ? <span>• {car.engine || car.engineType}</span> : null}
+                                  {car.exactMileage || car.mileage ? (
+                                    <span>• {car.exactMileage ? `${(car.exactMileage / 1000).toFixed(0)}K km` : `${(car.mileage / 1000).toFixed(0)}K km`}</span>
+                                  ) : null}
+                                </div>
+                              </div>
+                              {car.sellingPrice || car.bookValue ? (
+                                <span className="text-xs font-semibold text-blue-600 shrink-0">
+                                  SAR {Number(car.sellingPrice || car.bookValue).toLocaleString()}
+                                </span>
+                              ) : null}
                             </button>
                           ))
                         )}
