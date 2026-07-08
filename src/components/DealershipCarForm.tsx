@@ -207,7 +207,7 @@ const DealershipCarForm = ({
             {/* Exact Model Field */}
             <div>
               <label htmlFor="exactModel" className="block text-sm font-medium text-gray-700 mb-1">
-                Exact Model*
+                Available Model*
               </label>
               <input
                 type="text"
@@ -218,7 +218,7 @@ const DealershipCarForm = ({
                 className={`w-full px-3 py-2 border rounded-md ${
                   errors.exactModel ? 'border-red-500' : 'border-gray-300'
                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="Enter exact model/trim (e.g., SE, Limited, Sport)"
+                placeholder="Enter available model/trim (e.g., SE, Limited, Sport)"
               />
               {errors.exactModel && <p className="mt-1 text-sm text-red-500">{errors.exactModel}</p>}
             </div>
@@ -226,7 +226,7 @@ const DealershipCarForm = ({
             {/* Price Field */}
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                Selling Price (SAR)*
+                Starting Price (SAR)*
               </label>
               <input
                 type="number"
@@ -239,7 +239,7 @@ const DealershipCarForm = ({
                 className={`w-full px-3 py-2 border rounded-md ${
                   errors.price ? 'border-red-500' : 'border-gray-300'
                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="Enter selling price"
+                placeholder="Enter starting price"
               />
               {errors.price && <p className="mt-1 text-sm text-red-500">{errors.price}</p>}
             </div>
