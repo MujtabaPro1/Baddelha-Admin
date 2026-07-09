@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { RefreshCw, Check, X, AlertTriangle, Car as CarIcon, User, Hash } from 'lucide-react';
+import { RefreshCw, Check, X, AlertTriangle, Car as CarIcon, User, Hash, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   findMyOffers,
@@ -33,6 +33,7 @@ const InspectorOffers = () => {
   const [rejecting, setRejecting] = useState(false);
 
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [visibleNoteId, setVisibleNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOffers();
@@ -172,7 +173,18 @@ const InspectorOffers = () => {
                     )}
                     <p className="text-xl font-bold text-blue-900 mt-1">{fmtPrice(offer.price)}</p>
                     {offer.note && (
-                      <p className="text-sm text-gray-600 mt-1 bg-gray-50 rounded p-2 max-w-md">{offer.note}</p>
+                      <div className="mt-1 max-w-md">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setVisibleNoteId(visibleNoteId === String(offer.id) ? null : String(offer.id)); }}
+                          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                          {visibleNoteId === String(offer.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                          {visibleNoteId === String(offer.id) ? 'Hide Note' : 'Show Note'}
+                        </button>
+                        {visibleNoteId === String(offer.id) && (
+                          <p className="text-sm text-gray-600 mt-1.5 bg-gray-50 rounded p-2">{offer.note}</p>
+                        )}
+                      </div>
                     )}
                     <p className="text-xs text-gray-400 mt-2">Created: {fmtDate(offer.createdAt)}</p>
                   </div>
