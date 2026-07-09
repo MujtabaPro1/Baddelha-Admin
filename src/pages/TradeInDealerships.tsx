@@ -54,7 +54,7 @@ const TradeInDealerships = () => {
         }));
         setTopDealerships(topDealershipsData);
       }
-      const dealershipCarsResponse = await axiosInstance.get('/1.0/dealership-car/find-all');
+      const dealershipCarsResponse = await axiosInstance.get('/1.0/dealership-car/find-all?page=1&limit=100');
       if(dealershipCarsResponse?.data){
         setTotalStats({
           totalCars: dealershipCarsResponse?.data?.data?.length,
