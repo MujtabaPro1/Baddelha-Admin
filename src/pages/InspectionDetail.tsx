@@ -144,6 +144,117 @@ const isV2Format = (data: any): boolean => {
   return firstSection && typeof firstSection === 'object' && 'label' in firstSection && 'fields' in firstSection;
 };
 
+const ZoomableImage: React.FC<{ src: string; alt?: string; isActive: boolean }> = ({
+  src,
+  alt,
+  isActive,
+}) => {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
+
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 4;
+
+  const clampScale = (value: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
+
+  const resetZoom = () => {
+    setScale(MIN_SCALE);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    if (!isActive) resetZoom();
+  }, [isActive]);
+
+  const zoomBy = (delta: number) => {
+    setScale((prev) => {
+      const next = clampScale(prev + delta);
+      if (next === MIN_SCALE) setPosition({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    zoomBy(e.deltaY > 0 ? -0.5 : 0.5);
+  };
+
+  const handleDoubleClick = () => {
+    if (scale > MIN_SCALE) {
+      resetZoom();
+    } else {
+      setScale(2.5);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale === MIN_SCALE) return;
+    draggingRef.current = true;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingRef.current) return;
+    const dx = e.clientX - lastPosRef.current.x;
+    const dy = e.clientY - lastPosRef.current.y;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+    setPosition((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+  };
+
+  const stopDragging = () => {
+    draggingRef.current = false;
+  };
+
+  return (
+    <div
+      className="image-gallery-image relative overflow-hidden flex items-center justify-center"
+      style={{ height: "80vh", cursor: scale > MIN_SCALE ? "grab" : "zoom-in" }}
+      onWheel={handleWheel}
+      onDoubleClick={handleDoubleClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={stopDragging}
+      onMouseLeave={stopDragging}
+    >
+      <img
+        src={src}
+        alt={alt || ""}
+        draggable={false}
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+          transition: draggingRef.current ? "none" : "transform 0.15s ease-out",
+          maxHeight: "80vh",
+          userSelect: "none",
+        }}
+      />
+      <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            zoomBy(-0.5);
+          }}
+          className="bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-lg hover:bg-black/80"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            zoomBy(0.5);
+          }}
+          className="bg-black/60 text-white w-9 h-9 rounded-full flex items-center justify-center text-lg hover:bg-black/80"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ViewInspectionPage = () => {
   const [data, setData] = useState<any>(null);
   const params = useParams();
@@ -413,15 +524,24 @@ const ViewInspectionPage = () => {
               ref={imageGalleryRef}
               showPlayButton={false}
               startIndex={itemIndex}
+              onSlide={(index) => setStartIndex(index)}
               onErrorImageURL="/images/loader.webp"
               showFullscreenButton={false}
               lazyLoad={false}
-              items={galleryImages.map((item: any) => ({
+              items={galleryImages.map((item: any, idx: number) => ({
                 ...item,
                 original: item.url,
                 thumbnail: item.url,
                 description: item.caption ? item.caption.replace(/_/g, ' ') : undefined,
+                galleryIndex: idx,
               }))}
+              renderItem={(item: any) => (
+                <ZoomableImage
+                  src={item.original}
+                  alt={item.description}
+                  isActive={item.galleryIndex === itemIndex}
+                />
+              )}
             />
           </div>
         </div>
