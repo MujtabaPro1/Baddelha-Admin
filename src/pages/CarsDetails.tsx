@@ -12,6 +12,7 @@ import {
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
 import RevealPriceHistory from '../components/RevealPriceHistory';
+import { createPriceRevealAdmin, createPriceRevealQa, findAllPriceReveals } from '../service/priceReveal';
 
 const fmt = (x: number) => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -159,10 +160,13 @@ const StatusPill = ({ status }: { status: string }) => {
 
 const PriceModal = ({
   title, label, value, onChange, onSave, onClose, saving, coverImage, car,
+  note, onNoteChange, showNote, saveLabel, saveDisabled,
 }: {
   title: string; label: string; value: number | null;
   onChange: (v: number) => void; onSave: () => void; onClose: () => void;
   saving: boolean; coverImage: string | null; car: any;
+  note?: string; onNoteChange?: (v: string) => void; showNote?: boolean;
+  saveLabel?: string; saveDisabled?: boolean;
 }) => (
   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -198,16 +202,28 @@ const PriceModal = ({
             />
           </div>
         </div>
+        {showNote && (
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Note (optional)</label>
+            <textarea
+              rows={3}
+              value={note || ''}
+              onChange={e => onNoteChange?.(e.target.value)}
+              placeholder="Internal note..."
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003B7E] text-sm resize-none"
+            />
+          </div>
+        )}
         <div className="flex justify-end gap-3 pt-1">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             Cancel
           </button>
           <button
             onClick={onSave}
-            disabled={saving}
+            disabled={saving || saveDisabled}
             className="flex items-center gap-2 px-5 py-2 bg-[#003B7E] text-white text-sm font-medium rounded-xl hover:bg-[#002d61] transition-colors disabled:opacity-50"
           >
-            {saving ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />Saving…</> : 'Save'}
+            {saving ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />Saving…</> : (saveLabel || 'Save')}
           </button>
         </div>
       </div>
@@ -246,6 +262,10 @@ const CarsDetails = () => {
   const [coverImage, setCoverImage]                         = useState<any>(null);
   const [showRevealPriceModal, setShowRevealPriceModal]     = useState<boolean>(false);
   const [revealPrice, setRevealPrice]                       = useState<number | null>(null);
+  const [revealNote, setRevealNote]                         = useState<string>('');
+  const [submittingReveal, setSubmittingReveal]             = useState<boolean>(false);
+  const [revealHistory, setRevealHistory]                   = useState<any[]>([]);
+  const [loadingRevealHistory, setLoadingRevealHistory]     = useState<boolean>(false);
   const [editedSellerAskingPrice, setEditedSellerAskingPrice] = useState<number | null>(null);
   const [updatingSellerAskingPrice, setUpdatingSellerAskingPrice] = useState<boolean>(false);
   const [showSellerAskingPriceModal, setShowSellerAskingPriceModal] = useState<boolean>(false);
@@ -271,6 +291,7 @@ const CarsDetails = () => {
 
   useEffect(() => {
     fetchCarDetails();
+    fetchRevealHistory();
     const auctionId = searchParams.get('auctionId');
     if (auctionId) {
       fetchAuctionWinner(auctionId);
@@ -333,6 +354,16 @@ const CarsDetails = () => {
       if (resp.data?.images) setImages(resp.data.images);
     } catch { toast.error('Failed to load car details'); setError('Failed to load car details'); }
     finally { setLoading(false); }
+  }
+
+  async function fetchRevealHistory() {
+    if (!params.id) return;
+    setLoadingRevealHistory(true);
+    try {
+      const res = await findAllPriceReveals({ carId: String(params.id), limit: 50 });
+      setRevealHistory(res?.data || []);
+    } catch { /* non-critical */ }
+    finally { setLoadingRevealHistory(false); }
   }
 
   async function fetchAuctionBids(auctionId: string) {
@@ -430,6 +461,50 @@ const CarsDetails = () => {
     finally { setUpdatingRetailValue(false); }
   };
 
+  const openRevealPriceModal = () => {
+    setRevealPrice(carDetails?.sellingPrice ? Number(carDetails.sellingPrice) : null);
+    setRevealNote('');
+    setShowRevealPriceModal(true);
+  };
+
+  const submitRevealPrice = async () => {
+    if (!carDetails?.id) return;
+    if (!revealPrice || Number(revealPrice) <= 0) {
+      toast.error('Please enter a valid price');
+      return;
+    }
+    setSubmittingReveal(true);
+    try {
+      if (user?.role === 'admin') {
+        const inspection = carDetails?.Inspection?.[0];
+        if (!inspection?.id || !inspection?.inspectorId) {
+          toast.error('No completed inspection with an assigned inspector found for this car');
+          return;
+        }
+        await createPriceRevealAdmin({
+          carId: carDetails.id,
+          inspectionId: inspection.id,
+          inspectorUserId: inspection.inspectorId,
+          price: Number(revealPrice),
+          note: revealNote || undefined,
+        });
+      } else {
+        await createPriceRevealQa({
+          carId: carDetails.id,
+          price: Number(revealPrice),
+          note: revealNote || undefined,
+        });
+      }
+      toast.success('Price revealed successfully');
+      setShowRevealPriceModal(false);
+      fetchRevealHistory();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to reveal price');
+    } finally {
+      setSubmittingReveal(false);
+    }
+  };
+
   const markCarStatus = async (carId: string, status: string) => {
     try {
       await axiosInstance.put('/1.0/car/update/' + carId, { carStatus: status });
@@ -478,6 +553,7 @@ const CarsDetails = () => {
   const canPush = ['inspected', 'unlisted', 'push_to_inventory'].includes(carDetails?.carStatus);
   const canUnlist = ['listed', 'hold', 'sold', 'returned', 'push_to_auction'].includes(carDetails?.carStatus);
   const isAdmin = user?.role === 'admin' || user?.role === 'qa';
+  const canRevealPrice = isAdmin && ['inspected', 'listed', 'unlisted', 'push_to_inventory'].includes(carDetails?.carStatus);
   const auctionId = searchParams.get('auctionId');
   const highestBid = bids?.length > 0 ? Math.max(...bids.map((b: any) => b.amount)) : 0;
 
@@ -522,15 +598,13 @@ const CarsDetails = () => {
       {showRevealPriceModal && (
         <PriceModal
           title="Reveal Price" label="Selling Price (SAR)"
-          value={revealPrice ?? carDetails?.sellingPrice} onChange={setRevealPrice}
+          value={revealPrice ?? (carDetails?.sellingPrice ? Number(carDetails.sellingPrice) : null)} onChange={setRevealPrice}
+          note={revealNote} onNoteChange={setRevealNote} showNote
           onSave={() => {
-            if (confirm('Are you sure you want to reveal the price')) {
-              setShowRevealPriceModal(false);
-              toast.success('Price revealed successfully');
-            }
+            if (confirm('Are you sure you want to reveal this price to the seller?')) submitRevealPrice();
           }}
           onClose={() => setShowRevealPriceModal(false)}
-          saving={false} coverImage={coverImage} car={carDetails}
+          saving={submittingReveal} saveLabel="Reveal Price" coverImage={coverImage} car={carDetails}
         />
       )}
       {showAuctionModal && (
@@ -1090,16 +1164,19 @@ const CarsDetails = () => {
 
           {/* RIGHT: Sidebar */}
           <div className="space-y-4">
-            {isAdmin && (
+            {canRevealPrice && (
               <button
-                onClick={() => setShowRevealPriceModal(true)}
-                className="hidden w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B7E] text-white text-sm font-semibold hover:bg-[#002d61] transition-colors shadow-sm"
+                onClick={() => {
+                  if (!carDetails?.sellingPrice) { toast.error('Selling price must be set before revealing a price'); return; }
+                  openRevealPriceModal();
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003B7E] text-white text-sm font-semibold hover:bg-[#002d61] transition-colors shadow-sm"
               >
                 <Eye size={16} /> Reveal Price
               </button>
             )}
             <AuctionHistory auctions={auctionHistory} />
-            <RevealPriceHistory history={[]} />
+            <RevealPriceHistory history={revealHistory} loading={loadingRevealHistory} />
           </div>
         </div>
       </div>
