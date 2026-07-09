@@ -78,7 +78,7 @@ const TradeInDealershipDetail = () => {
           setDealership(response.data);
 
           //https://stg-service.bddelha.com/api/1.0/dealership-car/find-all?dealershipId=00704a9f-8f85-4800-bc09-76f90555d7d4
-          const carResponse = await axiosInstance.get(`/1.0/dealership-car/find-all?dealershipId=${id}`);
+          const carResponse = await axiosInstance.get(`/1.0/dealership-car/find-all?dealershipId=${id}&page=1&limit=100`);
           console.log("carResponse", carResponse);
           if (carResponse.data?.data) {
             setCars(carResponse.data?.data);
