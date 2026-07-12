@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { Search, RefreshCw, Plus, X, ChevronDown, Edit2, Flag, Eye } from 'lucide-react';
@@ -24,12 +24,11 @@ const PriceRevealPage = () => {
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const canCreate = isAdmin || user?.role?.toLowerCase() === 'qa';
 
-  const [reveals, setReveals] = useState<PriceReveal[]>([]);
+  const [allReveals, setAllReveals] = useState<PriceReveal[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'active' | 'discarded'>('active');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
@@ -58,8 +57,12 @@ const PriceRevealPage = () => {
   const [markingFinalId, setMarkingFinalId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchReveals(currentPage);
-  }, [currentPage, statusFilter]);
+    fetchReveals();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, statusFilter]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -90,20 +93,38 @@ const PriceRevealPage = () => {
     return () => clearTimeout(t);
   }, [carSearch, showCreateModal]);
 
-  const fetchReveals = async (page: number = 1) => {
+  const fetchReveals = async () => {
     setLoading(true);
     try {
-      const res = await findAllPriceReveals({ page, limit: itemsPerPage, status: statusFilter || undefined });
-      setReveals(res?.data || []);
-      const total = res?.total || 0;
-      setTotalCount(total);
-      setTotalPages(Math.ceil(total / itemsPerPage) || 1);
+      const res = await findAllPriceReveals({ page: 1, limit: 500 });
+      setAllReveals(res?.data || []);
     } catch (err) {
       console.error('Error fetching price reveals:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Discarded reveals live in their own tab; the Active tab always excludes them.
+  const tabFiltered = useMemo(() => {
+    return allReveals.filter((r) =>
+      activeTab === 'discarded'
+        ? r.status === PRICE_REVEAL_STATUS.Discarded
+        : r.status !== PRICE_REVEAL_STATUS.Discarded
+    );
+  }, [allReveals, activeTab]);
+
+  const filteredReveals = useMemo(() => {
+    return statusFilter ? tabFiltered.filter((r) => r.status === statusFilter) : tabFiltered;
+  }, [tabFiltered, statusFilter]);
+
+  const totalCount = filteredReveals.length;
+  const totalPages = Math.ceil(totalCount / itemsPerPage) || 1;
+  const reveals = filteredReveals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const statusOptions = Object.values(PRICE_REVEAL_STATUS).filter((s) =>
+    activeTab === 'discarded' ? s === PRICE_REVEAL_STATUS.Discarded : s !== PRICE_REVEAL_STATUS.Discarded
+  );
 
   const resetCreateForm = () => {
     setCarSearch('');
@@ -155,7 +176,7 @@ const PriceRevealPage = () => {
       setShowCreateModal(false);
       resetCreateForm();
       setCurrentPage(1);
-      fetchReveals(1);
+      fetchReveals();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to create price reveal');
     } finally {
@@ -181,7 +202,7 @@ const PriceRevealPage = () => {
       await revisePriceReveal(revisingReveal.id, { price: Number(revisePrice) });
       toast.success('Price revised successfully');
       setShowReviseModal(false);
-      fetchReveals(currentPage);
+      fetchReveals();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to revise price');
     } finally {
@@ -196,7 +217,7 @@ const PriceRevealPage = () => {
     try {
       await markFinalOffer(reveal.id);
       toast.success('Offer marked as final');
-      fetchReveals(currentPage);
+      fetchReveals();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to mark offer as final');
     } finally {
@@ -219,21 +240,21 @@ const PriceRevealPage = () => {
         description="Manage price offers between QA, inspectors, and sellers"
       />
 
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 sm:max-w-xs">
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="form-input"
           >
             <option value="">All Statuses</option>
-            {Object.values(PRICE_REVEAL_STATUS).map((s) => (
+            {statusOptions.map((s) => (
               <option key={s} value={s}>{s.replace(/([a-z])([A-Z])/g, '$1 $2')}</option>
             ))}
           </select>
         </div>
         <button
-          onClick={() => fetchReveals(currentPage)}
+          onClick={() => fetchReveals()}
           className="p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
         >
           <RefreshCw className={`h-5 w-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
@@ -248,6 +269,25 @@ const PriceRevealPage = () => {
             Create Price Reveal
           </button>
         )}
+      </div>
+
+      <div className="mb-6 inline-flex rounded-md border border-gray-200 bg-white p-1">
+        <button
+          onClick={() => { setActiveTab('active'); setStatusFilter(''); }}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'active' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => { setActiveTab('discarded'); setStatusFilter(''); }}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'discarded' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Discarded
+        </button>
       </div>
 
       <div className="table-container" ref={dropdownRef}>

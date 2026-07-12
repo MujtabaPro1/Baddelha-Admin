@@ -33,8 +33,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'edit':
       case 'returned':
       case 'rejectedbyseller':
-      case 'discarded':
         return 'bg-red-100 text-red-800';
+      case 'discarded':
+        return 'bg-gray-200 text-gray-700';
       case 'pending':
       case 'scheduled':
       case 'in_progress':
