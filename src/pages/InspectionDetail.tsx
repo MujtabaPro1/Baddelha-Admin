@@ -514,7 +514,12 @@ const ViewInspectionPage = () => {
       {/* ── Full-screen Gallery ── */}
       {showGallery && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          <div className="flex justify-end p-4">
+          <div className="flex items-center justify-between p-4">
+            <span className="text-white text-sm font-medium capitalize">
+              {galleryImages[itemIndex]?.caption
+                ? galleryImages[itemIndex].caption.replace(/_/g, " ")
+                : ""}
+            </span>
             <button onClick={() => setShowGallery(false)} className="text-white font-bold text-xl">
               <X size={28} />
             </button>
