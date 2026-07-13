@@ -420,7 +420,7 @@ const PriceRevealPage = () => {
       {openDropdownId && dropdownPos && (() => {
         const reveal = reveals.find((r) => r.id === openDropdownId);
         if (!reveal) return null;
-        const canRevise = reveal.status === PRICE_REVEAL_STATUS.RejectedBySeller && !reveal.isFinalOffer;
+        const canRevise = reveal.status != PRICE_REVEAL_STATUS.Discarded;
         const canMarkFinal = (reveal.status === PRICE_REVEAL_STATUS.Pending || reveal.status === PRICE_REVEAL_STATUS.RejectedBySeller) && !reveal.isFinalOffer;
         return (
           <div
