@@ -434,7 +434,7 @@ const Cars = () => {
                       </div>
 
                       <p className="shrink-0 text-right font-bold text-amber-600 text-sm">
-                        SAR {Number(auction.currentPrice || auction.startPrice).toLocaleString()}
+                        SAR {Number(auction.highestBid || auction.startPrice).toLocaleString()}
                       </p>
                     </div>
                   )
