@@ -28,7 +28,7 @@ const PriceRevealPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'active' | 'discarded'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'discarded' | 'accepted' | 'rejected'>('active');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
@@ -110,6 +110,10 @@ const PriceRevealPage = () => {
     return allReveals.filter((r) =>
       activeTab === 'discarded'
         ? r.status === PRICE_REVEAL_STATUS.Discarded
+        : activeTab === 'accepted'
+        ? r.status === PRICE_REVEAL_STATUS.Accepted
+        : activeTab === 'rejected'
+        ? r.status === PRICE_REVEAL_STATUS.RejectedBySeller
         : r.status !== PRICE_REVEAL_STATUS.Discarded
     );
   }, [allReveals, activeTab]);
@@ -278,7 +282,7 @@ const PriceRevealPage = () => {
             activeTab === 'active' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          Active
+          All
         </button>
         <button
           onClick={() => { setActiveTab('discarded'); setStatusFilter(''); }}
@@ -287,6 +291,22 @@ const PriceRevealPage = () => {
           }`}
         >
           Discarded
+        </button>
+          <button
+          onClick={() => { setActiveTab('accepted'); setStatusFilter(''); }}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'accepted' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Accepted
+        </button>
+            <button
+          onClick={() => { setActiveTab('rejected'); setStatusFilter(''); }}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'rejected' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Rejected
         </button>
       </div>
 
