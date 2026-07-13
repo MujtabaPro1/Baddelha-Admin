@@ -28,7 +28,7 @@ const PriceRevealPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'active' | 'discarded' | 'accepted' | 'rejected'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'discarded' | 'accepted' | 'rejected' | 'pending'>('active');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
@@ -114,6 +114,8 @@ const PriceRevealPage = () => {
         ? r.status === PRICE_REVEAL_STATUS.Accepted
         : activeTab === 'rejected'
         ? r.status === PRICE_REVEAL_STATUS.RejectedBySeller
+        : activeTab === 'pending'
+        ? r.status === PRICE_REVEAL_STATUS.Pending
         : r.status !== PRICE_REVEAL_STATUS.Discarded
     );
   }, [allReveals, activeTab]);
@@ -283,6 +285,14 @@ const PriceRevealPage = () => {
           }`}
         >
           All
+        </button>
+        <button
+          onClick={() => { setActiveTab('pending'); setStatusFilter(''); }}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            activeTab === 'pending' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          Pending
         </button>
         <button
           onClick={() => { setActiveTab('discarded'); setStatusFilter(''); }}
