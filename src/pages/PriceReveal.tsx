@@ -28,7 +28,7 @@ const PriceRevealPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'active' | 'discarded' | 'accepted' | 'rejected' | 'pending'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'discarded' | 'accepted' | 'rejected' | 'pending'>('pending');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
