@@ -427,7 +427,7 @@ const Cars = () => {
                           {auction.car?.modelYear} {auction.car?.make} {auction.car?.model}
                         </h3>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                          <span>{auction.bidCount || 0} bids</span>
+                          <span>{auction.totalBids || 0} bids</span>
                           <span>•</span>
                           <AuctionCountdown endTime={auction.endTime} />
                         </div>
