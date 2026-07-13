@@ -148,10 +148,10 @@ const MyInspections = () => {
 
   useEffect(() => {
     if (inspectorBranchId && inspectorId) {
-      fetchInspections();
-      fetchAvailableJobs();
-      fetchAppointments();
-      fetchCancelledAppointment();
+        fetchInspections();
+        fetchAvailableJobs();
+        fetchAppointments();
+        fetchCancelledAppointment();
     }
   }, [inspectorBranchId, inspectorId]);
 
@@ -256,6 +256,25 @@ const MyInspections = () => {
     }
   };
 
+
+   const handleUnAssignJob = async (inspectionId: number) => {
+    try {
+      await axiosInstance.patch(`/1.0/book-appointment/${inspectionId}/unassign`);
+      toast.success('Job unassigned successfully');
+      // Refresh the available jobs list
+      await fetchAvailableJobs();
+      await fetchInspections();
+      await fetchAppointments();
+      // Navigate to inspection report
+    } catch (err: any) {
+      console.error('Error unassigning job:', err);
+      toast.error(err?.response?.data?.message || 'Failed to unassign job');
+    } finally {
+      setAssigningJob(null);
+    }
+  };
+
+
   const fetchAppointments = async () => {
     try {
       const response = await axiosInstance.get('/1.0/book-appointment');
@@ -273,7 +292,6 @@ const MyInspections = () => {
       
 
     
-      console.log("_appointments", _appointments,data);
       setAppointments(_appointments || []);
 
     } catch (err) {
@@ -563,7 +581,6 @@ const MyInspections = () => {
             }
           })
           .map((inspection: any, index: number) => (
-            console.log(inspection),
           <div 
             key={inspection.uid || inspection.id} 
             className="card p-6 block hover:shadow-md animated-transition"
@@ -694,6 +711,7 @@ const MyInspections = () => {
 
                         </> }</>
                     ) : (
+                      <>
                       <button 
                         onClick={(e) => {
                           e.preventDefault();
@@ -704,6 +722,20 @@ const MyInspections = () => {
                       >
                         Customer Check In
                       </button>
+                           <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log(inspection);
+                          if(confirm("Are you sure you want to remove this inspection?")) {
+                            handleUnAssignJob(inspection.uid);                 
+                          }
+                   
+                        }}
+                        className="btn mt-3 min-w-[175px] text-white justify-center btn-sm bg-[#ff6700] flex items-center"
+                      >
+                        Remove Inspection
+                      </button>
+                      </>
                     )}
                   </>
                 ) : activeTab === 'available' ? <>
