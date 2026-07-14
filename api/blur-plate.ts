@@ -1,8 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const BLUR_PLATE_URL = process.env.BLUR_PLATE_URL;
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Colocated with this function so Vercel's build tracing includes it in the deployment bundle.
 const logoBuffer = readFileSync(join(__dirname, 'plate-hide-logo.png'));
@@ -14,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env.BLUR_PLATE_API_KEY;
-  if (!apiKey) {
+  if (!apiKey || !BLUR_PLATE_URL) {
     res.status(500).json({ message: 'Plate hiding is not configured on the server' });
     return;
   }
