@@ -41,8 +41,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
   const [userData, setUserData] = useState<any>(null);
   const [loadingUserBranch, setLoadingUserBranch] = useState(false);
   const [branchLocked, setBranchLocked] = useState(false);
-  const [inspectors, setInspectors] = useState<any[]>([]);
-  const [loadingInspectors, setLoadingInspectors] = useState(false);
   const [branchTimings, setBranchTimings] = useState<any[]>([]);
   const [timingsWithDates, setTimingsWithDates] = useState<any[]>([]);
   const [loadingTimings, setLoadingTimings] = useState(false);
@@ -68,7 +66,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     paint: '',
     specs: '',
     carPrice: 0,
-    inspectorId: '',
     appointmentDate: '',
     appointmentTime: ''
   });
@@ -91,16 +88,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       fetchCarModels(formData.make);
     }
   }, [formData.make]);
-
-  // Effect to fetch inspectors when branch changes (only for call-center type)
-  useEffect(() => {
-    if (type === 'call-center' && formData.branchId) {
-      fetchInspectorsByBranch(formData.branchId);
-    } else {
-      setInspectors([]);
-      setFormData(prev => ({ ...prev, inspectorId: '' }));
-    }
-  }, [formData.branchId, type]);
 
   useEffect(() => {
     if (formData.branchId) {
@@ -164,21 +151,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
     } catch (error) {
       console.error('Error fetching branches:', error);
       toast.error('Failed to load branches');
-    }
-  };
-
-  const fetchInspectorsByBranch = async (branchId: string) => {
-    if (!branchId) return;
-    
-    setLoadingInspectors(true);
-    try {
-      const response = await axiosInstance.get(`/1.0/inspector/branch/${branchId}`);
-      setInspectors(response.data || []);
-    } catch (error) {
-      console.error('Error fetching inspectors:', error);
-      setInspectors([]);
-    } finally {
-      setLoadingInspectors(false);
     }
   };
 
@@ -371,11 +343,9 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       paint: '',
       specs: '',
       carPrice: 0,
-      inspectorId: '',
       appointmentDate: '',
       appointmentTime: ''
     });
-    setInspectors([]);
     setTimingsWithDates([]);
     setSelectedTimingIndex(-1);
   };
@@ -420,11 +390,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
       newErrors.year = 'Please select a year';
     }
     
-    // Validate inspector for call-center type
-    if (type === 'call-center' && !formData.inspectorId) {
-      newErrors.inspectorId = 'Please select an inspector';
-    }
-
     // Validate appointment date and time when timings are available (skip for inspector type)
     if (type !== 'inspector' && timingsWithDates.length > 0 && !formData.appointmentDate) {
       newErrors.appointmentDate = 'Please select an appointment date';
@@ -482,11 +447,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
         type: 'sell'
       };
       
-      // Add inspectorId if call-center type
-      if (type === 'call-center' && formData.inspectorId) {
-        bookingData.inspectorId = Number(formData.inspectorId);
-      }
-
       // Make API call to create walk-in appointment
       const response = await axiosInstance.post('/1.0/book-appointment/walk-in', bookingData);
       console.log(response);
@@ -635,34 +595,6 @@ const WalkInAppointmentModal: React.FC<WalkInAppointmentModalProps> = ({
               {branchLocked && <span className="text-sm text-blue-500">Branch auto-assigned based on your profile</span>}
             </div>
             
-            {type === 'call-center' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Inspector*</label>
-                <select
-                  name="inspectorId"
-                  value={formData.inspectorId}
-                  onChange={(e) => {
-                    handleChange(e);
-                    if (errors.inspectorId) setErrors(prev => ({ ...prev, inspectorId: '' }));
-                  }}
-                  className={`form-input w-full ${errors.inspectorId ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                  disabled={!formData.branchId || loadingInspectors}
-                >
-                  <option value="">Select Inspector</option>
-                  {inspectors.map((inspector: any) => (
-                    <option key={inspector.id} value={inspector.id}>
-                      {inspector.user?.firstName} {inspector.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.inspectorId && <p className="text-red-500 text-sm mt-1">{errors.inspectorId}</p>}
-                {loadingInspectors && <span className="text-sm text-gray-500">Loading inspectors...</span>}
-                {!formData.branchId && <span className="text-sm text-gray-500">Please select a branch first</span>}
-                {formData.branchId && !loadingInspectors && inspectors.length === 0 && (
-                  <span className="text-sm text-orange-500">No inspectors available for this branch</span>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Appointment Date & Time */}
