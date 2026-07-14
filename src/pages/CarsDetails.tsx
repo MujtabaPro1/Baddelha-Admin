@@ -7,12 +7,13 @@ import {
   Check, X, Clock, ArrowUp, Clock10, DollarSign,
   Trophy, Car, Gauge, Cog, Calendar,
   Tag, Pencil, Eye, Ban, Package, RotateCcw, Bookmark,
-  Info, ChevronDown, ChevronUp,
+  Info, ChevronDown, ChevronUp, ShieldOff, Download, Loader2,
 } from 'lucide-react';
 import CarBodySvgView from '../components/CarBodyView';
 import AuctionHistory from '../components/AuctionHistory';
 import RevealPriceHistory from '../components/RevealPriceHistory';
 import { createPriceRevealAdmin, createPriceRevealQa, findAllPriceReveals } from '../service/priceReveal';
+import { hideCarPlate } from '../service/platePrivacy';
 
 const fmt = (x: number) => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -277,6 +278,8 @@ const CarsDetails = () => {
   const [pushingToAuction, setPushingToAuction]                     = useState<boolean>(false);
   const [viewerOpen, setViewerOpen]                                 = useState<boolean>(false);
   const [viewerIndex, setViewerIndex]                               = useState<number>(0);
+  const [hidingPlateIndex, setHidingPlateIndex]                     = useState<number | null>(null);
+  const [plateResult, setPlateResult]                               = useState<{ url: string } | null>(null);
 
   useEffect(() => {
     if (carDetails?.sellingPrice)      setEditedPrice(Number(carDetails.sellingPrice));
@@ -364,6 +367,39 @@ const CarsDetails = () => {
       setRevealHistory(res?.data || []);
     } catch { /* non-critical */ }
     finally { setLoadingRevealHistory(false); }
+  }
+
+  async function handleHidePlate(e: React.MouseEvent, img: any, i: number) {
+    e.stopPropagation();
+    const sourceUrl = img.url || img.path;
+    if (!sourceUrl || hidingPlateIndex !== null) return;
+    setHidingPlateIndex(i);
+    try {
+      const resultUrl = await hideCarPlate(sourceUrl);
+      setPlateResult(prev => {
+        if (prev?.url) window.URL.revokeObjectURL(prev.url);
+        return { url: resultUrl };
+      });
+    } catch {
+      toast.error('Failed to hide the plate. Please try again.');
+    } finally {
+      setHidingPlateIndex(null);
+    }
+  }
+
+  function closePlateModal() {
+    if (plateResult?.url) window.URL.revokeObjectURL(plateResult.url);
+    setPlateResult(null);
+  }
+
+  function downloadPlateResult() {
+    if (!plateResult?.url) return;
+    const a = document.createElement('a');
+    a.href = plateResult.url;
+    a.download = `plate-hidden-${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   async function fetchAuctionBids(auctionId: string) {
@@ -552,7 +588,7 @@ const CarsDetails = () => {
 
   const canPush = ['inspected', 'unlisted', 'push_to_inventory'].includes(carDetails?.carStatus);
   const canUnlist = ['listed', 'hold', 'sold', 'returned', 'push_to_auction'].includes(carDetails?.carStatus);
-  const isAdmin = user?.role === 'admin' || user?.role === 'qa';
+  const isAdmin = user?.role === 'admin' && user?.id === '1';
   const canRevealPrice = isAdmin && ['inspected', 'listed', 'unlisted', 'push_to_inventory','push_to_auction'].includes(carDetails?.carStatus);
   const auctionId = searchParams.get('auctionId');
   const highestBid = bids?.length > 0 ? Math.max(...bids.map((b: any) => b.amount)) : 0;
@@ -1143,6 +1179,16 @@ const CarsDetails = () => {
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <Eye size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
+                          {isAdmin && (
+                            <button
+                              onClick={(e) => handleHidePlate(e, img, i)}
+                              disabled={hidingPlateIndex !== null}
+                              title="Hide plate"
+                              className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-[#003B7E] text-white opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100 disabled:cursor-wait"
+                            >
+                              {hidingPlateIndex === i ? <Loader2 size={16} className="animate-spin" /> : <ShieldOff size={16} />}
+                            </button>
+                          )}
                           {img.caption && (
                             <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs px-2 py-1 truncate">
                               {img.caption}
@@ -1236,6 +1282,38 @@ const CarsDetails = () => {
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Hide Plate Result Viewer */}
+      {plateResult && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+          onClick={closePlateModal}
+        >
+          <button
+            onClick={closePlateModal}
+            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-colors z-10"
+          >
+            <X size={24} />
+          </button>
+
+          <div
+            className="max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={plateResult.url}
+              alt="Plate hidden"
+              className="max-w-full max-h-[75vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={downloadPlateResult}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#003B7E] text-white text-sm font-semibold rounded-xl hover:bg-[#002d61] transition-colors"
+            >
+              <Download size={16} /> Download
+            </button>
+          </div>
         </div>
       )}
     </>
