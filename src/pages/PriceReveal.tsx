@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
-import { Search, RefreshCw, Plus, X, ChevronDown, Edit2, Flag, Eye } from 'lucide-react';
+import { Search, RefreshCw, Plus, X, ChevronDown, Edit2, Flag, Eye, Ban } from 'lucide-react';
 import axiosInstance from '../service/api';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import {
   findAllPriceReveals,
   revisePriceReveal,
   markFinalOffer,
+  discardOffer,
 } from '../service/priceReveal';
 import { PriceReveal, PRICE_REVEAL_STATUS } from '../types/priceReveal';
 
@@ -55,6 +56,7 @@ const PriceRevealPage = () => {
   const [detailReveal, setDetailReveal] = useState<PriceReveal | null>(null);
 
   const [markingFinalId, setMarkingFinalId] = useState<string | null>(null);
+  const [discardingId, setDiscardingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReveals();
@@ -231,6 +233,21 @@ const PriceRevealPage = () => {
     }
   };
 
+  const handleDiscard = async (reveal: PriceReveal) => {
+    if (!confirm('Discard this offer? This action cannot be undone.')) return;
+    setDiscardingId(String(reveal.id));
+    setOpenDropdownId(null);
+    try {
+      await discardOffer(String(reveal.id));
+      toast.success('Offer discarded');
+      fetchReveals();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to discard offer');
+    } finally {
+      setDiscardingId(null);
+    }
+  };
+
   const openDetailModal = (reveal: PriceReveal) => {
     setDetailReveal(reveal);
     setOpenDropdownId(null);
@@ -247,7 +264,7 @@ const PriceRevealPage = () => {
       />
 
       <div className="mb-4 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 sm:max-w-xs">
+        <div className="hidden relative flex-1 sm:max-w-xs">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -259,12 +276,6 @@ const PriceRevealPage = () => {
             ))}
           </select>
         </div>
-        <button
-          onClick={() => fetchReveals()}
-          className="p-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-        >
-          <RefreshCw className={`h-5 w-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
-        </button>
         <div className="flex-1" />
         {canCreate && (
           <button
@@ -277,7 +288,8 @@ const PriceRevealPage = () => {
         )}
       </div>
 
-      <div className="mb-6 inline-flex rounded-md border border-gray-200 bg-white p-1">
+      <div className='flex justify-between items-center mb-6'>
+      <div className="inline-flex rounded-md border border-gray-200 bg-white p-1">
         <button
           onClick={() => { setActiveTab('active'); setStatusFilter(''); }}
           className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -319,6 +331,13 @@ const PriceRevealPage = () => {
           Rejected
         </button>
       </div>
+       <button
+          onClick={() => fetchReveals()}
+          className="p-2 ml-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+        >
+          <RefreshCw className={`h-5 w-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
 
       <div className="table-container" ref={dropdownRef}>
         <table className="table">
@@ -328,6 +347,8 @@ const PriceRevealPage = () => {
               <th>Price</th>
               <th>Status</th>
               <th>Final Offer</th>
+              <th>Customeer</th>
+              <th>Inspector</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -367,6 +388,8 @@ const PriceRevealPage = () => {
                       <span className="text-gray-400 text-xs">—</span>
                     )}
                   </td>
+                  <td>{reveal.customerName || '—'}</td>
+                  <td>{reveal.inspection?.Inspector?.user?.firstName || '—'}</td>
                   <td className="text-gray-600">{fmtDate(reveal.createdAt)}</td>
                   <td>
                     <button
@@ -479,6 +502,15 @@ const PriceRevealPage = () => {
                 className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100 disabled:opacity-50"
               >
                 <Flag size={14} /> Mark as Final
+              </button>
+            )}
+            {reveal.status === PRICE_REVEAL_STATUS.RejectedBySeller && (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDiscard(reveal); }}
+                disabled={discardingId === String(reveal.id)}
+                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 disabled:opacity-50"
+              >
+                <Ban size={14} /> Discard Offer
               </button>
             )}
           </div>

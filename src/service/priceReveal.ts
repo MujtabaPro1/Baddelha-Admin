@@ -69,3 +69,8 @@ export const sellerRejectedOffer = async (id: string, body?: SellerRejectedDto) 
   );
   return res.data;
 };
+
+export const discardOffer = async (id: string) => {
+  const res = await axiosInstance.patch("/1.0/price-reveal/discard-offer/" + id);
+  return res.data;
+};
