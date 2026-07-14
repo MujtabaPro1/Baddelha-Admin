@@ -588,7 +588,7 @@ const CarsDetails = () => {
 
   const canPush = ['inspected', 'unlisted', 'push_to_inventory'].includes(carDetails?.carStatus);
   const canUnlist = ['listed', 'hold', 'sold', 'returned', 'push_to_auction'].includes(carDetails?.carStatus);
-  const isAdmin = user?.role === 'admin' && user?.id === '1';
+  const isAdmin = false;
   const canRevealPrice = isAdmin && ['inspected', 'listed', 'unlisted', 'push_to_inventory','push_to_auction'].includes(carDetails?.carStatus);
   const auctionId = searchParams.get('auctionId');
   const highestBid = bids?.length > 0 ? Math.max(...bids.map((b: any) => b.amount)) : 0;
