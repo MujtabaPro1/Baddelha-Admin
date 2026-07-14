@@ -323,7 +323,19 @@ const CallCenter = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     try {
-      return format(new Date(dateString), 'MMM d, yyyy hh:mm:ss a');
+      const date = new Date(dateString);
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Riyadh',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }).formatToParts(date);
+      const get = (type: string) => parts.find(p => p.type === type)?.value || '';
+      return `${get('month')} ${get('day')}, ${get('year')} ${get('hour')}:${get('minute')}:${get('second')} ${get('dayPeriod')}`;
     } catch {
       return dateString;
     }
@@ -731,7 +743,7 @@ const CallCenter = () => {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-xs text-slate-500 font-medium">Appointment</span>
-                            <span className="text-slate-800 font-semibold">{formatDate(appointment.appointmentDate)}</span>
+                            <span className="text-slate-800 font-semibold">{new Date(appointment.appointmentDate).toDateString()}</span>
                             <span className="text-slate-600 text-xs">{formatTime(appointment.appointmentTime)}</span>
                           </div>
                         </div>
