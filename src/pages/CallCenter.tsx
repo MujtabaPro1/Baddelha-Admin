@@ -279,7 +279,9 @@ const CallCenter = () => {
         if (response.data?.statistics) {
           setStatistics(response.data.statistics);
         }
+        if(!searchQuery){
         fetchPendingInspections(data);
+        }
       } catch (apiError) {
         console.error('API call failed:', apiError);
         throw apiError; // Re-throw to be caught by the outer try/catch
@@ -313,6 +315,7 @@ const CallCenter = () => {
       const filteredData = data.filter(
         (a: any) => !cancelledAppointmentIds.includes(a?.BookAppointments?.[0]?.uid)
       );
+      console.log(filteredData);
       setPendingInspections(filteredData);
     } catch (err) {
       console.error('Error fetching pending inspections:', err);
