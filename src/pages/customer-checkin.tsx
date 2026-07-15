@@ -114,7 +114,14 @@ const CustomerCheckIn = () => {
                     return processedApt;
                 });
                 
-                let _processedAppointments = processedAppointments?.filter((p)=> p.status != 'Cancelled');
+                let _processedAppointments = processedAppointments?.filter((p: any) =>
+                    p.status === 'Confirmed' && String(p.inspectionId) === String(params.id)
+                );
+
+                if (_processedAppointments.length === 0) {
+                    throw new Error('No confirmed appointment found for this inspection');
+                }
+
                 setAvailableAppointments(_processedAppointments);
                 
                 // If there's only one appointment, select it automatically
