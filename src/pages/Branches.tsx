@@ -58,7 +58,7 @@ const Branches = () => {
       const response = await axiosInstance.get('/1.0/branch');
       response?.data?.map((d: any)=>{
         d['status'] = d?.is_active ? 'active' : 'inactive';
-        d['city'] = d?.enName?.split(' ')[0] || ''
+        d['city'] = d?.city || ''
         return d;
       })
       setBranches(response.data || []);
@@ -96,9 +96,10 @@ const Branches = () => {
         arName: formData.arName,
         address: formData.address,
         gmap: formData.gmap,
-    latitude: Number(formData.latitude),
+        latitude: Number(formData.latitude),
         longitude: Number(formData.longitude),
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        city: formData.city
       };
       
       await axiosInstance.post('/1.0/branch', payload);
@@ -134,7 +135,8 @@ const Branches = () => {
         gmap: formData.gmap,
         latitude: Number(formData.latitude),
         longitude: Number(formData.longitude),
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        city: formData.city
       };
       
       await axiosInstance.put(`/1.0/branch/${selectedBranch.id}`, payload);
