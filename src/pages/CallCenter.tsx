@@ -65,7 +65,6 @@ const CallCenter = () => {
 
   useEffect(()=>{
     fetchBranches();
-    fetchPendingInspections();
   },[])
 
   useEffect(()=>{
@@ -273,7 +272,6 @@ const CallCenter = () => {
             }
           };
         });
-        console.log(data);
         setAppointments(data);
         const total = response.data?.meta?.total || response.data?.length || 0;
         setTotalCount(total);
@@ -281,6 +279,7 @@ const CallCenter = () => {
         if (response.data?.statistics) {
           setStatistics(response.data.statistics);
         }
+        fetchPendingInspections(data);
       } catch (apiError) {
         console.error('API call failed:', apiError);
         throw apiError; // Re-throw to be caught by the outer try/catch
@@ -293,7 +292,7 @@ const CallCenter = () => {
     }
   };
 
-  const fetchPendingInspections = async () => {
+  const fetchPendingInspections = async (appointmentsList?: any[]) => {
     setPendingInspectionsLoading(true);
     try {
       const response = await axiosInstance.post('/1.0/inspection/search', {
@@ -306,7 +305,15 @@ const CallCenter = () => {
         car: a?.Car,
         branchName: a?.BookAppointments?.[0]?.Branch?.enName || a?.Car?.Branch?.enName || 'N/A'
       })) || [];
-      setPendingInspections(data);
+
+      // filter out the ones whose linked appointment status is "Cancelled"
+      const cancelledAppointmentIds = (appointmentsList ?? appointments)
+        .filter((appt: any) => appt.status === 'Cancelled')
+        .map((appt: any) => appt.id);
+      const filteredData = data.filter(
+        (a: any) => !cancelledAppointmentIds.includes(a?.BookAppointments?.[0]?.uid)
+      );
+      setPendingInspections(filteredData);
     } catch (err) {
       console.error('Error fetching pending inspections:', err);
     } finally {
