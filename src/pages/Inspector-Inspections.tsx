@@ -17,6 +17,7 @@ import WalkInAppointmentModal from '../components/WalkInAppointmentModal';
 import NotificationTaskbar from '../components/NotificationTaskbar';
 import NotificationDebugPanel from '../components/NotificationDebugPanel';
 import { toast } from 'react-hot-toast';
+import { findMyOffers } from '../service/priceReveal';
 
 
 interface Inspector {
@@ -63,6 +64,7 @@ const MyInspections = () => {
   const [historyInspectionId, setHistoryInspectionId] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [myOffers, setMyOffers] = useState<any[]>([]);
  
 
 
@@ -152,8 +154,18 @@ const MyInspections = () => {
         fetchAvailableJobs();
         fetchAppointments();
         fetchCancelledAppointment();
+        fetchMyOffers();
     }
   }, [inspectorBranchId, inspectorId]);
+
+  const fetchMyOffers = async () => {
+    try {
+      const res = await findMyOffers();
+      setMyOffers(Array.isArray(res) ? res : res?.data || []);
+    } catch (err) {
+      console.error('Error fetching my offers:', err);
+    }
+  };
 
 
   const fetchCancelledAppointment = async (page = cancelledPage, perPage = cancelledPerPage, search = cancelledSearch) => {
@@ -290,7 +302,8 @@ const MyInspections = () => {
           && appointment.status != 'Cancelled'
         );
       
-
+  
+ 
     
       setAppointments(_appointments || []);
 
@@ -659,14 +672,26 @@ const MyInspections = () => {
                         QA Pending
                       </button>
                     ) : inspection?.Inspection?.inspectionStatus == 'Completed' ? (
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                        }}
-                        className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-purple-600 hover:bg-purple-700 flex items-center"
-                      >
-                        Offer Pending
-                      </button>
+                      myOffers.some((o: any) => o.inspectionId === inspection.inspectionId) ? (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/my-offers');
+                          }}
+                          className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-green-600 hover:bg-green-700 flex items-center"
+                        >
+                          Offer Generated
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                          }}
+                          className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-purple-600 hover:bg-purple-700 flex items-center"
+                        >
+                          Offer Pending
+                        </button>
+                      )
                     ) : inspection?.customerCheckIn != null ? (
                       <>{inspection?.Inspection?.inspectionStatus != 'In_Complete' ? 
                         <>
