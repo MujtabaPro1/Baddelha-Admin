@@ -13,7 +13,7 @@ const firebaseConfig = {
 
 
 // VAPID Key - Generate from Firebase Console > Project Settings > Cloud Messaging
-const VAPID_KEY = "BOw4b2GBO4rNDXLVAu__GWpTInpZrd-6dptV2p5-6PQsFpm3kqom7kVWKtSRPnhJ0F_pVFrJ9BvinzeqAdj3Htw";
+const VAPID_KEY = process.env.VAPID_KEY;
 
 let app: any = null;
 let messaging: any = null;
