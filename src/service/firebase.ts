@@ -1,8 +1,10 @@
 // Firebase configuration for push notifications
 // Note: Install firebase package first: npm install firebase
 
+
+//AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY
 const firebaseConfig = {
-  apiKey: "AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY",
+  apiKey: process.env.API_KEY_FIREBASE,
   authDomain: "baddelha-d3e96.firebaseapp.com",
   projectId: "baddelha-d3e96",
   storageBucket: "baddelha-d3e96.firebasestorage.app",
