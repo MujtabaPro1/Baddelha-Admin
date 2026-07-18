@@ -114,14 +114,7 @@ const CustomerCheckIn = () => {
                     return processedApt;
                 });
                 
-                let _processedAppointments = processedAppointments?.filter((p: any) =>
-                    p.status === 'Confirmed' && String(p.inspectionId) === String(params.id)
-                );
-
-                if (_processedAppointments.length === 0) {
-                    throw new Error('No confirmed appointment found for this inspection');
-                }
-
+                let _processedAppointments = processedAppointments?.filter((p)=> p.status != 'Cancelled');
                 setAvailableAppointments(_processedAppointments);
                 
                 // If there's only one appointment, select it automatically
@@ -548,7 +541,10 @@ const CustomerCheckIn = () => {
                             </button>
 
                             <button
-                                onClick={startInspection}
+                                onClick={()=>{
+                                    console.log("Starting inspection...");
+                                    startInspection();
+                                }}
                                 disabled={loading}
                                 className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed"
                             >
