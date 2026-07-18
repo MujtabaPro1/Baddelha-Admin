@@ -4,14 +4,13 @@
 
 //AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY
 const firebaseConfig = {
-  apiKey: process.env.API_KEY_FIREBASE,
+  apiKey: "AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY",
   authDomain: "baddelha-d3e96.firebaseapp.com",
   projectId: "baddelha-d3e96",
   storageBucket: "baddelha-d3e96.firebasestorage.app",
   messagingSenderId: "885700467987",
   appId: "1:885700467987:web:dcd2a5fe7c157242b34ee6"
 };
-
 
 
 // VAPID Key - Generate from Firebase Console > Project Settings > Cloud Messaging

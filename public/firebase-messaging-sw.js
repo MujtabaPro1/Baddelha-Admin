@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: process.env.API_KEY_FIREBASE,
+  apiKey: "AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY",
   authDomain: "baddelha-d3e96.firebaseapp.com",
   projectId: "baddelha-d3e96",
   storageBucket: "baddelha-d3e96.firebasestorage.app",
