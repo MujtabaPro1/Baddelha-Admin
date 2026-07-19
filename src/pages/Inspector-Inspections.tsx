@@ -32,8 +32,9 @@ const MyInspections = () => {
   const { user } = useAuth();
   const [inspections, setInspections]: any = useState([]);
   const [appointments, setAppointments]: any = useState([]);
+  const [offerAppointments, setOfferAppointments]: any = useState([]);
   const [allAppointments, setAllAppointments]: any = useState([]);
-  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available' | 'cancelled'>('available');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'inspections' | 'available' | 'cancelled' | 'offers'>('available');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryAvailable, setSearchQueryAvailable] = useState('');
   const [searchType, setSearchType] = useState<'phone' | 'email'>('phone');
@@ -297,15 +298,23 @@ const MyInspections = () => {
           car: JSON.parse(a.carDetail),
         };
       });
-        const _appointments = data?.filter((appointment: any) => 
+        const _appointments = data?.filter((appointment: any) =>
           appointment.inspectorUserId === inspectorId
           && appointment.status != 'Cancelled'
+          && appointment.status != 'Completed'
+          && appointment?.Inspection?.inspectionStatus != 'Completed'
         );
-      
-  
- 
-    
+        const _offerAppointments = data?.filter((appointment: any) =>
+          appointment.inspectorUserId === inspectorId
+          && appointment.status != 'Cancelled'
+          && appointment?.Inspection?.inspectionStatus == 'Completed'
+        );
+
+
+
+
       setAppointments(_appointments || []);
+      setOfferAppointments(_offerAppointments || []);
 
     } catch (err) {
       console.error('Error fetching appointments:', err);
@@ -431,6 +440,16 @@ const MyInspections = () => {
               Appointments ({appointments.length})
             </button>
             <button
+              onClick={() => setActiveTab('offers')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'offers'
+                  ? 'border-blue-900 text-blue-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Offers ({offerAppointments.length})
+            </button>
+            <button
               onClick={() => setActiveTab('inspections')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'inspections'
@@ -458,7 +477,7 @@ const MyInspections = () => {
    
       
       {/* Filters and search */}
-      {activeTab == 'appointments' ? <div className="mb-8 flex flex-col sm:flex-row gap-4">
+      {activeTab == 'appointments' || activeTab == 'offers' ? <div className="mb-8 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 flex">
           <select
             value={searchType}
@@ -580,7 +599,7 @@ const MyInspections = () => {
           </div>
         ))}
 
-        {(activeTab !== 'cancelled') && (activeTab === 'appointments' ? appointments : activeTab === 'available' ? allAppointments : inspections)
+        {(activeTab !== 'cancelled') && (activeTab === 'appointments' ? appointments : activeTab === 'offers' ? offerAppointments : activeTab === 'available' ? allAppointments : inspections)
           .filter((inspection: any) => {
            // if (activeTab === 'appointments' && (inspection.status !== 'Confirmed' || inspection.status !== 'In_Complete')) return false;
             if (!searchQuery.trim()) return true;
@@ -620,9 +639,9 @@ const MyInspections = () => {
                     </div>
                   )}
                   <div className="mt-1 flex items-center text-sm text-gray-600">
-                    <StatusBadge status={activeTab === 'appointments' ? inspection.status : inspection?.inspectionStatus} />
+                    <StatusBadge status={(activeTab === 'appointments' || activeTab === 'offers') ? inspection.status : inspection?.inspectionStatus} />
                   </div>
-                  {activeTab === 'appointments' && (
+                  {(activeTab === 'appointments' || activeTab === 'offers') && (
                     <div className="mt-1 flex items-center text-sm text-gray-600">
                       <User className="h-4 w-4 mr-1" />
                       <span>{inspection?.firstName + ' ' + inspection?.lastName}</span>
@@ -643,7 +662,7 @@ const MyInspections = () => {
                 <div className="flex items-center text-sm text-gray-700 mb-1">
                   <Calendar className="h-4 w-4 text-gray-500 mr-1" />
                   <span>
-                    {activeTab === 'appointments' 
+                    {(activeTab === 'appointments' || activeTab === 'offers')
                       ? (inspection?.appointmentDate ? `Scheduled: ${formatDate(inspection.appointmentDate)}` : `Requested: ${formatDate(inspection.appointmentDate)}`)
                       : `Created Date: ${formatDate(inspection.createdAt)}`
                     }
@@ -654,16 +673,16 @@ const MyInspections = () => {
                     <span className="truncate max-w-48 font-bold">{inspection.displayId}</span>
                   </div>
                 )}
-                {activeTab === 'appointments' && (
+                {(activeTab === 'appointments' || activeTab === 'offers') && (
                   <div className="flex items-center text-sm text-gray-700">
                     <MapPin className="h-4 w-4 text-gray-500 mr-1" />
                     <span className="truncate max-w-48">{inspection.Branch?.enName}</span>
                   </div>
                 )}
-                {activeTab === 'appointments' ? (
+                {(activeTab === 'appointments' || activeTab === 'offers') ? (
                   <>
                     {inspection?.Inspection?.inspectionStatus == 'Submit' ? (
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.preventDefault();
                         }}
@@ -680,7 +699,7 @@ const MyInspections = () => {
                           }}
                           className="btn mt-3 text-white min-w-[175px] justify-center btn-sm bg-green-600 hover:bg-green-700 flex items-center"
                         >
-                          Offer Generated
+                          Offer Ready
                         </button>
                       ) : (
                         <button
@@ -829,6 +848,13 @@ const MyInspections = () => {
         ): <></>}
 
      
+
+        {activeTab == 'offers' && offerAppointments.length === 0 ? (
+          <div className="py-12 text-center bg-white rounded-lg shadow-sm">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No offers found matching your criteria.</p>
+          </div>
+        ): <></>}
 
         {activeTab == 'available' && allAppointments.length === 0 ? (
           <div className="py-12 text-center bg-white rounded-lg shadow-sm">
