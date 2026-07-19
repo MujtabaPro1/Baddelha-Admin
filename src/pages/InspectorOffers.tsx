@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { RefreshCw, Check, X, AlertTriangle, Car as CarIcon, User, Hash, Eye, EyeOff } from 'lucide-react';
@@ -23,6 +24,7 @@ const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-US', { yea
 const imgSrc = (path?: string | null) => (path && /^https?:\/\//.test(path)) ? path : null;
 
 const InspectorOffers = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('');
   const [offers, setOffers] = useState<PriceReveal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,10 @@ const InspectorOffers = () => {
     setLoading(true);
     try {
       const res = await findMyOffers(activeTab || undefined);
-      setOffers(Array.isArray(res) ? res : res?.data || []);
+      const allOffers = Array.isArray(res) ? res : res?.data || [];
+      // Filter offers to only show those assigned to current user
+      const filtered = allOffers.filter((o: any) => String(o.inspectorUserId) === String(user?.id));
+      setOffers(filtered);
     } catch (err) {
       console.error('Error fetching offers:', err);
     } finally {
