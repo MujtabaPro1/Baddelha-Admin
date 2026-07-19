@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useFirebaseNotifications } from '../hooks/useFirebaseNotifications';
 import { requestNotificationPermission } from '../service/firebase';
-import { updateFcmToken } from '../service/user';
+import { removeDeviceToken, syncDeviceToken } from '../service/notification';
 import NotificationToastContainer from './NotificationToastContainer';
 import {
   LayoutDashboard, Users, Car, Calendar,
@@ -51,7 +51,7 @@ const Layout = () => {
       if (token) {
         localStorage.setItem('fcm_token', token);
         try {
-          await updateFcmToken(token);
+          await syncDeviceToken(token);
         } catch (err) {
           console.error('Error syncing FCM token to backend:', err);
         }
@@ -78,6 +78,7 @@ const Layout = () => {
       return [
         { name: 'Inspections', href: '/my-inspections', icon: ClipboardCheck },
         { name: 'My Offers', href: '/my-offers', icon: Tag },
+        { name: 'Notifications', href: '/notifications', icon: Bell },
       ];
     }
 
@@ -86,6 +87,7 @@ const Layout = () => {
         { name: 'Inspections', href: '/inspections', icon: ClipboardCheck },
         { name: 'Cars', href: '/cars', icon: Calendar },
         { name: 'Price Negotiation', href: '/price-reveal', icon: Tag },
+        { name: 'Notifications', href: '/notifications', icon: Bell },
       ];
     }
 
@@ -135,10 +137,26 @@ const Layout = () => {
   };
 
   const navigation = getNavigation();
+  
 
-  const handleLogout = () => {
-    logout();
+     const fcmToken = async () => {
+          const token = localStorage.getItem('fcm_token');
+          if (token) {
+            await removeDeviceToken(token);
+          }
+        };
+
+  const handleLogout =  async () => {
+
+   
+    await fcmToken().catch(() => {});
+
+    setTimeout(()=>{
+  logout();
     navigate('/login');
+    },0)
+
+  
   };
 
   const getPageTitle = () => {

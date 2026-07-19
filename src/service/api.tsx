@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const isDevelop = false;
+export const isDevelop = false;
 const PROD_BASE_URL = 'https://service.baddelha.com.sa/api/';
-const STG_NEW = 'https://stg-service.baddelha.com.sa/api';
+const STG_NEW = 'https://stg-service.baddelha.com.sa/api/';
 const BASE_URL = isDevelop ? STG_NEW : PROD_BASE_URL;
 
 const axiosInstance = axios.create({

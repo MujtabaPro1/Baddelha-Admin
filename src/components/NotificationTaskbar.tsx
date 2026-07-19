@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { useNotifications, Notification } from '../contexts/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -10,14 +10,13 @@ interface NotificationTaskbarProps {
 
 const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '' }) => {
   const navigate = useNavigate();
-  const { 
-    notifications, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    clearNotifications 
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
   } = useNotifications();
-  
+
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
@@ -27,17 +26,21 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
     markAsRead(notification.id);
     if (notification.link) {
       navigate(notification.link);
-    } else if (notification.referenceId && notification.type === 'inspection') {
-      navigate(`/inspections/${notification.referenceId}`);
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'inspection':
+      case 'INSPECTION':
         return 'bg-blue-500';
-      case 'appointment':
+      case 'BOOK_APPOINTMENT':
         return 'bg-green-500';
+      case 'AUCTION':
+        return 'bg-amber-500';
+      case 'CAR':
+        return 'bg-purple-500';
+      case 'PRICE_REVEAL':
+        return 'bg-teal-500';
       default:
         return 'bg-gray-500';
     }
@@ -45,10 +48,16 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'inspection':
+      case 'INSPECTION':
         return 'Inspection';
-      case 'appointment':
+      case 'BOOK_APPOINTMENT':
         return 'Appointment';
+      case 'AUCTION':
+        return 'Auction';
+      case 'CAR':
+        return 'Car';
+      case 'PRICE_REVEAL':
+        return 'Price Reveal';
       default:
         return 'General';
     }
@@ -93,13 +102,6 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
               Mark all read
             </button>
           )}
-          <button
-            onClick={(e) => { e.stopPropagation(); clearNotifications(); }}
-            className="text-xs text-slate-500 hover:text-red-600 font-medium flex items-center gap-1"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Clear
-          </button>
           {isExpanded ? (
             <ChevronUp className="h-5 w-5 text-slate-400" />
           ) : (
@@ -128,9 +130,9 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    notification.type === 'inspection' 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : notification.type === 'appointment'
+                    notification.type === 'INSPECTION'
+                      ? 'bg-blue-100 text-blue-700'
+                      : notification.type === 'BOOK_APPOINTMENT'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-700'
                   }`}>
@@ -150,7 +152,7 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
                   <span className="text-xs text-slate-400">
                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                   </span>
-                  {(notification.link || notification.referenceId) && (
+                  {notification.link && (
                     <span className="text-xs text-blue-600 flex items-center gap-1">
                       View details <ExternalLink className="h-3 w-3" />
                     </span>

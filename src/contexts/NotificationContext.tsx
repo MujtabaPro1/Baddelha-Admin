@@ -1,28 +1,42 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import axiosInstance from '../service/api';
 import { useAuth } from './AuthContext';
+import {
+  findAllNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsSeen,
+  markNotificationSeen,
+  resolveNotificationLink,
+} from '../service/notification';
+import { NotificationItem, NotificationType } from '../types/notification';
 
 export interface Notification {
   id: string;
   title: string;
   body: string;
-  // 'general' is visible to every role. Any other type is only shown to a
-  // matching user role (e.g. type: 'qa' -> only the qa role sees it), except
-  // admin which always sees every notification regardless of type.
-  type: 'inspection' | 'appointment' | 'general' | 'inspector' | 'qa' | 'sale' | 'supervisor' | 'call-center';
-  referenceId?: string;
+  type: NotificationType;
+  data: Record<string, string> | null;
   link?: string;
   read: boolean;
   createdAt: Date;
 }
 
+const toNotification = (n: NotificationItem): Notification => ({
+  id: n.id,
+  title: n.title,
+  body: n.body,
+  type: n.type,
+  data: n.data,
+  link: resolveNotificationLink(n),
+  read: n.isSeen,
+  createdAt: new Date(n.createdAt),
+});
+
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   addNotification: (notification: Omit<Notification, 'id' | 'read' | 'createdAt'>) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  clearNotifications: () => void;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
 }
 
@@ -42,101 +56,84 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const [allNotifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Admin sees every notification. Other roles only see notifications meant
-  // for everyone ('general') or specifically targeted at their own role.
-  const notifications = user?.role === 'admin'
-    ? allNotifications
-    : allNotifications.filter(n => n.type === 'general' || n.type === user?.role);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
+  // Locally injected notifications (from a live FCM push) haven't been
+  // written to the feed from the client's point of view yet, but the server
+  // already wrote them when it dispatched the push — so this is purely an
+  // optimistic, instant addition to the list; the next poll reconciles it.
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'read' | 'createdAt'>) => {
     const newNotification: Notification = {
       ...notification,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       read: false,
       createdAt: new Date(),
     };
     setNotifications(prev => [newNotification, ...prev]);
-    
-    // Store in localStorage for persistence
-    const stored = localStorage.getItem('admin_notifications');
-    const existing = stored ? JSON.parse(stored) : [];
-    localStorage.setItem('admin_notifications', JSON.stringify([newNotification, ...existing].slice(0, 50)));
-  }, []);
-
-  const markAsRead = useCallback((id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
-    // Update localStorage
-    const stored = localStorage.getItem('admin_notifications');
-    if (stored) {
-      const existing = JSON.parse(stored);
-      const updated = existing.map((n: Notification) => n.id === id ? { ...n, read: true } : n);
-      localStorage.setItem('admin_notifications', JSON.stringify(updated));
-    }
-  }, []);
-
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    const stored = localStorage.getItem('admin_notifications');
-    if (stored) {
-      const existing = JSON.parse(stored);
-      const updated = existing.map((n: Notification) => ({ ...n, read: true }));
-      localStorage.setItem('admin_notifications', JSON.stringify(updated));
-    }
-  }, []);
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-    localStorage.removeItem('admin_notifications');
+    setUnreadCount(prev => prev + 1);
   }, []);
 
   const fetchNotifications = useCallback(async () => {
+    if (!user) return;
     try {
-      // Try to fetch from API
-      //const response = await axiosInstance.get('/1.0/notifications');
-      // if (response.data?.data) {
-      //   const apiNotifications = response.data.data.map((n: any) => ({
-      //     id: n.id?.toString() || Date.now().toString(),
-      //     title: n.title || 'Notification',
-      //     body: n.body || n.message || '',
-      //     type: n.type || 'general',
-      //     referenceId: n.referenceId || n.inspectionId,
-      //     link: n.link || (n.inspectionId ? `/inspections/${n.inspectionId}` : undefined),
-      //     read: n.read || false,
-      //     createdAt: new Date(n.createdAt || Date.now()),
-      //   }));
-        setNotifications([]);
-    
+      const [list, count] = await Promise.all([
+        findAllNotifications({ limit: 100 }),
+        getUnreadNotificationCount(),
+      ]);
+      setNotifications(list.data.map(toNotification));
+      setUnreadCount(count);
     } catch (error) {
-      // If API fails, load from localStorage
-      const stored = localStorage.getItem('admin_notifications');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setNotifications(parsed.map((n: any) => ({
-          ...n,
-          createdAt: new Date(n.createdAt),
-        })));
-      }
+      console.error('Error fetching notifications:', error);
+    }
+  }, [user]);
+
+  const markAsRead = useCallback(async (id: string) => {
+    const target = notifications.find(n => n.id === id);
+    if (target?.read) return;
+
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
+    // Locally-injected notifications (id prefixed "local-") haven't been
+    // persisted under this id on the server, so there's nothing to PATCH.
+    if (id.startsWith('local-')) return;
+
+    try {
+      await markNotificationSeen(id);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }, [notifications]);
+
+  const markAllAsRead = useCallback(async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try {
+      await markAllNotificationsSeen();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
     }
   }, []);
 
-  // Load notifications on mount
+  // Load notifications once logged in, and clear them out on logout.
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (user) {
+      fetchNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [user, fetchNotifications]);
 
-  // Set up polling for new notifications (every 30 seconds)
+  // Poll for new notifications every 30 seconds while logged in.
   useEffect(() => {
+    if (!user) return;
     const interval = setInterval(() => {
       fetchNotifications();
     }, 30000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, [user, fetchNotifications]);
 
   return (
     <NotificationContext.Provider
@@ -146,7 +143,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         addNotification,
         markAsRead,
         markAllAsRead,
-        clearNotifications,
         fetchNotifications,
       }}
     >

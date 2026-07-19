@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser } from '../types';
 import axiosInstance from '../service/api';
 import { setLogoutFunction, setupAuthInterceptor } from '../utils/authInterceptor';
+import { clearSyncedDeviceToken, removeDeviceToken } from '../service/notification';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -150,6 +151,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    // Best-effort: unregister this device's push token so the logged-out
+    // user stops receiving pushes here. Fired before clearing the auth token
+    // (needed for the request's Authorization header) and never awaited —
+    // logout must not be blocked by a network call.
+    // Drop the "already synced" guard so the next login on this device (which
+    // may be a different user) re-registers the token and reclaims it.
+    clearSyncedDeviceToken();
+
     localStorage.removeItem('baddelha_user');
     localStorage.removeItem('token');
     localStorage.removeItem('refresh_token');

@@ -221,11 +221,7 @@ function App() {
                                 </AdminRoute>
                               } />
 
-            <Route path="notifications" element={
-                                <AdminRoute>
-                                  <Notifications />
-                                </AdminRoute>
-                              } />
+            <Route path="notifications" element={<Notifications />} />
 
             <Route path="content-moderation" element={
                                 <AdminRoute>

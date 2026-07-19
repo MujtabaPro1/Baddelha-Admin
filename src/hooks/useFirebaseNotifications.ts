@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { requestNotificationPermission } from '../service/firebase';
 import { showToast } from '../components/NotificationToastContainer';
-import { updateFcmToken } from '../service/user';
+import { resolveNotificationLink, syncDeviceToken } from '../service/notification';
+import { NotificationType } from '../types/notification';
 
 export const useFirebaseNotifications = () => {
   const { addNotification } = useNotifications();
@@ -23,7 +24,7 @@ export const useFirebaseNotifications = () => {
           localStorage.setItem('fcm_token', token);
           localStorage.setItem('notification_permission', 'granted');
           try {
-            await updateFcmToken(token);
+            await syncDeviceToken(token);
           } catch (err) {
             console.error('Error syncing FCM token to backend:', err);
           }
@@ -68,14 +69,20 @@ export const useFirebaseNotifications = () => {
           console.log('🔔 [Foreground] Parsed title:', title);
           console.log('🔔 [Foreground] Parsed body:', body);
           
-          const notificationLink = payload.data?.link || (payload.data?.inspectionId ? `/inspections/${payload.data.inspectionId}` : undefined);
-          
+          const notificationData: Record<string, string> = payload.data || {};
+          const notificationType = (notificationData.type as NotificationType) || 'SYSTEM';
+          const notificationLink = notificationData.link || resolveNotificationLink({ data: notificationData });
+          const toastType =
+            notificationType === 'INSPECTION' ? 'inspection' :
+            notificationType === 'BOOK_APPOINTMENT' ? 'appointment' :
+            'general';
+
           // Add to notification center
           addNotification({
             title,
             body,
-            type: payload.data?.type || 'general',
-            referenceId: payload.data?.inspectionId || payload.data?.referenceId,
+            type: notificationType,
+            data: notificationData,
             link: notificationLink,
           });
 
@@ -85,7 +92,7 @@ export const useFirebaseNotifications = () => {
           showToast({
             title,
             body,
-            type: payload.data?.type || 'general',
+            type: toastType,
             link: notificationLink,
           });
 
@@ -109,10 +116,8 @@ export const useFirebaseNotifications = () => {
 
               notification.onclick = () => {
                 window.focus();
-                if (payload.data?.link) {
-                  window.location.href = payload.data.link;
-                } else if (payload.data?.inspectionId) {
-                  window.location.href = `/inspections/${payload.data.inspectionId}`;
+                if (notificationLink) {
+                  window.location.href = notificationLink;
                 }
                 notification.close();
               };

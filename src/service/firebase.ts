@@ -1,6 +1,7 @@
 // Firebase configuration for push notifications
 // Note: Install firebase package first: npm install firebase
 
+import { isDevelop } from "./api";
 
 //AIzaSyA5VHL5A_pxAYCmzHlNuwBDnLieucE8laY
 const firebaseConfig = {
@@ -13,14 +14,19 @@ const firebaseConfig = {
 };
 
 
+
 // VAPID Key - Generate from Firebase Console > Project Settings > Cloud Messaging
-const VAPID_KEY = process.env.VAPID_KEY;
+const VAPID_KEY = import.meta.env.VITE_VAPID_KEY || 'BOw4b2GBO4rNDXLVAu__GWpTInpZrd-6dptV2p5-6PQsFpm3kqom7kVWKtSRPnhJ0F_pVFrJ9BvinzeqAdj3Htw';
 
 let app: any = null;
 let messaging: any = null;
 
 export const initializeFirebase = async () => {
   if (app) return { app, messaging };
+
+  if(isDevelop){
+     return { app: null, messaging: null};
+  }
   
   try {
     const { initializeApp } = await import("firebase/app");
