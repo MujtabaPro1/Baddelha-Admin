@@ -17,7 +17,7 @@ const NotificationTaskbar: React.FC<NotificationTaskbarProps> = ({ className = '
     markAllAsRead,
   } = useNotifications();
 
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const displayedNotifications = showAll ? notifications : notifications.slice(0, 5);
