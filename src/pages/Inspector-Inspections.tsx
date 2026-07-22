@@ -645,8 +645,12 @@ const MyInspections = () => {
                     <div className="mt-1 flex items-center text-sm text-gray-600">
                       <User className="h-4 w-4 mr-1" />
                       <span>{inspection?.firstName + ' ' + inspection?.lastName}</span>
-                      <span className="mx-2">•</span>
-                      <span>{inspection?.phone}</span>
+                      {inspection?.customerCheckIn != null && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span>{inspection?.phone}</span>
+                        </>
+                      )}
                     </div>
                   )}
                   {activeTab === 'available' && (
